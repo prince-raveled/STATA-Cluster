@@ -31,7 +31,8 @@ async def _read(upload: UploadFile | None) -> bytes:
 def landing(request: Request):
     return templates.TemplateResponse(
         request, "index.html",
-        {"demos": services.DEMO_DATASETS, "formats": SUPPORTED_FORMATS},
+        {"demos": services.DEMO_DATASETS, "formats": SUPPORTED_FORMATS,
+         "grid_sizes": services.demo_grid_sizes()},
     )
 
 

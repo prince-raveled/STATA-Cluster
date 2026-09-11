@@ -130,8 +130,8 @@ VALIDATION_MATRIX = [
     Component(
         name="Statistical tests (7)",
         grade=REFERENCE,
-        internal="Vectorised closed forms checked against the statsmodels models §10 "
-                 "names; 200-test suite.",
+        internal="Vectorised closed forms checked against the statsmodels models the "
+                 "specification names; 200-test suite.",
         reference="edgeR 4.10.1 TMM identical to 0.0000%; ALDEx2 1.44.0 within its own "
                   "Monte-Carlo noise; ANCOM-BC 2.14.0 log fold changes r = 1.00000; "
                   "scikit-bio for CLR and multiplicative replacement.",
@@ -157,8 +157,8 @@ VALIDATION_MATRIX = [
     Component(
         name="Robustness tiers",
         grade=EMPIRICAL,
-        internal="tests/test_worked_example.py encodes §19; adversarial tests cover "
-                 "every threshold boundary.",
+        internal="tests/test_worked_example.py encodes the specification's own worked "
+                 "example; adversarial tests cover every threshold boundary.",
         reference="",
         empirical="Held-out replication on 25 published cohorts, 75 discovery/"
                   "validation splits, 12,564 taxon observations: ROBUST 90%, "

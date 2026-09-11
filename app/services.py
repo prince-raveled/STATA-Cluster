@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import traceback
+from functools import lru_cache
 
 import pandas as pd
 
@@ -24,13 +25,14 @@ DEMO_DATASETS = {
     "ibd_genus": {
         "title": "IBD vs control, genus level",
         "blurb": "120 samples (60/60), 380 genera, 24 taxa spiked at known effect sizes. "
-                 "The rank fork collapses to one level, as in SPEC §19.",
+                 "No taxonomy file is supplied, so the taxonomic-rank choice has "
+                 "only one level.",
         "shape": "380 taxa x 120 samples",
     },
     "gut_species": {
         "title": "Species-level gut cohort",
-        "blurb": "80 samples, 300 species with full lineages, so fork 4 (taxonomic rank) "
-                 "has two levels and the grid is twice the size.",
+        "blurb": "80 samples and 300 species with full lineages, so the analysis can be "
+                 "repeated at genus level as well — twice as many analyses.",
         "shape": "300 taxa x 80 samples",
     },
     "t2d_covariates": {
@@ -58,6 +60,42 @@ def build_dataset(abundance_bytes, abundance_name, metadata_bytes, metadata_name
                 " — table IDs look like: " + ", ".join(table.taxa[:4]) + ".",
             )
     return validate_dataset(table, metadata, group_column, covariates=covariates)
+
+
+@lru_cache(maxsize=1)
+def demo_grid_sizes() -> dict:
+    """How many valid specifications each demo actually produces, per mode.
+
+    The landing page used to promise "three thousand defensible answers" while the
+    default demo produced 1,596 and the graphic beside the headline said so. Numbers
+    shown to a reader are derived from the same enumeration the run uses, so the copy
+    cannot drift away from the product again. Enumeration is pure combinatorics —
+    roughly 0.05s per demo — and the result is cached for the process.
+    """
+    from .core.grid import capabilities_for, enumerate_grid
+    from .core.preprocess import MatrixBuilder
+
+    sizes = {}
+    for name in DEMO_DATASETS:
+        try:
+            dataset = load_demo(name)
+            builder = MatrixBuilder(dataset)
+            capabilities = capabilities_for(dataset)
+            per_mode = {}
+            for mode in ("quick", "full"):
+                _, report = enumerate_grid(
+                    builder, mode=mode, capabilities=capabilities,
+                    covariate_columns=dataset.covariate_columns)
+                per_mode[mode] = int(report.n_valid)
+            sizes[name] = per_mode
+        except Exception:                                    # noqa: BLE001
+            continue          # a demo failing to enumerate must not break the homepage
+    if not sizes:
+        return {}
+    every = [v for per_mode in sizes.values() for v in per_mode.values()]
+    sizes["_range"] = {"low": min(every), "high": max(every)}
+    sizes["_default"] = sizes.get("ibd_genus", {}).get("quick", min(every))
+    return sizes
 
 
 def load_demo(name: str):
@@ -212,7 +250,14 @@ def load_results(token: str):
             db.load_payload(token, "attribution"))
 
 
-def taxon_options(summary, limit: int = 400) -> list:
+#: The curve selector holds one <option> per taxon. This is a DOM-size bound, not an
+#: editorial one — above it the page gets slow to build. When it bites, the interface
+#: says so and points at the table, which is always complete. It must never look like
+#: the run only found this many taxa.
+TAXON_OPTION_LIMIT = 2000
+
+
+def taxon_options(summary, limit: int = TAXON_OPTION_LIMIT) -> list:
     """Taxa for the curve selector, best tier first."""
     table = summary.table.head(limit)
     return [

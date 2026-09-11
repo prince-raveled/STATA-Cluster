@@ -222,10 +222,45 @@ def locate_declared(run, taxon_id: int) -> dict:
     }
 
 
+def n_detected(summary: RobustnessSummary) -> int:
+    """Taxa significant in at least one specification — the four assignable tiers."""
+    counts = summary.tier_counts
+    return sum(counts[t] for t in ("ROBUST", "CONDITIONAL", "FRAGILE", "UNSTABLE"))
+
+
+def n_stable(summary: RobustnessSummary) -> int:
+    """Taxa that held up: ROBUST or CONDITIONAL.
+
+    The distinction that matters to a reader. "Significant in at least one of 1,596
+    analyses" is a very low bar — a table simulated with no group difference at all
+    still put 57 of 79 taxa in UNSTABLE — so a page can be full of tiers and contain
+    no finding. This counts the tiers that survive their own definition.
+    """
+    counts = summary.tier_counts
+    return int(counts["ROBUST"]) + int(counts["CONDITIONAL"])
+
+
 def verdict_sentence(run, summary: RobustnessSummary) -> str:
     """SPEC §16.1 — one line, at the top of the page."""
     counts = summary.tier_counts
-    detected = sum(counts[t] for t in ("ROBUST", "CONDITIONAL", "FRAGILE", "UNSTABLE"))
+    detected = n_detected(summary)
+
+    # A cohort where nothing reached significance is a real result, and one worth
+    # reporting. Rendering it through the tier template gives "Of the 0 taxa
+    # significant in at least one specification, 0 are ROBUST, 0 CONDITIONAL..." —
+    # arithmetically true and indistinguishable from a malfunction.
+    if detected == 0:
+        tested = int(counts.get("INSUFFICIENT", 0)) + int(counts.get("NOT DETECTED", 0))
+        return (
+            f"No taxon reached significance in any of the "
+            f"{summary.n_specs_total:,} valid specifications. That is a finding, not a "
+            f"failure: across every defensible way of analysing this table, "
+            f"{tested:,} taxa were examined and none produced a difference between the "
+            f"groups that survived multiple-testing correction. The most common reason "
+            f"is that the study is too small or too sparse to settle the question — the "
+            f"readiness checks on the configure page say which applies here."
+        )
+
     unit = "taxa" if detected != 1 else "taxon"
     parts = [
         f"Of the {detected} {unit} significant in at least one specification, "

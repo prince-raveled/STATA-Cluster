@@ -35,7 +35,8 @@ RULES = [
      "TMM + rarefaction is double library-size correction"),
 
     (lambda s: s.method == "logistic" and s.transform != "raw",
-     "presence/absence is transform-invariant; keep one canonical spec"),
+     "presence/absence is transform-invariant; keep one canonical "
+     "combination"),
 
     (lambda s: s.method == "pydeseq2" and s.rarefaction != "none",
      "DESeq2 models library size internally"),
