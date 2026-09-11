@@ -57,7 +57,7 @@ from __future__ import annotations
 
 import time
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import MISSING, dataclass, field, fields
 
 import numpy as np
 import pandas as pd
@@ -150,6 +150,27 @@ class Attribution:
     diagnostics: dict = field(default_factory=dict)
     evidence: str = "exploratory"
     warnings: list = field(default_factory=list)
+
+    def __setstate__(self, state):
+        """Restore a payload that may predate some of these fields.
+
+        Results are pickled to disk and kept for RETENTION_DAYS, so a stored run
+        outlives the code that wrote it. Pickle restores `__dict__` verbatim and does
+        not re-run dataclass defaults, so adding a field here made every previously
+        stored result raise AttributeError and return 500 on the results page — a
+        deploy silently broke every link a researcher had already shared.
+
+        Filling in the defaults for anything the payload predates keeps old results
+        readable, and keeps that from happening again the next time a field is added.
+        """
+        self.__dict__.update(state)
+        for spec in fields(self):
+            if spec.name in self.__dict__:
+                continue
+            if spec.default is not MISSING:
+                setattr(self, spec.name, spec.default)
+            elif spec.default_factory is not MISSING:      # type: ignore[misc]
+                setattr(self, spec.name, spec.default_factory())
 
     @property
     def ranked(self) -> list:
