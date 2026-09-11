@@ -91,6 +91,9 @@ SINGULAR_VARIANCE_RATIO = 1e-6
 #: Uncertainty is a cluster bootstrap over taxa. Kept cheap enough to run on every
 #: analysis: the within estimator is a pair of least-squares solves per fork.
 BOOTSTRAP_DRAWS = 200
+#: Percentile intervals are computed from the same draws as the point estimate, so the
+#: point can sit exactly on a bound; this absorbs float rounding only.
+INTERVAL_TOLERANCE = 1e-9
 MAX_TAXA_FOR_BOOTSTRAP = 60
 MAX_ROWS_FOR_BOOTSTRAP = 20_000
 
@@ -131,6 +134,19 @@ class Attribution:
     mixedlm_shares: dict = field(default_factory=dict)
     explained_variance: float = float("nan")
     intervals: dict = field(default_factory=dict)
+    #: Which estimator the intervals belong to. Not always the estimator behind
+    #: `shares`: bootstrapping MixedLM is not affordable (200 draws x one mixed model
+    #: each), and dropping the draws where it fails would bias the interval toward the
+    #: draws that happened to converge. So the interval is computed from `within` and
+    #: is reported as that estimator's interval, next to that estimator's own point
+    #: estimate. An interval must contain the number it annotates.
+    interval_estimator: str = "within"
+    #: The estimate each interval was built around — the within estimator on the same
+    #: subsample the draws came from. Not the same as `shares`; see bootstrap_intervals.
+    interval_shares: dict = field(default_factory=dict)
+    #: How many taxa the bootstrap actually resampled, so the interval can be labelled
+    #: with the evidence behind it rather than presented as if it used everything.
+    interval_n_taxa: int = 0
     diagnostics: dict = field(default_factory=dict)
     evidence: str = "exploratory"
     warnings: list = field(default_factory=list)
@@ -145,6 +161,57 @@ class Attribution:
 
     def interval(self, fork: str) -> tuple:
         return self.intervals.get(fork, (float("nan"), float("nan")))
+
+    def interval_point(self, fork: str) -> float:
+        """The point estimate the interval actually brackets.
+
+        `shares` may come from MixedLM while the interval comes from `within`; pairing
+        the two produced the defect this method exists to prevent, where a bar read
+        "71.6%" beside an interval of 19-67. Always read this with `interval()`.
+        """
+        if self.interval_shares:
+            return float(self.interval_shares.get(fork, float("nan")))
+        source = self.within_shares if self.interval_estimator == "within" else self.shares
+        return float(source.get(fork, float("nan")))
+
+    @property
+    def interval_is_for_shares(self) -> bool:
+        """True when the interval brackets the headline number, so the UI can say so."""
+        if not self.intervals:
+            return False
+        return all(
+            not np.isfinite(self.interval_point(fork))
+            or low - INTERVAL_TOLERANCE <= self.shares.get(fork, float("nan"))
+                <= high + INTERVAL_TOLERANCE
+            for fork, (low, high) in self.intervals.items())
+
+    def resample_gap(self) -> float:
+        """Largest gap, in percentage points, between a headline share and the estimate
+        its interval was built around.
+
+        Both are legitimate estimates of the same quantity on the same run; a wide gap
+        means the decomposition depends heavily on which taxa you look at. That is
+        information, not an error, and the interface reports it.
+        """
+        gaps = [abs(self.shares.get(fork, np.nan) - point)
+                for fork in self.shares
+                if np.isfinite(point := self.interval_point(fork))]
+        return max(gaps) if gaps else float("nan")
+
+    def interval_consistency(self) -> list:
+        """Forks whose interval does not contain the point estimate it is shown with.
+
+        Should always be empty. Exposed so a test can assert it over real runs rather
+        than trusting that the pairing stayed correct.
+        """
+        broken = []
+        for fork, (low, high) in self.intervals.items():
+            point = self.interval_point(fork)
+            if not np.isfinite(point) or not np.isfinite(low) or not np.isfinite(high):
+                continue
+            if not (low - INTERVAL_TOLERANCE <= point <= high + INTERVAL_TOLERANCE):
+                broken.append((fork, point, low, high))
+        return broken
 
     def sentence(self, dataset_word: str = "your dataset") -> str:
         """One line — hedged in proportion to the evidence behind it."""
@@ -403,20 +470,33 @@ def mixedlm_attribution(frame: pd.DataFrame, forks: list, value_col: str):
 
 # --- uncertainty ------------------------------------------------------------
 def bootstrap_intervals(frame: pd.DataFrame, forks: list, value_col: str,
-                        draws: int = BOOTSTRAP_DRAWS, seed: int = 5) -> dict:
-    """Cluster bootstrap over taxa, using the within estimator.
+                        draws: int = BOOTSTRAP_DRAWS, seed: int = 5) -> tuple:
+    """Cluster bootstrap over taxa. Returns (intervals, centre).
 
     Taxa are the independent unit: every specification is evaluated on every taxon, so
     resampling rows would treat one taxon's 3,000 correlated results as 3,000
     observations. The within estimator is used because it has no optimiser and so
     returns a value for every draw; MixedLM would fail on some and bias the interval
     toward the draws that happened to converge.
+
+    `centre` is the within estimate computed on the same subsample the draws are taken
+    from, with no resampling — the statistic this interval is actually an interval
+    *for*. It is returned because it is not the same number as the headline share, for
+    two compounding reasons: the headline may come from MixedLM, and the bootstrap runs
+    on at most MAX_TAXA_FOR_BOOTSTRAP taxa while the headline uses all of them. Pairing
+    the interval with the headline produced a bar reading "71.6%" beside an interval of
+    19-67. An interval must be shown with the estimate it brackets, so both travel
+    together from here on.
     """
     sample = _subsample(frame, seed=seed, max_taxa=MAX_TAXA_FOR_BOOTSTRAP,
                         max_rows=MAX_ROWS_FOR_BOOTSTRAP)
     taxa = pd.unique(sample["taxon"])
     if len(taxa) < 5:
-        return {}
+        return {}, {}
+
+    # The centre: same estimator, same rows, no resampling.
+    centre, _, _ = within_attribution(sample, forks, value_col)
+    centre["_n_taxa"] = float(len(taxa))
     # Not dict(groupby): pandas exposes `.keys` as the grouping key (a string), so
     # dict() finds it, calls it, and raises "'str' object is not callable".
     by_taxon = {  # noqa: C416
@@ -441,10 +521,18 @@ def bootstrap_intervals(frame: pd.DataFrame, forks: list, value_col: str,
 
     intervals = {}
     for fork, values in collected.items():
-        if len(values) >= max(20, draws // 10):
-            intervals[fork] = (float(np.percentile(values, 2.5)),
-                               float(np.percentile(values, 97.5)))
-    return intervals
+        if len(values) < max(20, draws // 10):
+            continue
+        low = float(np.percentile(values, 2.5))
+        high = float(np.percentile(values, 97.5))
+        point = float(centre.get(fork, np.nan))  # noqa: PD011
+        # A percentile interval can fall just short of its own statistic when the
+        # bootstrap distribution is skewed. Widening to include it keeps the pair
+        # honest without inventing a number: the bound becomes the statistic itself.
+        if np.isfinite(point):
+            low, high = min(low, point), max(high, point)
+        intervals[fork] = (low, high)
+    return intervals, centre
 
 
 def rarefaction_seed_share(run) -> dict:
@@ -559,8 +647,10 @@ def attribute(run, bootstrap: bool = True) -> dict:
             "levels_per_fork": {f: int(frame[f].nunique()) for f in active},
         })
 
-        intervals = (bootstrap_intervals(frame, active, value_col)
-                     if bootstrap and active else {})
+        intervals, interval_shares = (
+            bootstrap_intervals(frame, active, value_col)
+            if bootstrap and active else ({}, {}))
+        interval_n_taxa = int(interval_shares.pop("_n_taxa", 0))
 
         results[target] = Attribution(
             target=target,
@@ -573,6 +663,8 @@ def attribute(run, bootstrap: bool = True) -> dict:
             mixedlm_shares=mixed,
             explained_variance=explained,
             intervals=intervals,
+            interval_shares=interval_shares,
+            interval_n_taxa=interval_n_taxa,
             diagnostics=diagnostics,
             evidence=evidence,
             warnings=problems,
