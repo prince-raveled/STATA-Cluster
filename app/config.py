@@ -18,7 +18,10 @@ MAX_UPLOAD_BYTES = int(os.environ.get("MICROVERSE_MAX_UPLOAD", str(64 * 1024 * 1
 VERSION = "1.0.0"
 SPEC_VERSION = "2.0 (frozen)"
 LICENSE = "MIT"
-REPOSITORY = os.environ.get("MICROVERSE_REPO", "https://github.com/your-org/microverse")
+#: The "Source" link in the header and footer. The default was a placeholder
+#: (your-org/microverse), which 404s on GitHub — override it per deployment.
+REPOSITORY = os.environ.get(
+    "MICROVERSE_REPO", "https://github.com/prince-raveled/STATA-Cluster")
 
 MODE_LABELS = {
     "quick": "Quick",

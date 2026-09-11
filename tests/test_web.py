@@ -446,3 +446,27 @@ def test_the_curve_payload_has_one_shape_whether_or_not_it_is_empty(client, fini
     assert empty["n_specs"] == 0
     assert empty["effect"] == []
     assert "nothing to plot" in empty.get("note", "")
+
+def test_the_source_link_is_not_a_placeholder(client):
+    """The header and footer "Source" link shipped pointing at your-org/microverse.
+
+    That URL does not exist, so every visitor who clicked Source got a GitHub 404.
+    A placeholder in a link is worse than no link: it looks deliberate.
+    """
+    from app import config
+
+    assert "your-org" not in config.REPOSITORY
+    assert "example.com" not in config.REPOSITORY
+    assert config.REPOSITORY.startswith("https://")
+
+    body = client.get("/").text
+    assert config.REPOSITORY in body
+    assert "your-org" not in body
+
+
+def test_no_page_ships_an_obvious_placeholder(client):
+    """A sweep for the strings that mean 'we meant to fill this in'."""
+    for path in ("/", "/about", "/validation"):
+        body = client.get(path).text.lower()
+        for marker in ("your-org", "example.com", "lorem ipsum", "tbd", "fixme"):
+            assert marker not in body, f"{marker} on {path}"
