@@ -8,7 +8,10 @@
   <meta name="description" content="{% block description %}MicroVerse runs every defensible analytical pipeline on your microbiome differential abundance data and reports the distribution of answers.{% endblock %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="/static/css/microverse.css">
+  {# The version query is what makes a deploy actually reach a returning visitor:
+     without it the browser keeps the cached stylesheet and the page renders with
+     old CSS against new markup. #}
+  <link rel="stylesheet" href="/static/css/microverse.css?v={{ VERSION }}">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2316233a'/><rect x='6' y='18' width='3' height='8' fill='%234a4bb0'/><rect x='12' y='11' width='3' height='15' fill='%234a4bb0'/><rect x='18' y='15' width='3' height='11' fill='%234a4bb0'/><rect x='24' y='6' width='3' height='20' fill='%23e8c65c'/></svg>">
   {% block head %}{% endblock %}
 </head>

@@ -77,8 +77,8 @@
           <dd>{{ summary.min_library|commafy }}–{{ summary.max_library|commafy }}
             <span class="muted">median {{ summary.median_library|commafy }}</span></dd>
           <dt>Sparsity</dt><dd>{{ summary.sparsity|percent(1) }} zeros</dd>
-          <dt>Fork 1 — rarefaction</dt><dd>{{ depths|join(", ") }}</dd>
-          <dt>Fork 4 — rank</dt>
+          <dt>Rarefaction depths</dt><dd>{{ depths|join(", ") }}</dd>
+          <dt>Taxonomic levels</dt>
           <dd>{{ ranks|join(" + ") }}{% if ranks|length == 1 %}
             <span class="muted">(one level)</span>{% endif %}</dd>
         </dl>
@@ -150,7 +150,7 @@
                        {% if blocked %}disabled{% endif %}>
                 <span class="row">
                   <span class="title">{{ MODE_LABELS[name] }}{% if name == "quick" %} <span class="muted" style="font-weight:400;font-size:13px">— default</span>{% endif %}</span>
-                  {% if preview %}<span class="count row-end">{{ preview.n_valid|commafy }} specs</span>{% endif %}
+                  {% if preview %}<span class="count row-end">{{ preview.n_valid|commafy }} analyses</span>{% endif %}
                 </span>
                 <span class="blurb">{{ MODE_BLURBS[name] }}</span>
                 {% if blocked %}

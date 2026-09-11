@@ -58,8 +58,12 @@
     </div>
     <p class="note" style="margin-top:16px">
       These are shares of the <i>analyses</i>, not probabilities about the biology.
-      "Detection 72%" means 72% of the analyses that tested this taxon called it
-      significant — it does not mean a 72% chance the difference is real.
+      Detection here is <b>{{ fingerprint.detection|percent(0) if fingerprint.detection == fingerprint.detection else 'not available' }}</b>,
+      which means {{ fingerprint.detection|percent(0) if fingerprint.detection == fingerprint.detection else 'an unknown share' }}
+      of the {{ row.n_specs_tested|commafy }} analyses that tested this taxon called it
+      significant. It does not mean there is a
+      {{ fingerprint.detection|percent(0) if fingerprint.detection == fingerprint.detection else 'corresponding' }}
+      chance the difference is real.
     </p>
   </section>
 
@@ -73,7 +77,36 @@
       — it is what happened across the analyses that ran.
     </p>
 
-    {% if evidence.ranked %}
+    {% set movers = evidence.ranked|selectattr('conditional_swing', '>=', 0.005)|list %}
+    {% if evidence.ranked and not movers %}
+      <div class="card card-paper">
+        <p style="margin:0;font-size:14px;line-height:1.75">
+          <b>No analytical choice moved this taxon's answer.</b> All
+          {{ evidence.ranked|length }} choices were varied and every one of them left the
+          significance rate unchanged, so there is nothing here to rank — an ordered list
+          of {{ evidence.ranked|length }} zeros would imply a winner that the numbers do
+          not support.
+          {% if row.frac_significant <= 0.05 %}
+            This taxon was not significant under essentially any analysis, so there was no
+            answer for a choice to move.
+          {% elif row.frac_significant >= 0.95 %}
+            This taxon was significant under essentially every analysis, so no choice
+            could have flipped it.
+          {% endif %}
+        </p>
+        <details style="margin-top:14px">
+          <summary>Show the per-choice breakdown anyway</summary>
+          <div class="influence-list" style="margin-top:14px">
+            {% for inf in evidence.ranked %}
+              <div class="influence-flat">
+                <span class="inf-name">{{ inf.label }}</span>
+                <span class="inf-value">{{ inf.conditional_swing|percent(0) }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        </details>
+      </div>
+    {% elif evidence.ranked %}
       <div class="influence-list">
         {% for inf in evidence.ranked %}
           <details class="influence" {% if loop.first and inf.conditional_swing >= 0.1 %}open{% endif %}>
@@ -187,6 +220,12 @@
           trivial, or unstable and real.</li>
         <li>Nothing here is causal. A difference between groups that survives every
           analytical choice is still an association.</li>
+        <li id="effect-invariance">The effect size shown above comes from the abundance
+          table, not from a model, so it is identical across every statistical test and
+          <b>does not change when an analysis adjusts for a covariate</b> (its spread
+          across 32 adjustment sets is exactly zero). Adjustment does matter here — it
+          shows up in whether the taxon is called significant, not in this number. Do not
+          quote it as a regression coefficient.</li>
         {% if row.robustness_tier in TIER_REPLICATION %}
           <li>{{ row.robustness_tier|tier_sentence }} That is a rate measured across
             other people's cohorts, not a prediction about this taxon in your data.</li>
@@ -210,7 +249,7 @@
 {% block scripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.3/plotly.min.js"
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="/static/js/curve.js"></script>
+<script src="/static/js/curve.js?v={{ VERSION }}"></script>
 <script>
   (function () {
     var node = document.getElementById("curve");

@@ -31,7 +31,7 @@
 <section class="section shell" aria-labelledby="forks-title">
   <div class="section-heading">
     <div>
-      <p class="eyebrow">§10 — the grid</p>
+      <p class="eyebrow" data-spec="10">The grid of analyses</p>
       <h2 id="forks-title">Seven forks, each genuinely contested.</h2>
     </div>
     <p>Every level below is defended in current literature. MicroVerse does not pick between
@@ -115,7 +115,7 @@
 <section class="section shell" aria-labelledby="tiers-title">
   <div class="section-heading">
     <div>
-      <p class="eyebrow">§15–16 — how a taxon is tiered</p>
+      <p class="eyebrow" data-spec="15-16">How a taxon gets its verdict</p>
       <h2 id="tiers-title">Two numbers decide the tier.</h2>
     </div>
     <p>How often a taxon is FDR-significant, and how consistently its effect points the same way.
@@ -162,7 +162,7 @@
 <!-- ============ anti-p-hacking ============ -->
 <section class="section shell" aria-labelledby="norm-title">
   <div class="card card-dark">
-    <p class="eyebrow on-dark">§18 — designed against cherry-picking</p>
+    <p class="eyebrow on-dark" data-spec="18">Designed against cherry-picking</p>
     <h2 id="norm-title" style="color:var(--white);max-width:22ch">A multiverse tool can be used to p-hack. This one is built not to be.</h2>
     <div class="split" style="margin-top:26px">
       <ul class="prose" style="color:#c2cad8;padding-left:20px">
@@ -185,7 +185,7 @@
 <section class="section-tight shell" aria-labelledby="scope-title">
   <div class="section-heading">
     <div>
-      <p class="eyebrow">§21 — scope</p>
+      <p class="eyebrow" data-spec="21">What is in scope</p>
       <h2 id="scope-title">What is deliberately out of scope.</h2>
     </div>
     <p>A tool that does one thing completely is more useful than one that does six things
@@ -231,11 +231,36 @@
   </div>
 </section>
 
+<!-- ============ glossary ============ -->
+<section class="section-tight shell" id="glossary" aria-labelledby="glossary-title">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">Every term, explained once</p>
+      <h2 id="glossary-title">Glossary</h2>
+    </div>
+    <p>The words this site uses, in the order they become useful. Every dotted term
+      anywhere on the site is defined here too.</p>
+  </div>
+  {% for section in glossary %}
+    <div class="glossary-group">
+      <h3>{{ section.heading }}</h3>
+      <dl>
+        {% for entry in section.entries %}
+          <div class="glossary-entry" id="term-{{ entry.key }}">
+            <dt>{{ entry.term }}</dt>
+            <dd>{{ entry.long or entry.short }}</dd>
+          </div>
+        {% endfor %}
+      </dl>
+    </div>
+  {% endfor %}
+</section>
+
 <!-- ============ references ============ -->
 <section class="section-tight shell" aria-labelledby="refs-title">
   <div class="section-heading">
     <div>
-      <p class="eyebrow">§26 — sources</p>
+      <p class="eyebrow" data-spec="26">Sources</p>
       <h2 id="refs-title">Everything here is someone else's finding.</h2>
     </div>
     <p>MicroVerse's contribution is putting the space behind a URL. The evidence that the space

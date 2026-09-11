@@ -6,14 +6,18 @@
 
 <section class="hero" aria-labelledby="hero-title">
   <div class="hero-copy">
-    <p class="eyebrow">Specification-curve analysis for microbiome DA</p>
-    <h1 id="hero-title">One dataset. <em class="accent">Three thousand</em> defensible answers.</h1>
-    <p class="lede">A differential abundance result depends on at least six analytical choices,
-      and not one of them has field consensus. Researchers make one set of choices, report one
-      p-value, and never show what a different set would have said.</p>
+    <p class="eyebrow">Specification-curve analysis for microbiome differential abundance</p>
+    <h1 id="hero-title">One dataset. <em class="accent">Every</em> defensible answer.</h1>
+    <p class="lede">A <b>differential abundance</b> result — which microbes differ between two
+      groups — depends on at least six analytical choices, and not one of them has field
+      consensus. Researchers make one set of choices, report one p-value, and never show what a
+      different set would have said.</p>
     <p class="lede">MicroVerse runs the whole space and reports the distribution: which taxa
       survive every defensible pipeline, which appear only under particular choices, and which
-      fork is actually driving your result.</p>
+      choice is actually driving your result.{% if grid_sizes._range %} On the demo datasets
+      that comes to between <b>{{ grid_sizes._range.low|commafy }}</b> and
+      <b>{{ grid_sizes._range.high|commafy }}</b> complete analyses, depending on the table you
+      bring.{% endif %}</p>
     <div class="hero-actions">
       <a class="button button-primary" href="#start">Run your data <span aria-hidden="true">→</span></a>
       <a class="text-action" href="#demos">Start from a demo <span aria-hidden="true">↗</span></a>
@@ -25,7 +29,7 @@
   <div class="hero-visual" aria-label="A specification curve: effect size across every analytical pipeline, over a matrix of which choice was active">
     <div class="orb orb-a" aria-hidden="true"></div>
     <div class="orb orb-b" aria-hidden="true"></div>
-    <p class="visual-topline"><span>SPECIFICATION CURVE / ONE TAXON</span><span>1,596 PIPELINES</span></p>
+    <p class="visual-topline"><span>SPECIFICATION CURVE / ONE TAXON</span><span>{{ grid_sizes._default|commafy if grid_sizes._default else '1,596' }} PIPELINES</span></p>
 
     <div class="mini-curve" aria-hidden="true">
       <svg viewBox="0 0 460 250" role="img" preserveAspectRatio="none">

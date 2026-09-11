@@ -12,15 +12,24 @@
 {%- set t = TERM(key) -%}
 <span class="dfn" tabindex="0" role="note" aria-label="{{ t.term }}: {{ t.short }}"
   >{{ label or t.term }}<span class="dfn-pop" aria-hidden="true"
-    ><b>{{ t.term }}</b>{{ t.short }}{% if t.spec %}<i>spec section {{ t.spec }}</i>{% endif %}</span
+    ><b>{{ t.term }}</b>{{ t.short }}</span
   ></span>
 {%- endmacro %}
 
 {#
   A section label. Replaces the old "§16.2 — per-taxon robustness" eyebrows: the plain
-  words lead, and the specification reference is a small marker for the few readers who
-  want it rather than the heading everyone else has to decode.
+  words lead and nothing else has to be decoded.
+
+  `spec` is kept in the signature because every caller passes it and it is genuinely
+  useful to a reviewer, but it is no longer rendered as a visible "spec 16.2" chip —
+  that was internal shorthand leaking into the interface. It survives as a `data-spec`
+  attribute, so anyone reading the page source or writing a reviewer tool can still
+  find the section, and no reader has to wonder what "spec 16.2" means.
+
+  The separator before any trailing marker is a real space in the markup, not a CSS
+  margin: a margin does not survive copy-and-paste or a screen reader, which is how
+  "How each taxon held upspec 16.2" reached users.
 #}
 {% macro section_label(text, spec='') -%}
-<p class="eyebrow">{{ text }}{% if spec %}<span class="spec-ref" title="Section {{ spec }} of the frozen specification">spec {{ spec }}</span>{% endif %}</p>
+<p class="eyebrow"{% if spec %} data-spec="{{ spec }}"{% endif %}>{{ text }}</p>
 {%- endmacro %}

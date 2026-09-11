@@ -366,7 +366,7 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
 
 /* ---- attribution bars ---------------------------------------------------- */
 .bars { display: grid; gap: 11px; }
-.bar-row { display: grid; grid-template-columns: 152px minmax(0, 1fr) 52px; gap: 14px; align-items: center; font-size: 13px; }
+.bar-row { display: grid; grid-template-columns: 152px minmax(0, 1fr) 122px; gap: 14px; align-items: center; font-size: 13px; }
 .bar-track { position: relative; height: 9px; background: var(--paper-deep); }
 .bar-fill { display: block; height: 100%; background: var(--accent); min-width: 2px; }
 .bar-ghost { position: absolute; top: -3px; bottom: -3px; width: 0; border-right: 2px dotted var(--ink-soft); opacity: .75; }
@@ -469,7 +469,7 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
   .band { grid-template-columns: 1fr; gap: 12px; }
   .band-number { display: none; }
   .site-footer .inner { grid-template-columns: 1fr; gap: 26px; }
-  .bar-row { grid-template-columns: 118px minmax(0, 1fr) 46px; gap: 10px; font-size: 12px; }
+  .bar-row { grid-template-columns: 110px minmax(0, 1fr) 108px; gap: 10px; font-size: 12px; }
   .float-card { min-width: 168px; padding: 9px 11px; }
   .score-orb { width: 120px; height: 120px; left: 40%; }
   .score-orb strong { font-size: 36px; }
@@ -558,10 +558,13 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
 .attribution-warnings li { margin-bottom: 4px; }
 .bar-ci {
   display: block;
+  margin-top: 2px;
   font-size: 10px;
+  line-height: 1.35;
   color: var(--grey);
   font-variant-numeric: tabular-nums;
 }
+.bar-point { display: block; }
 
 /* --- validation matrix ---------------------------------------------------- */
 .matrix-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -604,6 +607,11 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
   color: var(--grey);
 }
 
+/* A backstop against any absolutely-positioned child reaching past the column.
+   `clip` rather than `hidden` so these do not become scroll containers — `hidden`
+   would reintroduce exactly the sideways scrolling this is here to prevent. */
+main, .shell { overflow-x: clip; }
+
 /* --- inline definitions ---------------------------------------------------
    A term a reader may not know, explained where it is used. Works on hover, on
    keyboard focus, and on tap — the last matters because a tooltip a phone cannot
@@ -615,33 +623,63 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
   text-decoration: none;
 }
 .dfn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.dfn-pop {
-  position: absolute;
-  bottom: calc(100% + 9px);
-  left: 50%;
-  transform: translateX(-50%);
+/* Scoped through `.dfn` rather than written as a bare `.dfn-pop`. A bare class loses
+   to context rules like `.metrics span`, which is more specific and sets both
+   `display: block` and a grey inherited colour — three definition panels were left
+   permanently on screen, in the wrong colour, the moment hiding moved from
+   `visibility` to `display`. */
+.dfn .dfn-pop {
+  /* A panel pinned to the bottom of the viewport, not a tooltip beside the word.
+
+     The anchored version could not be made correct in CSS alone. Hidden, it stayed in
+     layout and widened the document — 566px on a 375px phone, 1440px on a 1280px
+     desktop, so the page scrolled sideways at every size. `display: none` fixes that,
+     but open it then hangs off the right edge for any term near the end of a line:
+     measured on the results page at 1280px, three of nine terms were clipped, one of
+     them by 160px of a 330px box. Whether a term sits near the edge depends on where
+     the line wraps, which no selector can see — "models fitted" and "considered" have
+     identical markup and only one of them overflows. Structural heuristics such as
+     `:last-child` do not correlate with it.
+
+     Fixed to the viewport removes both problems at once and needs no JavaScript, which
+     is the constraint this component was built under: it is out of flow, so it cannot
+     widen the document whether open or closed, and its position does not depend on
+     where the word happens to fall. */
+  display: none;
+  position: fixed;
   z-index: 40;
-  width: max-content;
-  max-width: min(330px, 78vw);
-  padding: 11px 13px;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  width: auto;
+  padding: 14px 16px;
   background: var(--ink);
   color: var(--paper);
   font-family: var(--sans);
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 400;
   font-style: normal;
-  line-height: 1.55;
+  line-height: 1.6;
   letter-spacing: 0;
   text-align: left;
   text-transform: none;
-  box-shadow: 0 8px 26px rgba(10, 14, 26, .28);
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity .12s ease;
+  box-shadow: 0 -6px 30px rgba(10, 14, 26, .34);
   pointer-events: none;
 }
-.dfn-pop b { display: block; margin-bottom: 4px; font-weight: 650; }
-.dfn-pop i {
+@media (min-width: 700px) {
+  /* Wide enough for a panel rather than a full-width bar. Centred so it reads as a
+     deliberate surface instead of a banner pinned to one side. */
+  .dfn .dfn-pop {
+    left: 50%;
+    right: auto;
+    bottom: 24px;
+    transform: translateX(-50%);
+    width: min(460px, calc(100vw - 48px));
+    padding: 15px 18px;
+  }
+}
+.dfn .dfn-pop b { display: block; margin-bottom: 4px; font-weight: 650; }
+.dfn .dfn-pop i {
   display: block;
   margin-top: 7px;
   font-style: normal;
@@ -650,35 +688,11 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
   text-transform: uppercase;
   opacity: .6;
 }
-.dfn-pop::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  margin-left: -6px;
-  border: 6px solid transparent;
-  border-top-color: var(--ink);
-}
 .dfn:hover .dfn-pop,
 .dfn:focus .dfn-pop,
-.dfn:focus-within .dfn-pop { opacity: 1; visibility: visible; }
-
-/* Near the viewport edges, pin the tooltip inside the page instead of letting it
-   overflow — otherwise the first definition in a paragraph is unreadable. */
-.dfn:first-child .dfn-pop { left: 0; transform: none; }
-.dfn:first-child .dfn-pop::after { left: 22px; }
+.dfn:focus-within .dfn-pop { display: block; }
 
 /* The specification reference, demoted from heading to marker. */
-.spec-ref {
-  margin-left: 9px;
-  padding: 1px 5px;
-  border: 1px solid var(--rule);
-  font-size: 9.5px;
-  letter-spacing: .04em;
-  color: var(--grey);
-  text-transform: none;
-  white-space: nowrap;
-}
 
 /* --- glossary ------------------------------------------------------------- */
 .glossary-group { margin-bottom: 34px; }
@@ -707,7 +721,6 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
   color: var(--ink-soft, var(--grey));
   max-width: 68ch;
 }
-.glossary-entry .spec-ref { margin-left: 8px; vertical-align: middle; }
 
 /* --- orientation panel ---------------------------------------------------- */
 .orient {
@@ -914,4 +927,79 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
 @media (max-width: 680px) {
   .readiness-head { grid-template-columns: 1fr; }
   .readiness-item { grid-template-columns: 1fr; gap: 4px; }
+}
+
+/* --- a run that detected nothing ------------------------------------------
+   Deliberately not styled as a warning. It is a valid scientific answer, and
+   colouring it like an error is what made it read as a malfunction. */
+.null-result { border-left: 3px solid var(--accent); }
+.null-result p { font-size: 14px; line-height: 1.75; margin: 0 0 12px; }
+.null-diagnostics-title {
+  margin: 22px 0 4px;
+  font: 650 11px var(--mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* A flat, unranked listing for the case where every influence is zero. Deliberately
+   not the ranked `.influence` treatment — there is no ranking to show. */
+.influence-flat {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  border-top: 1px solid var(--rule);
+  font-size: 13px;
+}
+.influence-flat .inf-value { font-family: var(--mono); color: var(--grey); }
+
+/* --- caveats where the tier is first read -------------------------------- */
+.tier-limits { margin-top: 18px; }
+.tier-limits h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-family: var(--sans);
+  font-weight: 650;
+}
+
+/* --- provenance disclosure ------------------------------------------------ */
+.provenance { margin: 16px 0 0; }
+.provenance > summary {
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 6px 0;
+}
+.provenance-body { padding: 6px 0 0; font-size: 13.5px; line-height: 1.7; }
+.provenance-body ul { margin: 10px 0; padding-left: 20px; }
+.provenance-body li { margin-bottom: 6px; }
+.provenance-body .muted { font-size: 12.5px; }
+
+/* --- taxon picker ---------------------------------------------------------
+   A search box beside a grouped native select. Native rather than a custom
+   combobox: optgroups are announced by screen readers, the browser's own
+   type-ahead keeps working, and there is no focus behaviour to reimplement. */
+.taxon-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.taxon-picker-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.taxon-picker-field label {
+  font: 400 10px var(--mono);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+.taxon-picker-field input[type="search"] { width: 260px; max-width: 100%; }
+.taxon-picker-select select { min-width: 320px; max-width: 520px; }
+.taxon-picker #curve-status { margin-left: auto; padding-bottom: 9px; }
+@media (max-width: 700px) {
+  .taxon-picker { flex-direction: column; align-items: stretch; gap: 12px; }
+  .taxon-picker-field input[type="search"],
+  .taxon-picker-select select { width: 100%; min-width: 0; max-width: none; }
+  .taxon-picker #curve-status { margin-left: 0; padding-bottom: 0; }
 }
