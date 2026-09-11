@@ -1,0 +1,17 @@
+.venv/
+data/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+examples/*_abundance.tsv
+examples/*_metadata.tsv
+examples/*_taxonomy.tsv
+examples/*_truth.json
+.ruff_cache/
+.venv310/
+.claude/
+*.log
+.DS_Store
+Thumbs.db

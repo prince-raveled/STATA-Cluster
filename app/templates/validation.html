@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Validation — MicroVerse{% endblock %}
+
+{% set page = 'validation' %}
+{% block content %}
+
+  <section class="section-tight shell">
+    <p class="eyebrow">What is actually known</p>
+    <h1 style="max-width:22ch">Every claim, and the evidence behind it.</h1>
+    <p class="lede" style="max-width:62ch">
+      Software that analyses research data is easy to test against itself and hard to
+      test against reality. These are not the same thing, and conflating them is how a
+      convention gets published as a finding. This page separates them for every part of
+      MicroVerse, including the parts where the answer is "not validated".
+    </p>
+  </section>
+
+  <section class="section-tight shell">
+    <div class="grade-key">
+      {% for grade in ["internal", "reference", "empirical", "exploratory"] %}
+        <div class="grade-key-item">
+          <span class="grade-chip grade-{{ grade }}">{{ GRADE_LABEL[grade] }}</span>
+          <p>{{ GRADE_BLURB[grade] }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="section-tight shell">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Validation matrix, scrollable">
+      <table class="matrix-table">
+        <thead>
+          <tr>
+            <th scope="col">Component</th>
+            <th scope="col">Internal test</th>
+            <th scope="col">Reference validation</th>
+            <th scope="col">Held-out validation</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in VALIDATION_MATRIX %}
+            <tr>
+              <th scope="row">
+                <span class="matrix-name">{{ row.name }}</span><br>
+                <span class="grade-chip grade-{{ row.grade }}">{{ row.grade_label }}</span>
+                {% if row.note %}<p class="matrix-note">{{ row.note }}</p>{% endif %}
+                <p class="matrix-sources">{{ row.sources|join(' · ') }}</p>
+              </th>
+              <td {% if not row.internal %}class="empty"{% endif %}>{{ row.internal or "—" }}</td>
+              <td {% if not row.reference %}class="empty"{% endif %}>{{ row.reference or "not validated against an external implementation" }}</td>
+              <td {% if not row.empirical %}class="empty"{% endif %}>{{ row.empirical or "no held-out experiment" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section-tight shell">
+    <div class="split split-wide">
+      <div class="card">
+        <p class="eyebrow">§16.2 — the tier experiment</p>
+        <h2 class="mt0" style="font-size:22px">Do the tiers predict anything?</h2>
+        <p class="muted" style="font-size:13.5px;margin:10px 0 16px">
+          {{ TIER_VALIDATION.design }}. Data: {{ TIER_VALIDATION.data }}.
+          Replication was defined as "{{ TIER_VALIDATION.definition }}", scored on the
+          held-out half without reference to the discovery tier.</p>
+
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Replication by tier, scrollable">
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th scope="col">Tier</th>
+              <th scope="col">Replicated</th>
+              <th scope="col">95% CI</th>
+              <th scope="col">Taxa</th>
+              <th scope="col">How often assigned</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for name, ev in TIER_REPLICATION.items() %}
+              <tr>
+                <th scope="row"><span class="tier {{ TIERS[name].class }}">{{ name }}</span></th>
+                <td><b>{{ ev.rate|percent(0) }}</b></td>
+                <td>{{ ev.ci[0]|percent(0) }}–{{ ev.ci[1]|percent(0) }}</td>
+                <td>{{ ev.n|commafy }}</td>
+                <td>{{ ev.share|percent(1) }} of observations</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        </div>
+
+        <p class="note" style="margin-top:18px">
+          <b>AUC {{ TIER_VALIDATION.auc }}</b> for the tier ordering against replication
+          — given one taxon that replicated and one that did not, the tier ranks them
+          correctly {{ TIER_VALIDATION.auc|percent(0) }} of the time. ROBUST taxa
+          replicated {{ TIER_VALIDATION.risk_ratio_robust }}× as often as other tiers.
+          Under permuted group labels the rate collapses to
+          {{ TIER_VALIDATION.null_rate|percent(1) }}, which is the check that the
+          definition is measuring signal rather than arithmetic.
+        </p>
+      </div>
+
+      <div class="card card-paper">
+        <p class="eyebrow">Limits</p>
+        <h2 class="mt0" style="font-size:20px">What it does not establish.</h2>
+        <ul style="margin:14px 0 0;padding-left:20px;font-size:13px;line-height:1.65">
+          {% for caveat in TIER_CAVEATS %}<li style="margin-bottom:12px">{{ caveat }}</li>{% endfor %}
+          <li style="margin-bottom:12px">Replication within one study's own samples is
+            an easier test than replication in an independently collected cohort. These
+            halves share protocol, population and sequencing run; a true external
+            replication would not.</li>
+          <li>The experiment validates the <i>ordering</i> and the tiers' relative
+            meaning. It does not license reading a tier as a probability for any
+            particular taxon in your data.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-tight shell">
+    <div class="card">
+      <p class="eyebrow">Reproducing all of it</p>
+      <h2 class="mt0" style="font-size:20px">Every number on this page is regenerable.</h2>
+      <p class="muted" style="font-size:13.5px;margin:10px 0 14px">
+        Nothing here is asserted from memory. Each check is a script that reports
+        SKIPPED with an install hint when its dependency is missing, never a silent pass.
+      </p>
+      <pre class="code"><code>.venv/Scripts/python tests/reference/run_all.py          # every reference check
+.venv/Scripts/python tests/reference/tier_validation.py # the tier experiment
+.venv/Scripts/python tests/reference/compare_r.py       # edgeR, ALDEx2, ANCOM-BC
+.venv/Scripts/python -m pytest -q                       # the internal suite</code></pre>
+    </div>
+  </section>
+
+{% endblock %}

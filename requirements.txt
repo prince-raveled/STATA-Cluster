@@ -1,0 +1,25 @@
+# MicroVerse — SPEC section 20.
+fastapi>=0.115
+uvicorn[standard]>=0.30
+jinja2>=3.1
+python-multipart>=0.0.9
+sqlalchemy>=2.0
+
+numpy>=1.26
+pandas>=2.1
+scipy>=1.11
+statsmodels>=0.14
+joblib>=1.3
+h5py>=3.10          # BIOM v2 (HDF5) reader
+
+# Optional: enables PyDESeq2 (fork 5, method 7). Specifications needing it are
+# pruned with a visible reason when it is absent.
+pydeseq2>=0.4
+
+# Optional: when importable, skbio's ancombc / multi_replace are preferred over the
+# in-tree implementations. No wheel on Python 3.13+ (biom-format fails to build).
+# scikit-bio>=0.7.1
+
+pytest>=8.0
+ruff>=0.6            # lint config lives in pyproject.toml
+httpx>=0.27          # fastapi.testclient

@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% block title %}Configure the run — MicroVerse{% endblock %}
+
+{% block content %}
+<section class="section-tight shell">
+  <p class="eyebrow">Step 02 — choose the grid</p>
+  <div class="section-heading" style="margin-bottom:26px">
+    <div>
+      <h1 style="font-size:clamp(30px,3.6vw,44px)">Your dataset is valid.</h1>
+      <p class="micro" style="margin-top:10px">{{ job.dataset_name }}</p>
+    </div>
+    <p>Everything below was read from your files rather than assumed. Check it, then pick how
+      much of the specification space to run.</p>
+  </div>
+
+  <div class="split split-wide">
+
+    <!-- ---------------- what was parsed ---------------- -->
+    <div class="stack">
+      <section class="card" aria-labelledby="parsed-title">
+        <h2 id="parsed-title" class="mt0" style="font-size:22px">What was parsed</h2>
+        <p class="muted" style="font-size:13.5px;margin:6px 0 20px">
+          Orientation, value type and taxonomic rank are detected, not assumed.</p>
+
+        <dl class="kv">
+          <dt>Samples</dt>
+          <dd>{{ summary.n_samples }}
+            <span class="muted">({{ summary.n_group_a }} {{ summary.group_a }} · {{ summary.n_group_b }} {{ summary.group_b }})</span></dd>
+          <dt>Grouping column</dt><dd><code>{{ summary.group_column }}</code></dd>
+          <dt>Taxa</dt>
+          <dd>{{ summary.n_taxa|commafy }}{% if summary.collapsed_from %}
+            <span class="muted">(from {{ summary.collapsed_from }})</span>{% endif %}</dd>
+          <dt>Format</dt><dd>{{ summary.format }} · {{ summary.value_type }}</dd>
+          <dt>Input rank</dt><dd>{{ summary.input_rank }}</dd>
+          <dt>Library sizes</dt>
+          <dd>{{ summary.min_library|commafy }}–{{ summary.max_library|commafy }}
+            <span class="muted">median {{ summary.median_library|commafy }}</span></dd>
+          <dt>Sparsity</dt><dd>{{ summary.sparsity|percent(1) }} zeros</dd>
+          <dt>Fork 1 — rarefaction</dt><dd>{{ depths|join(", ") }}</dd>
+          <dt>Fork 4 — rank</dt>
+          <dd>{{ ranks|join(" + ") }}{% if ranks|length == 1 %}
+            <span class="muted">(one level)</span>{% endif %}</dd>
+        </dl>
+
+        {% if summary.warnings or summary.notes or dropped_depths %}
+          <div style="margin-top:20px;display:grid;gap:9px">
+            {% for warning in summary.warnings %}<p class="warn" style="margin:0">{{ warning }}</p>{% endfor %}
+            {% for note in summary.notes %}<p class="note" style="margin:0">{{ note }}</p>{% endfor %}
+            {% for note in dropped_depths %}<p class="note" style="margin:0">{{ note }}</p>{% endfor %}
+          </div>
+        {% endif %}
+      </section>
+
+      {% set preview = previews.get("quick") %}
+      {% if preview %}
+      <section class="card card-paper" aria-labelledby="grid-title">
+        <h2 id="grid-title" class="mt0" style="font-size:22px">The grid, before you run it</h2>
+        <p class="muted" style="font-size:13.5px;margin:6px 0 18px">
+          Both counts are always reported: how many specifications the grid enumerates, and how
+          many survive the validity matrix. The ratio is itself informative.</p>
+
+        <div class="metrics">
+          <div><b>{{ preview.n_enumerated|commafy }}</b><span>enumerated</span></div>
+          <div><b>{{ preview.n_valid|commafy }}</b><span>statistically valid</span></div>
+          <div><b>{{ preview.n_pruned|commafy }}</b><span>pruned as incoherent</span></div>
+        </div>
+        <p class="footnote">
+          Those {{ preview.n_valid|commafy }} specifications reduce to
+          <b>{{ preview.n_matrices|commafy }}</b> preprocessed matrices and
+          <b>{{ preview.n_fits|commafy }}</b> model fits, because FDR is applied post-hoc to
+          stored p-values and matrices are shared across methods.
+        </p>
+
+        {% if preview.pruned_reasons %}
+          <h3 style="margin:24px 0 10px;font-size:16px">Why specifications were pruned</h3>
+          <div class="table-wrap" tabindex="0" role="region" aria-label="Reasons specifications were pruned, scrollable">
+            <table class="data">
+              <thead><tr><th scope="col">Reason</th><th scope="col" class="num">Specifications</th></tr></thead>
+              <tbody>
+                {% for reason, count in preview.pruned_reasons.items() %}
+                  <tr><td>{{ reason }}</td><td class="num">{{ count|commafy }}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+        {% for note in preview.notes %}<p class="note" style="margin-top:10px">{{ note }}</p>{% endfor %}
+      </section>
+      {% endif %}
+    </div>
+
+    <!-- ---------------- run configuration ---------------- -->
+    <form class="stack" method="post" action="/run/{{ token }}" x-data="{mode:'quick', declare:false}">
+      <section class="card" aria-labelledby="mode-title">
+        <h2 id="mode-title" class="mt0" style="font-size:22px">Choose a mode</h2>
+        <p class="muted" style="font-size:13.5px;margin:6px 0 18px">
+          Three modes, never one crossed grid — fully crossing all seven forks is over 500,000
+          specifications, which is not achievable in web-request time.</p>
+
+        <fieldset style="border:0;padding:0;margin:0">
+          <legend class="visually-hidden">Analysis mode</legend>
+          <div class="choice">
+            {% for name in ["quick", "full", "covariate"] %}
+              {% set preview = previews.get(name) %}
+              {% set blocked = name == "covariate" and not dataset.covariate_columns %}
+              <label>
+                <input type="radio" name="mode" value="{{ name }}" x-model="mode"
+                       {% if name == "quick" %}checked{% endif %}
+                       {% if blocked %}disabled{% endif %}>
+                <span class="row">
+                  <span class="title">{{ MODE_LABELS[name] }}{% if name == "quick" %} <span class="muted" style="font-weight:400;font-size:13px">— default</span>{% endif %}</span>
+                  {% if preview %}<span class="count row-end">{{ preview.n_valid|commafy }} specs</span>{% endif %}
+                </span>
+                <span class="blurb">{{ MODE_BLURBS[name] }}</span>
+                {% if blocked %}
+                  <span class="warn-text">No usable covariate columns were found in your metadata.</span>
+                {% endif %}
+              </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+
+        <div x-show="mode === 'covariate'" x-cloak style="margin-top:20px">
+          <p class="label" style="font:400 10px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--grey);margin:0 0 6px">
+            Covariates to vary</p>
+          <p class="muted" style="font-size:12.5px;margin:0 0 10px">
+            Every subset is enumerated — all 2<sup>k</sup> when k ≤ 6, otherwise 64 random
+            subsets stratified by size. The null and full models are always included.</p>
+          <div class="chips">
+            {% for column in dataset.covariate_columns %}
+              <label class="chip"><input type="checkbox" name="covariates" value="{{ column }}" checked> {{ column }}</label>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+
+      <section class="card card-paper" aria-labelledby="declare-title">
+        <h2 id="declare-title" class="mt0" style="font-size:20px">Declare your own pipeline</h2>
+        <p class="muted" style="font-size:13.5px;margin:6px 0 14px">
+          Optional. Tell MicroVerse the pipeline you would otherwise have reported, and it
+          locates it in the distribution — the percentile of significance it sits at, marked on
+          every specification curve.</p>
+
+        <label class="check-row" style="border-top:1px solid var(--line-soft)">
+          <input type="checkbox" name="declare" value="1" x-model="declare">
+          <span>I have a pipeline to declare</span>
+        </label>
+
+        <div x-show="declare" x-cloak class="split" style="gap:0 16px;margin-top:18px">
+          <label class="field"><span class="label">Rarefaction</span>
+            <select name="declared_rarefaction">
+              {% for d in depths %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
+            </select></label>
+          <label class="field"><span class="label">Rank</span>
+            <select name="declared_rank">
+              {% for r in ranks %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+            </select></label>
+          <label class="field"><span class="label">Prevalence filter</span>
+            <select name="declared_prev_filter">
+              <option value="0.0">0%</option><option value="0.05">5%</option>
+              <option value="0.1" selected>10%</option><option value="0.2">20%</option>
+            </select></label>
+          <label class="field"><span class="label">Transformation</span>
+            <select name="declared_transform">
+              <option value="tss">TSS — relative abundance</option>
+              <option value="clr">CLR</option>
+              <option value="raw">raw counts</option>
+              <option value="tmm">TMM</option>
+            </select></label>
+          <label class="field"><span class="label">DA method</span>
+            <select name="declared_method">
+              {% for key, label in METHOD_LABELS.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+            </select></label>
+          <label class="field"><span class="label">FDR method</span>
+            <select name="declared_fdr_method">
+              <option value="bh">Benjamini-Hochberg</option>
+              <option value="by">Benjamini-Yekutieli</option>
+            </select></label>
+          <label class="field"><span class="label">FDR threshold</span>
+            <select name="declared_fdr_threshold">
+              <option value="0.05">0.05</option><option value="0.1">0.10</option>
+            </select></label>
+        </div>
+      </section>
+
+      <div class="row">
+        <button class="button button-primary" type="submit">
+          Run the multiverse <span aria-hidden="true">→</span></button>
+        <a class="text-action" href="/">Start over</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.1/cdn.min.js"></script>
+<style>
+  [x-cloak] { display: none !important; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+<script>
+// Selection state without relying on :has(), which older Firefox and Safari lack.
+// The stylesheet carries both rules, so this is enhancement, not a requirement.
+(function () {
+  "use strict";
+  function sync() {
+    document.querySelectorAll(".choice label").forEach(function (label) {
+      const input = label.querySelector("input");
+      if (!input) return;
+      label.classList.toggle("is-checked", input.checked);
+      label.classList.toggle("is-disabled", input.disabled);
+    });
+    document.querySelectorAll(".chip").forEach(function (chip) {
+      const input = chip.querySelector("input");
+      if (input) chip.classList.toggle("is-checked", input.checked);
+    });
+  }
+  document.addEventListener("change", sync);
+  document.addEventListener("DOMContentLoaded", sync);
+  sync();
+})();
+</script>
+{% endblock %}

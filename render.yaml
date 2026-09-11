@@ -1,0 +1,19 @@
+# Render — SPEC §20. Blueprint deploy: New > Blueprint, point at this repo.
+services:
+  - type: web
+    name: microverse
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: standard          # 2 GB RAM; the free plan will OOM at the §8 taxon ceiling
+    healthCheckPath: /healthz
+    envVars:
+      - key: MICROVERSE_DATA
+        value: /data
+      - key: MICROVERSE_MAX_CONCURRENT
+        value: "2"
+      - key: MICROVERSE_MAX_QUEUED
+        value: "24"
+    disk:
+      name: microverse-data
+      mountPath: /data
+      sizeGB: 10

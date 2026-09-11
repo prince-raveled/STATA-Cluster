@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% set page = 'about' %}
+{% block title %}Method — MicroVerse{% endblock %}
+{% block description %}The seven analytical forks MicroVerse varies, how a taxon is tiered, and the norm the tool exists to support.{% endblock %}
+
+{% block content %}
+
+<section class="section-tight shell">
+  <p class="eyebrow">Method</p>
+  <div class="section-heading" style="margin-bottom:0">
+    <div>
+      <h1 style="font-size:clamp(34px,4.4vw,56px);max-width:16ch">
+        Report the distribution, <em class="accent">not your favourite point</em> in it.</h1>
+    </div>
+    <p class="lede">A differential abundance analysis involves at least six choices with no field
+      consensus. If you make one set and report one p-value, you have reported a sample of size
+      one from a distribution you never looked at.</p>
+  </div>
+</section>
+
+<section class="band">
+  <span class="band-number">01</span>
+  <p>Tierney et al. showed that <b>84% of published microbiome associations</b> could be recovered
+    as significant by picking the right model, and that one taxon in three flipped the sign of its
+    association across defensible choices. MicroVerse exists so that looking at the distribution
+    is cheap enough that there is no excuse not to.</p>
+  <a href="/#start">Run your data <span aria-hidden="true">→</span></a>
+</section>
+
+<!-- ============ the forks ============ -->
+<section class="section shell" aria-labelledby="forks-title">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">§10 — the grid</p>
+      <h2 id="forks-title">Seven forks, each genuinely contested.</h2>
+    </div>
+    <p>Every level below is defended in current literature. MicroVerse does not pick between
+      them; it runs them all and reports what changes.</p>
+  </div>
+
+  <div class="table-wrap" tabindex="0" role="region" aria-label="The seven analytical forks, scrollable">
+    <table class="data">
+      <thead>
+        <tr>
+          <th scope="col" style="width:22%">Fork</th>
+          <th scope="col" style="width:26%">Levels</th>
+          <th scope="col">Why it is contested</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">1 · Rarefaction depth</th>
+          <td class="mono">none · min · 1000 · 5000 · 10000, each × 3 seeds</td>
+          <td>A twelve-year unresolved argument. McMurdie &amp; Holmes 2014 called rarefying
+            “statistically inadmissible”; Cameron et al. 2022 showed it guarantees Type I error
+            control in permutation tests; Schloss 2024 argued it is currently the best approach.
+            <b>Each random draw is its own specification, never averaged</b> — averaging p-values
+            across draws is statistically wrong, and keeping them separate is what makes the
+            draw's own contribution measurable.</td>
+        </tr>
+        <tr>
+          <th scope="row">2 · Prevalence filter</th>
+          <td class="mono">0% · 5% · 10% · 20%</td>
+          <td>No standard exists for how rare is too rare. It changes both the taxa tested and
+            the multiple-testing burden.</td>
+        </tr>
+        <tr>
+          <th scope="row">3 · Transformation</th>
+          <td class="mono">TSS · CLR · raw · TMM</td>
+          <td>The compositional school holds that CLR is not optional; count-model advocates hold
+            that raw counts with a proper model are required. Both publish continuously. CLR uses
+            multiplicative zero replacement rather than a fixed pseudocount, which would destroy
+            the ratios CLR exists to preserve.</td>
+        </tr>
+        <tr>
+          <th scope="row">4 · Taxonomic rank</th>
+          <td class="mono">genus · input rank</td>
+          <td>Wang 2023 showed results depend heavily on the analysis unit, with a real
+            resolution-versus-power trade-off. If your table is already at genus, this fork has
+            one level and the grid halves — which MicroVerse reports rather than hides.</td>
+        </tr>
+        <tr>
+          <th scope="row">5 · DA method</th>
+          <td class="mono">Wilcoxon · Welch's t · logistic · linear · ANCOM-BC · ALDEx2 · PyDESeq2</td>
+          <td>Nearing et al. 2022 compared 14 methods over 38 datasets and found materially
+            different results. Pelto et al. 2025 found the elementary methods the most
+            replicable — which is why Quick mode uses exactly those four, and says so.</td>
+        </tr>
+        <tr>
+          <th scope="row">6 · FDR correction</th>
+          <td class="mono">BH@0.05 · BH@0.10 · BY@0.05</td>
+          <td>Published studies use 0.05, 0.07 and 0.15, and BH versus BY, inconsistently.
+            Applied post-hoc to stored p-values, so all three settings cost essentially nothing.</td>
+        </tr>
+        <tr>
+          <th scope="row">7 · Covariates</th>
+          <td class="mono">every subset (covariate mode)</td>
+          <td>Tierney et al. 2022 found BMI, age, sequencing depth and gender all changed both
+            the size and the direction of associations, disease-specifically.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="note" style="margin-top:18px">
+    <b>The pipeline order is fixed and enforced in one place:</b>
+    rarefy → collapse → prevalence filter → transform → test → FDR. Rarefying after collapsing,
+    or filtering before rarefying, gives different answers.
+  </p>
+</section>
+
+<hr class="rule">
+
+<!-- ============ tiers ============ -->
+<section class="section shell" aria-labelledby="tiers-title">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">§15–16 — how a taxon is tiered</p>
+      <h2 id="tiers-title">Two numbers decide the tier.</h2>
+    </div>
+    <p>How often a taxon is FDR-significant, and how consistently its effect points the same way.
+      Both are computed over the specifications in which it actually survived the prevalence
+      filter — never over the run total.</p>
+  </div>
+
+  <div class="tier-grid">
+    {% for name in ["ROBUST", "CONDITIONAL", "FRAGILE", "UNSTABLE", "INSUFFICIENT", "NOT DETECTED"] %}
+      {% set t = TIERS[name] %}
+      <div class="tier-cell {{ t.class }}">
+        <div class="k">{{ name }}</div>
+        <div class="d">{{ t.blurb }}</div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="split" style="margin-top:26px">
+    <div class="card card-paper prose">
+      <h3 class="mt0" style="font-size:18px;font-family:var(--sans);font-weight:650">
+        Why the denominator matters</h3>
+      <p>A taxon removed by a 20% prevalence filter does not appear in that specification at all.
+        Counting it as “not significant” there would silently punish every rare taxon, and
+        counting the specification in the denominator would understate how often the taxon was
+        actually tested.</p>
+      <p>So MicroVerse reports <code>frac_tested</code> as its own finding: a taxon testable in
+        only 30% of the grid is filter-dependent by construction, and you should know that before
+        you read anything else about it.</p>
+    </div>
+    <div class="card card-paper prose">
+      <h3 class="mt0" style="font-size:18px;font-family:var(--sans);font-weight:650">
+        Why effect size is computed separately</h3>
+      <p>Seven methods return seven incompatible statistics. A Wilcoxon U, a log odds ratio and a
+        DESeq2 log2 fold change cannot share an axis, so there would be no specification curve.</p>
+      <p>Significance therefore comes from each method's own p-value, and effect size from a
+        single estimator — the log2 fold change of mean relative abundance — computed identically
+        for every specification, with one pseudocount fixed for the whole run.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ============ anti-p-hacking ============ -->
+<section class="section shell" aria-labelledby="norm-title">
+  <div class="card card-dark">
+    <p class="eyebrow on-dark">§18 — designed against cherry-picking</p>
+    <h2 id="norm-title" style="color:var(--white);max-width:22ch">A multiverse tool can be used to p-hack. This one is built not to be.</h2>
+    <div class="split" style="margin-top:26px">
+      <ul class="prose" style="color:#c2cad8;padding-left:20px">
+        <li>There is <b style="color:var(--white)">no “export best specification”</b> button — not
+          on the page, not in the API, not in the download bundle.</li>
+        <li>Every export contains the <b style="color:var(--white)">full distribution</b>. Even
+          the point-thinning on the specification curve takes an even stride, so the shape of the
+          distribution survives.</li>
+      </ul>
+      <ul class="prose" style="color:#c2cad8;padding-left:20px">
+        <li>The generated methods paragraph describes the multiverse, not a point in it.</li>
+        <li>If you declare your own pipeline and it sits above the 75th percentile of
+          significance, the interface <b style="color:var(--white)">says so, neutrally</b>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ limits ============ -->
+<section class="section-tight shell" aria-labelledby="scope-title">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">§21 — scope</p>
+      <h2 id="scope-title">What is deliberately out of scope.</h2>
+    </div>
+    <p>A tool that does one thing completely is more useful than one that does six things
+      partially. These are refusals, not gaps.</p>
+  </div>
+
+  <ol class="steps">
+    <li><span>01</span><div><b>Two-group comparisons only</b>
+      <small>No multi-group, continuous or ordinal outcomes. No longitudinal or paired designs,
+        no repeated measures.</small></div></li>
+    <li><span>02</span><div><b>Input starts at the abundance table</b>
+      <small>No read processing, no denoising, no taxonomic classification.</small></div></li>
+    <li><span>03</span><div><b>No diversity metrics, no contamination screening</b>
+      <small>Alpha and beta diversity are not standalone features here, and contamination
+        assessment is a separate problem with a separate tool.</small></div></li>
+    <li><span>04</span><div><b>No accounts, no login, no saved projects</b>
+      <small>Each run gets an unguessable token URL. Anyone with the link sees the results;
+        nobody without it does. Uploads and results are deleted after
+        {{ retention_days }} days.</small></div></li>
+  </ol>
+</section>
+
+<!-- ============ what it is not ============ -->
+<section class="section-tight shell">
+  <div class="card card-paper">
+    <p class="eyebrow">Stated plainly</p>
+    <h2 style="margin-bottom:20px">What MicroVerse is not.</h2>
+    <div class="split prose">
+      <div>
+        <p><b>Not a new statistical method.</b> It orchestrates published methods inside a
+          published framework — multiverse analysis (Steegen 2016), specification curve analysis
+          (Simonsohn 2020) and vibration of effects (Patel 2015).</p>
+        <p><b>Not truth.</b> A taxon robust to analytical choice is not thereby biologically
+          real. Confounding, contamination and batch effects survive a multiverse intact.</p>
+      </div>
+      <div>
+        <p><b>Not exhaustive.</b> The grid is bounded by what is defensible and computable. Every
+          run reports how many specifications it enumerated, how many it pruned, and why.</p>
+        <p><b>Not a replacement for judgement.</b> MicroVerse ranks and describes; the scientific
+          decision stays with you, and so does the obligation to report it honestly.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ references ============ -->
+<section class="section-tight shell" aria-labelledby="refs-title">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">§26 — sources</p>
+      <h2 id="refs-title">Everything here is someone else's finding.</h2>
+    </div>
+    <p>MicroVerse's contribution is putting the space behind a URL. The evidence that the space
+      matters was already published.</p>
+  </div>
+  <ol class="prose" style="line-height:1.75;font-size:13.5px;padding-left:22px;columns:2;column-gap:44px">
+    {% for citation in citations %}<li style="break-inside:avoid;margin-bottom:10px">{{ citation }}</li>{% endfor %}
+  </ol>
+</section>
+{% endblock %}

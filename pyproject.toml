@@ -1,0 +1,42 @@
+[project]
+name = "microverse"
+version = "1.0.0"
+description = "Multiverse analysis of microbiome differential abundance, behind a URL."
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = [".venv", ".venv310", "data", "docs"]
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "B", "SIM", "UP", "C4", "RET", "ARG", "I"]
+ignore = [
+  # FastAPI's dependency-injection defaults are function calls by design.
+  "B008",
+  # An explicit if/else is clearer than a ternary in the places we use one.
+  "SIM108",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests import fixtures and modules for their side effects, and assert on values
+# that a linter reads as unused.
+"tests/*" = ["ARG001", "ARG005"]
+# The reference scripts run standalone against other environments, so they set up
+# sys.path before importing and print rather than assert.
+"tests/reference/*" = ["E402", "T201"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# tests/reference/ holds standalone comparison scripts, not pytest tests: they need a
+# second interpreter, a live server or a network fetch. Run them via
+# tests/reference/run_all.py.
+norecursedirs = ["reference", ".*", "build", "dist", "data", "docs"]
+filterwarnings = [
+  "ignore::DeprecationWarning:starlette.*",
+  "ignore::DeprecationWarning:fastapi.*",
+]

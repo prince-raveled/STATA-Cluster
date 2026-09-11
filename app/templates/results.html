@@ -1,0 +1,493 @@
+{% extends "base.html" %}
+{% from "_terms.html" import dfn, section_label %}
+{% block title %}Results — {{ job.dataset_name }} — MicroVerse{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/6.3.1/css/tabulator_simple.min.css">
+<style>.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}</style>
+{% endblock %}
+
+{% block content %}
+<section class="section-tight shell">
+
+  <div class="row" style="margin-bottom:18px">
+    <p class="eyebrow" style="margin:0">Results</p>
+    <h1 style="font-size:clamp(22px,2vw,28px)">Multiverse results</h1>
+    <span class="pill row-end">{{ MODE_LABELS.get(run.mode, run.mode) }} mode</span>
+    <span class="pill">{{ dataset.n_samples }} samples · {{ dataset.n_taxa|commafy }} taxa</span>
+    <span class="pill">{{ run.runtime_seconds|duration }}</span>
+  </div>
+
+  <!-- ============ how to read this page ============ -->
+  <div class="orient">
+    <div class="orient-step">
+      <b>WHAT HAPPENED</b>
+      <p>Your data was analysed <strong>{{ grid.n_valid|commafy }} different ways</strong> —
+        every combination of choices a reasonable researcher could defend.</p>
+    </div>
+    <div class="orient-step">
+      <b>WHAT TO LOOK AT</b>
+      <p>Start with the <strong>verdict</strong> below, then open the
+        <strong>curve</strong> for any taxon you care about to see which choice moves it.</p>
+    </div>
+    <div class="orient-step">
+      <b>WHAT IT MEANS</b>
+      <p>A taxon found by nearly every analysis is a finding. One found by only a few is a
+        <strong>choice</strong>, not a result.</p>
+    </div>
+    <div class="orient-step">
+      <b>NEW TO THIS?</b>
+      <p>Dotted words carry definitions — hover, tap or tab to them. Full
+        <a href="/about#glossary">glossary</a>.</p>
+    </div>
+  </div>
+
+  <!-- ============ the verdict ============ -->
+  <div class="verdict">
+    <div>
+      <p class="eyebrow on-dark" style="margin-bottom:12px">{{ job.dataset_name }}</p>
+      <h2>{{ verdict.split(".")[0] }}.</h2>
+      {% if verdict.split(".")|length > 1 %}
+        <p>{{ verdict.split(".", 1)[1]|trim }}</p>
+      {% endif %}
+    </div>
+    <div class="verdict-side">
+      <span>Analyses run</span>
+      <b>{{ grid.n_valid|commafy }}</b>
+      <small>of {{ grid.n_enumerated|commafy }} possible · {{ grid.n_fits|commafy }} statistical models fitted</small>
+    </div>
+  </div>
+
+  <!-- ============ tiers ============ -->
+  <section class="section-tight" aria-labelledby="tiers-title">
+    <div class="section-heading" style="margin-bottom:22px">
+      <div>
+        {{ section_label('How each taxon held up', '16.2') }}
+        <h2 id="tiers-title">One verdict per taxon.</h2>
+      </div>
+      <p>Every taxon gets a {{ dfn('tier') }} built from two numbers:
+        {{ dfn('significance_rate') }} and {{ dfn('direction_agreement') }}. A taxon that a
+        filter removed from an analysis is not counted against it — only the analyses that
+        actually tested it count.</p>
+    </div>
+
+    <div class="tier-grid">
+      {% for name in ["ROBUST", "CONDITIONAL", "FRAGILE", "UNSTABLE", "INSUFFICIENT", "NOT DETECTED"] %}
+        {% set t = TIERS[name] %}
+        {% set ev = TIER_REPLICATION.get(name) %}
+        <div class="tier-cell {{ t.class }}">
+          <div class="n">{{ summary.tier_counts[name] }}</div>
+          <div class="k">{{ name }}</div>
+          <div class="d">{{ t.blurb }}</div>
+          {% if ev %}
+            <div class="tier-evidence" title="{{ name|tier_sentence }}">
+              <b>{{ ev.rate|percent(0) }}</b> replicated out of sample
+              <span class="ci">({{ ev.ci[0]|percent(0) }}–{{ ev.ci[1]|percent(0) }})</span>
+            </div>
+          {% else %}
+            <div class="tier-evidence muted-evidence">no replication claim</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="evidence-note">
+      <p class="evidence-grade"><span class="grade-chip grade-empirical">{{ GRADE_LABEL['empirical'] }}</span>
+        These are not conventions. Tiers were tested against data they had never seen:
+        {{ TIER_VALIDATION.n_splits }} discovery/validation splits of
+        {{ TIER_VALIDATION.n_cohorts }} published cohorts,
+        {{ TIER_VALIDATION.n_observations|commafy }} taxon observations. A taxon's tier
+        was assigned on the discovery half; replication was scored on the held-out half
+        without reference to it. <b>AUC {{ TIER_VALIDATION.auc }}</b>, against
+        {{ TIER_VALIDATION.null_rate|percent(1) }} under permuted labels.
+        <a href="/validation">See the full validation matrix</a>.</p>
+      <details>
+        <summary>What this evidence does not establish</summary>
+        <ul>
+          {% for caveat in TIER_CAVEATS %}<li>{{ caveat }}</li>{% endfor %}
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <div class="split split-wide">
+    <!-- ============ §17 attribution ============ -->
+    <section class="card" aria-labelledby="attribution-title">
+      {{ section_label('Which choice is driving this?', '17') }}
+      <h2 id="attribution-title" class="mt0" style="font-size:24px">Where the variation comes from.</h2>
+      <p class="muted" style="font-size:13.5px;margin:8px 0 6px">
+        An attempt to apportion the variation in your results across the seven
+        {{ dfn('fork', 'analytical choices') }}, following Young &amp; Holsteen (2017).
+        The solid bar is the main estimate; the dotted mark is a second, independent
+        estimate — if the two disagree, neither is trustworthy. Percentages are shares
+        <i>of the variation this model can explain</i>, which on real data is often only a
+        few percent of the total. Read the grade under each chart before quoting any of
+        it.</p>
+      <p class="bar-legend" style="margin-bottom:22px">
+        <span><i aria-hidden="true"></i>estimator used</span>
+        <span><i class="ghost" aria-hidden="true"></i>fallback estimator</span>
+      </p>
+
+      {% for target, title in [("significance", "Variance in whether a taxon is called significant"), ("effect", "Variance in effect size")] %}
+        {% set result = attribution.get(target) %}
+        {% if result %}
+          <h3 style="font-size:15px;font-family:var(--sans);font-weight:650;margin:{{ '0' if loop.first else '28px' }} 0 12px">{{ title }}</h3>
+          <div class="bars">
+            {% for fork, share in result.ranked %}
+              <div class="bar-row">
+                <span>{{ FORK_LABELS.get(fork, fork) }}</span>
+                <span class="bar-track">
+                  <span class="bar-fill" style="width: {{ share|round(1) }}%"></span>
+                  {% set ghost = result.fallback_shares.get(fork) %}
+                  {% if ghost is not none %}
+                    <span class="bar-ghost" style="left: {{ ghost|round(1) }}%"
+                          title="fallback estimator: {{ ghost|fixed(1) }}%"></span>
+                  {% endif %}
+                </span>
+                <span class="bar-value">{{ share|fixed(1) }}%{% set ci = result.interval(fork) %}{% if ci[0] == ci[0] %}<small class="bar-ci">{{ ci[0]|fixed(0) }}–{{ ci[1]|fixed(0) }}</small>{% endif %}</span>
+              </div>
+            {% endfor %}
+          </div>
+          <p class="attribution-grade">
+            <span class="grade-chip grade-{{ result.evidence }}">{{ GRADE_LABEL[result.evidence] }}</span>
+            {% if result.explained_variance == result.explained_variance %}
+              the forks explain <b>{{ result.explained_variance|percent(0) }}</b> of the
+              within-taxon variance;
+            {% endif %}
+            estimators agree at
+            {{ result.estimator_agreement()|fixed(2) }} (Spearman, 1.00 = identical ranking).
+          </p>
+          {% if result.warnings %}
+            <ul class="attribution-warnings">
+              {% for warning in result.warnings %}<li>{{ warning }}</li>{% endfor %}
+            </ul>
+          {% endif %}
+          <p class="footnote">{{ result.estimator }}{% if result.note %} — {{ result.note }}{% endif %}</p>
+        {% endif %}
+      {% endfor %}
+
+      {% set draw = attribution.get("rarefaction_draw") %}
+      {% if draw %}
+        <p class="note" style="margin-top:22px">
+          <b>{{ draw.seed_share|fixed(0) }}% of rarefaction's variance is the random draw
+          itself</b>, not the choice of depth — measurable only because each subsampling seed is
+          treated as its own specification rather than averaged away. The remaining
+          {{ draw.depth_share|fixed(0) }}% is the depth.
+        </p>
+      {% endif %}
+    </section>
+
+    <!-- ============ grid accounting ============ -->
+    <section class="stack">
+      <div class="card card-paper">
+        {{ section_label('What was actually run', '11-12') }}
+        <h2 class="mt0" style="font-size:22px">Nothing hidden from the count.</h2>
+        <p class="muted" style="font-size:13.5px;margin:8px 0 18px">
+          Not every combination of choices makes sense — some contradict themselves. Those
+          are {{ dfn('pruned', 'ruled out') }} with the reason shown, so you can see how much
+          of the space was ever real.</p>
+
+        <div class="metrics">
+          <div><b>{{ grid.n_enumerated|commafy }}</b><span>{{ dfn('enumerated', 'considered') }}</span></div>
+          <div><b>{{ grid.n_valid|commafy }}</b><span>{{ dfn('valid', 'run') }}</span></div>
+          <div><b>{{ grid.n_fits|commafy }}</b><span>{{ dfn('model_fit', 'models fitted') }}</span></div>
+        </div>
+
+        {% if grid.pruned_reasons %}
+          <div class="table-wrap" tabindex="0" role="region" aria-label="Reasons specifications were pruned, scrollable" style="margin-top:16px">
+            <table class="data">
+              <thead><tr><th scope="col">Ruled out because</th><th scope="col" class="num">How many</th></tr></thead>
+              <tbody>
+                {% for reason, count in grid.pruned_reasons.items() %}
+                  <tr><td>{{ reason }}</td><td class="num">{{ count|commafy }}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+
+        {% if summary.n_specs_skipped %}
+          <p class="warn" style="margin-top:12px">
+            {{ summary.n_specs_skipped|commafy }} analyses produced no result at all, because
+            subsampling to that depth left one group with too few samples to compare. They are
+            excluded from every percentage on this page rather than counted as failures.</p>
+        {% endif %}
+        {% for note in grid.notes %}<p class="note" style="margin-top:10px">{{ note }}</p>{% endfor %}
+      </div>
+
+      <div class="card">
+        <h3 class="mt0" style="font-size:17px;font-family:var(--sans);font-weight:650">
+          How many taxa each specification called</h3>
+        <p class="muted" style="font-size:13px;margin:7px 0 12px">
+          From <b class="num">{{ spec_stats.min }}</b> to <b class="num">{{ spec_stats.max }}</b>
+          significant taxa across the grid, median <b class="num">{{ spec_stats.median|fixed(0) }}</b>.
+          {% if spec_stats.declared >= 0 %}Your declared pipeline called
+            <b class="num">{{ spec_stats.declared }}</b>.{% endif %}
+        </p>
+        <div id="spec-histogram" class="plot" style="height:180px"></div>
+      </div>
+
+      {% if declared_spec %}
+        <div class="card card-paper">
+          {{ section_label('Where your own pipeline sits', '16.4') }}
+          <h3 class="mt0" style="font-size:17px;font-family:var(--sans);font-weight:650">
+            The analysis you would have run</h3>
+          <p class="mono" style="font-size:12.5px;color:var(--ink-soft);margin:8px 0 14px;line-height:1.6">
+            {{ declared_spec.describe() }}</p>
+          {% if summary.declared_percentile == summary.declared_percentile %}
+            <p class="{% if summary.declared_percentile > 75 %}warn{% else %}note{% endif %}" style="margin:0">
+              It finds more significant taxa than
+              <b>{{ summary.declared_percentile|fixed(0) }}%</b> of the other defensible
+              analyses.
+              {% if summary.declared_percentile > 75 %}
+                More specifications give a less significant answer than a more significant one.
+                That is worth stating in your paper.
+              {% endif %}
+            </p>
+          {% endif %}
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <!-- ============ §16.3 specification curve ============ -->
+  <section class="section-tight" aria-labelledby="curve-title">
+    <div class="section-heading" style="margin-bottom:20px">
+      <div>
+        {{ section_label('One taxon, every analysis', '16.3') }}
+        <h2 id="curve-title">See which choice moves the answer.</h2>
+      </div>
+      <p>Pick a taxon. The top panel shows its {{ dfn('effect_size') }} from every analysis,
+        sorted smallest to largest and coloured by significance. The panel beneath shows which
+        choice was active in each one. <b>When the non-significant points all sit above a
+        single row below, that choice is what is producing your result.</b></p>
+    </div>
+
+    <div class="card">
+      <div class="row" style="margin-bottom:18px">
+        <label for="taxon-select" style="font:400 10px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--grey)">
+          Taxon</label>
+        <select id="taxon-select" class="control" style="max-width:520px;width:auto;min-width:320px">
+          {% for taxon in taxa %}
+            <option value="{{ taxon.id }}">{{ taxon.tier }} · {{ taxon.label }} — significant in {{ taxon.frac_significant|percent(0) }}</option>
+          {% endfor %}
+        </select>
+        <span id="curve-status" class="micro row-end" aria-live="polite"></span>
+      </div>
+      <div class="plot-frame"><div id="curve" class="plot"></div></div>
+      <div id="curve-declared" style="margin-top:14px"></div>
+    </div>
+  </section>
+
+  <!-- ============ §16.2 table ============ -->
+  <section class="section-tight" aria-labelledby="table-title">
+    <div class="section-heading" style="margin-bottom:20px">
+      <div>
+        {{ section_label('Every taxon, sortable', '16.2') }}
+        <h2 id="table-title">Every taxon, every metric.</h2>
+      </div>
+      <p><code>frac tested</code> is the share of eligible specifications in which the taxon
+        survived the prevalence filter. A taxon testable in only part of the grid is a finding
+        in itself, not a footnote. Click a row to load its curve.</p>
+    </div>
+
+    <div class="row" style="margin-bottom:14px">
+      <button class="button button-outline button-small" type="button"
+              onclick="taxaTable.download('csv','taxa_robustness.csv')">Download this table (CSV)</button>
+      <a class="button button-outline button-small" href="/download/{{ token }}/bundle">Full results bundle (ZIP)</a>
+      <a class="button button-outline button-small" href="/download/{{ token }}/long">Every specification × taxon (CSV.gz)</a>
+      <a class="button button-outline button-small" href="/download/{{ token }}/methods">Methods paragraph</a>
+      <a class="button button-outline button-small" href="/download/{{ token }}/attribution">Attribution (CSV)</a>
+    </div>
+
+    <div id="taxa-table"></div>
+
+    <p class="footnote" style="margin-top:14px">
+      There is no “best specification” export here, and there will not be one. The point of a
+      multiverse is the distribution; a tool that hands you your favourite point in it is a
+      p-hacking device. Every export contains the whole distribution.
+    </p>
+  </section>
+
+  <!-- ============ methods ============ -->
+  <section class="section-tight" aria-labelledby="methods-title">
+    <div class="card card-dark">
+      <p class="eyebrow on-dark">Take it with you</p>
+      <h2 id="methods-title" class="mt0" style="color:var(--white);font-size:24px">Methods paragraph</h2>
+      <p class="muted" style="font-size:13.5px;margin:8px 0 20px">
+        It describes the multiverse, not a point in it. Copy it as written.</p>
+      <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);padding:22px">
+        <p style="white-space:pre-wrap;margin:0;font-size:13.5px;line-height:1.75;color:#e2e7ef">{{ methods_text }}</p>
+      </div>
+      <div class="row" style="margin-top:18px">
+        <a class="button button-primary" style="background:var(--signal);border-color:var(--signal);color:var(--ink)"
+           href="/download/{{ token }}/methods">Download with citations <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </section>
+
+  <p class="footnote">
+    Permanent link: <code>{{ request.base_url }}results/{{ token }}</code> — kept until
+    {{ job.expires_at.strftime("%d %B %Y") if job.expires_at else "expiry" }}.
+  </p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.3/plotly.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/6.3.1/js/tabulator.min.js"></script>
+<script src="/static/js/curve.js"></script>
+<script id="taxa-data" type="application/json">{{ records|tojson }}</script>
+<script id="hist-data" type="application/json">{{ spec_histogram|tojson }}</script>
+<script>
+(function () {
+  "use strict";
+  const token = {{ token|tojson }};
+  const records = JSON.parse(document.getElementById("taxa-data").textContent);
+  const hist = JSON.parse(document.getElementById("hist-data").textContent);
+  const tiers = {{ TIERS|tojson }};
+  const theme = MicroVerseCurve.theme();
+
+  /* Taxon names come from an uploaded file and the results URL is shareable, so
+     nothing from the data is ever written into the page as markup. */
+  function escapeHtml(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+    });
+  }
+  function ordinal(value) {
+    const n = Math.round(value);
+    if (n % 100 >= 10 && n % 100 <= 20) return n + "th";
+    return n + ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th");
+  }
+  const pct = (cell) => (cell.getValue() * 100).toFixed(1) + "%";
+  const fixed2 = (cell) => cell.getValue().toFixed(2);
+
+  /* ---------------- per-taxon table ---------------- */
+  window.taxaTable = new Tabulator("#taxa-table", {
+    data: records,
+    layout: "fitColumns",
+    // No fixed height: the table sizes to its page, so it never ends mid-row.
+    renderVertical: "basic",
+    pagination: true, paginationSize: 15, paginationSizeSelector: [15, 25, 50, 100, 500],
+    initialSort: [{ column: "frac_significant", dir: "desc" }],
+    columnDefaults: { headerHozAlign: "left" },
+    columns: [
+      { title: "Taxon", field: "label", minWidth: 180, headerFilter: "input", frozen: true,
+        formatter: (cell) => '<span style="font-family:var(--serif);font-size:15px">'
+          + escapeHtml(cell.getValue()) + "</span>" },
+      { title: "Tier", field: "tier", width: 138, headerFilter: "list",
+        headerFilterParams: { values: true },
+        formatter: (cell) => {
+          const key = cell.getValue();
+          const t = tiers[key] || { class: "" };
+          return '<span class="tier ' + t.class + '">' + escapeHtml(key) + "</span>";
+        } },
+      { title: "Specs tested", field: "n_specs_tested", width: 114, hozAlign: "right" },
+      { title: "Frac tested", field: "frac_tested", width: 106, hozAlign: "right", formatter: pct },
+      { title: "Frac significant", field: "frac_significant", width: 128, hozAlign: "right", formatter: pct },
+      { title: "Frac nominal", field: "frac_nominal", width: 114, hozAlign: "right", formatter: pct },
+      { title: "Sign consistency", field: "sign_consistency", width: 134, hozAlign: "right", formatter: pct },
+      { title: "Median log2FC", field: "median_effect", width: 124, hozAlign: "right", formatter: fixed2 },
+      { title: "IQR", field: "iqr_low", width: 136, hozAlign: "right",
+        formatter: (cell) => "[" + cell.getValue().toFixed(2) + ", "
+          + cell.getRow().getData().iqr_high.toFixed(2) + "]" },
+      { title: "Direction", field: "direction", minWidth: 150,
+        formatter: (cell) => escapeHtml(cell.getValue()) }
+    ]
+  });
+  /* Tabulator's own accessibility markup does not validate, and the widget gives no
+     option to turn it off. It marks the outer element role="grid", but that element
+     also contains the pagination controls — and a grid may only own rows and
+     rowgroups — while the header nests a rowgroup inside a rowgroup. axe-core reports
+     both as critical. An invalid grid is announced worse than plain content, so the
+     roles are removed and the table is exposed as a labelled, scrollable region
+     instead. Verified with axe-core 4.10 (wcag2a/2aa/21a/21aa + best-practice):
+     zero violations on this page. The full data is also available as CSV and through
+     the API, which is the reliable path for assistive technology. */
+  function repairTableAccessibility() {
+    const grid = document.getElementById("taxa-table");
+    if (!grid) return;
+    grid.querySelectorAll("[role]").forEach((el) => el.removeAttribute("role"));
+    grid.querySelectorAll("[aria-sort]").forEach((el) => el.removeAttribute("aria-sort"));
+    grid.setAttribute("role", "region");
+    grid.setAttribute("aria-label", "Per-taxon robustness table");
+
+    const holder = grid.querySelector(".tabulator-tableholder");
+    if (holder) holder.setAttribute("tabindex", "0");   // scrollable, so focusable
+
+    grid.querySelectorAll(".tabulator-header-filter input").forEach(function (input) {
+      const column = input.closest("[tabulator-field]");
+      const field = column ? column.getAttribute("tabulator-field") : "column";
+      input.setAttribute("aria-label", "Filter by " + field.replace(/_/g, " "));
+    });
+  }
+  taxaTable.on("tableBuilt", repairTableAccessibility);
+  taxaTable.on("renderComplete", repairTableAccessibility);
+
+  taxaTable.on("rowClick", function (event, row) {
+    const select = document.getElementById("taxon-select");
+    select.value = row.getData().taxon_id;
+    loadCurve(row.getData().taxon_id);
+    document.getElementById("curve").scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+
+  /* ---------------- specification-count histogram ---------------- */
+  const centres = [];
+  for (let i = 0; i < hist.counts.length; i++) {
+    centres.push((hist.edges[i] + hist.edges[i + 1]) / 2);
+  }
+  Plotly.newPlot("spec-histogram", [{
+    x: centres, y: hist.counts, type: "bar",
+    marker: { color: theme.accent },
+    hovertemplate: "%{y} specifications called ~%{x:.0f} taxa<extra></extra>"
+  }], {
+    margin: { l: 46, r: 8, t: 6, b: 36 }, height: 180, bargap: 0.06,
+    paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+    font: { family: theme.sans, color: theme.grey, size: 10.5 },
+    xaxis: { title: { text: "taxa called significant", font: { size: 10.5 } },
+             gridcolor: theme.line, zerolinecolor: theme.line },
+    yaxis: { title: { text: "specifications", font: { size: 10.5 } },
+             gridcolor: theme.line, zerolinecolor: theme.line }
+  }, { displaylogo: false, responsive: true, displayModeBar: false });
+
+  /* ---------------- specification curve ---------------- */
+  function loadCurve(taxonId) {
+    const status = document.getElementById("curve-status");
+    status.textContent = "loading…";
+    fetch("/results/" + token + "/curve/" + taxonId)
+      .then((response) => response.json())
+      .then(function (data) {
+        MicroVerseCurve.render("curve", data);
+        status.textContent = data.n_plotted < data.n_specs
+          ? data.n_specs.toLocaleString() + " specifications · "
+            + data.n_plotted.toLocaleString() + " plotted"
+          : data.n_specs.toLocaleString() + " specifications";
+
+        const box = document.getElementById("curve-declared");
+        const d = data.declared;
+        if (d && d.tested) {
+          box.className = d.percentile > 75 ? "warn" : "note";
+          box.innerHTML = "Your declared pipeline ranks <b>" + d.rank.toLocaleString()
+            + " of " + d.n_specs_tested.toLocaleString()
+            + "</b> specifications for this taxon by −log10(p) — the <b>"
+            + ordinal(d.percentile) + " percentile</b>. It calls this taxon "
+            + (d.significant ? "significant" : "not significant")
+            + " (adjusted p = " + d.p_adjusted.toExponential(2) + ").";
+        } else if (d && d.note) {
+          box.className = "note";
+          box.textContent = d.note;
+        } else {
+          box.className = "";
+          box.textContent = "";
+        }
+      })
+      .catch(function () { status.textContent = "could not load this taxon"; });
+  }
+  document.getElementById("taxon-select").addEventListener("change", function (event) {
+    loadCurve(parseInt(event.target.value, 10));
+  });
+  const first = document.getElementById("taxon-select");
+  if (first && first.value) loadCurve(parseInt(first.value, 10));
+})();
+</script>
+{% endblock %}

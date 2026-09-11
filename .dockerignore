@@ -1,0 +1,13 @@
+# The image COPYs only app/, examples/, tests/ and a few files, but the whole context is
+# sent to the builder first, so anything large and irrelevant belongs here.
+.venv/
+.venv*/
+data/
+.git/
+.github/
+.claude/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.log

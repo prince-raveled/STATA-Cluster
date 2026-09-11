@@ -1,0 +1,9 @@
+# Constraints applied when generating requirements.lock.txt (deploy/lock_requirements.py).
+# Only for keeping the resolver off versions we do not want; real dependencies belong in
+# requirements.txt.
+
+# formulaic declares `wrapt>=1.17.0rc1; python_version >= "3.13"`. A specifier holding a
+# pre-release switches pre-releases on for that project, so an unconstrained resolve
+# picks wrapt 2.4.1rc1 ahead of the stable 2.4.0 — even when resolving for Python 3.12,
+# where that marker does not apply. Hold it to released versions.
+wrapt<2.4.1

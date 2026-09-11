@@ -1,0 +1,321 @@
+{
+  "source": "Tierney et al. 2022, PLOS Biol 20(3):e3001556",
+  "data": "curatedMetagenomicData",
+  "target": {
+    "sign_flip_fraction": 0.3333333333333333,
+    "fraction_nonrobust": 0.9
+  },
+  "cohorts": [
+    {
+      "slug": "Heitz_BuschartA_2016_T1D",
+      "study": "Heitz-BuschartA_2016",
+      "condition": "T1D",
+      "covariates": [
+        "age",
+        "gender",
+        "antibiotics_current_use",
+        "number_reads"
+      ],
+      "n_samples": 53,
+      "n_taxa": 390,
+      "n_case": 27,
+      "n_control": 26,
+      "n_ranks": null,
+      "n_specifications": 2016,
+      "n_covariate_subsets": 16,
+      "runtime_seconds": 4.79,
+      "n_taxa_tested": 299,
+      "n_taxa_detected": 246,
+      "sign_flip_fraction": 0.07357859531772576,
+      "sign_flip_fraction_detected": 0.06910569105691057,
+      "fraction_nonrobust_of_detected": 1.0,
+      "fraction_nonrobust_of_tested": 1.0,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 1,
+        "FRAGILE": 231,
+        "UNSTABLE": 18,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 49
+      },
+      "significance_leading_fork": "method",
+      "significance_leading_share": 51.9,
+      "covariate_fork_only": {
+        "n_matrices": 12,
+        "n_subsets": 16,
+        "sign_flip_tested": 0.5470375759377575,
+        "sign_flip_detected": 0.20878527336860667
+      }
+    },
+    {
+      "slug": "KosticAD_2015_T1D",
+      "study": "KosticAD_2015",
+      "condition": "T1D",
+      "covariates": [
+        "age",
+        "gender",
+        "number_reads"
+      ],
+      "n_samples": 120,
+      "n_taxa": 330,
+      "n_case": 31,
+      "n_control": 89,
+      "n_ranks": null,
+      "n_specifications": 1008,
+      "n_covariate_subsets": 8,
+      "runtime_seconds": 2.73,
+      "n_taxa_tested": 206,
+      "n_taxa_detected": 173,
+      "sign_flip_fraction": 0.05339805825242718,
+      "sign_flip_fraction_detected": 0.057803468208092484,
+      "fraction_nonrobust_of_detected": 1.0,
+      "fraction_nonrobust_of_tested": 1.0,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 18,
+        "FRAGILE": 147,
+        "UNSTABLE": 9,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 32
+      },
+      "significance_leading_fork": "method",
+      "significance_leading_share": 35.2,
+      "covariate_fork_only": {
+        "n_matrices": 12,
+        "n_subsets": 8,
+        "sign_flip_tested": 0.10814998942565919,
+        "sign_flip_detected": 0.0
+      }
+    },
+    {
+      "slug": "LiJ_2014_T1D",
+      "study": "LiJ_2014",
+      "condition": "T1D",
+      "covariates": [
+        "number_reads"
+      ],
+      "n_samples": 41,
+      "n_taxa": 375,
+      "n_case": 31,
+      "n_control": 10,
+      "n_ranks": null,
+      "n_specifications": 252,
+      "n_covariate_subsets": 2,
+      "runtime_seconds": 0.78,
+      "n_taxa_tested": 285,
+      "n_taxa_detected": 244,
+      "sign_flip_fraction": 0.05964912280701754,
+      "sign_flip_fraction_detected": 0.04918032786885246,
+      "fraction_nonrobust_of_detected": 1.0,
+      "fraction_nonrobust_of_tested": 1.0,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 1,
+        "FRAGILE": 232,
+        "UNSTABLE": 15,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 37
+      },
+      "significance_leading_fork": "method",
+      "significance_leading_share": 38.2,
+      "covariate_fork_only": {}
+    },
+    {
+      "slug": "HMP_2019_t2d_T2D",
+      "study": "HMP_2019_t2d",
+      "condition": "T2D",
+      "covariates": [
+        "age",
+        "gender",
+        "number_reads"
+      ],
+      "n_samples": 57,
+      "n_taxa": 273,
+      "n_case": 11,
+      "n_control": 46,
+      "n_ranks": null,
+      "n_specifications": 1008,
+      "n_covariate_subsets": 8,
+      "runtime_seconds": 2.57,
+      "n_taxa_tested": 237,
+      "n_taxa_detected": 237,
+      "sign_flip_fraction": 0.4177215189873418,
+      "sign_flip_fraction_detected": 0.4177215189873418,
+      "fraction_nonrobust_of_detected": 1.0,
+      "fraction_nonrobust_of_tested": 1.0,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 53,
+        "FRAGILE": 87,
+        "UNSTABLE": 97,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 0
+      },
+      "significance_leading_fork": "method",
+      "significance_leading_share": 40.3,
+      "covariate_fork_only": {
+        "n_matrices": 12,
+        "n_subsets": 8,
+        "sign_flip_tested": 0.4832353256218402,
+        "sign_flip_detected": 0.20107751293953754
+      }
+    },
+    {
+      "slug": "KarlssonFH_2013_T2D",
+      "study": "KarlssonFH_2013",
+      "condition": "T2D",
+      "covariates": [
+        "age",
+        "BMI",
+        "number_reads"
+      ],
+      "n_samples": 96,
+      "n_taxa": 433,
+      "n_case": 53,
+      "n_control": 43,
+      "n_ranks": null,
+      "n_specifications": 1008,
+      "n_covariate_subsets": 8,
+      "runtime_seconds": 3.05,
+      "n_taxa_tested": 298,
+      "n_taxa_detected": 187,
+      "sign_flip_fraction": 0.053691275167785234,
+      "sign_flip_fraction_detected": 0.0374331550802139,
+      "fraction_nonrobust_of_detected": 1.0,
+      "fraction_nonrobust_of_tested": 1.0,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 4,
+        "FRAGILE": 176,
+        "UNSTABLE": 15,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 103
+      },
+      "significance_leading_fork": "transform",
+      "significance_leading_share": 40.4,
+      "covariate_fork_only": {
+        "n_matrices": 12,
+        "n_subsets": 8,
+        "sign_flip_tested": 0.1296396090455801,
+        "sign_flip_detected": 0.0
+      }
+    },
+    {
+      "slug": "MetaCardis_2020_a_T2D",
+      "study": "MetaCardis_2020_a",
+      "condition": "T2D",
+      "covariates": [
+        "antibiotics_current_use",
+        "number_reads"
+      ],
+      "n_samples": 1129,
+      "n_taxa": 634,
+      "n_case": 515,
+      "n_control": 616,
+      "n_ranks": null,
+      "n_specifications": 504,
+      "n_covariate_subsets": 4,
+      "runtime_seconds": 3.55,
+      "n_taxa_tested": 262,
+      "n_taxa_detected": 254,
+      "sign_flip_fraction": 0.019083969465648856,
+      "sign_flip_fraction_detected": 0.01968503937007874,
+      "fraction_nonrobust_of_detected": 0.8346456692913385,
+      "fraction_nonrobust_of_tested": 0.8396946564885496,
+      "tiers": {
+        "ROBUST": 42,
+        "CONDITIONAL": 91,
+        "FRAGILE": 117,
+        "UNSTABLE": 4,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 8
+      },
+      "significance_leading_fork": "method",
+      "significance_leading_share": 40.4,
+      "covariate_fork_only": {}
+    },
+    {
+      "slug": "QinJ_2012_T2D",
+      "study": "QinJ_2012",
+      "condition": "T2D",
+      "covariates": [
+        "age",
+        "gender",
+        "BMI",
+        "number_reads"
+      ],
+      "n_samples": 344,
+      "n_taxa": 640,
+      "n_case": 170,
+      "n_control": 174,
+      "n_ranks": null,
+      "n_specifications": 2016,
+      "n_covariate_subsets": 16,
+      "runtime_seconds": 6.65,
+      "n_taxa_tested": 282,
+      "n_taxa_detected": 268,
+      "sign_flip_fraction": 0.028368794326241134,
+      "sign_flip_fraction_detected": 0.029850746268656716,
+      "fraction_nonrobust_of_detected": 0.996268656716418,
+      "fraction_nonrobust_of_tested": 0.9964539007092199,
+      "tiers": {
+        "ROBUST": 1,
+        "CONDITIONAL": 21,
+        "FRAGILE": 238,
+        "UNSTABLE": 8,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 14
+      },
+      "significance_leading_fork": "method",
+      "significance_leading_share": 35.6,
+      "covariate_fork_only": {
+        "n_matrices": 12,
+        "n_subsets": 16,
+        "sign_flip_tested": 0.15836385328752703,
+        "sign_flip_detected": 0.0
+      }
+    },
+    {
+      "slug": "SankaranarayananK_2015_T2D",
+      "study": "SankaranarayananK_2015",
+      "condition": "T2D",
+      "covariates": [
+        "age",
+        "gender",
+        "BMI",
+        "antibiotics_current_use",
+        "number_reads"
+      ],
+      "n_samples": 37,
+      "n_taxa": 365,
+      "n_case": 19,
+      "n_control": 18,
+      "n_ranks": null,
+      "n_specifications": 4032,
+      "n_covariate_subsets": 32,
+      "runtime_seconds": 7.8,
+      "n_taxa_tested": 297,
+      "n_taxa_detected": 13,
+      "sign_flip_fraction": 0.030303030303030304,
+      "sign_flip_fraction_detected": 0.0,
+      "fraction_nonrobust_of_detected": 1.0,
+      "fraction_nonrobust_of_tested": 1.0,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 0,
+        "FRAGILE": 13,
+        "UNSTABLE": 8,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 276
+      },
+      "significance_leading_fork": "method",
+      "significance_leading_share": 86.5,
+      "covariate_fork_only": {
+        "n_matrices": 12,
+        "n_subsets": 32,
+        "sign_flip_tested": 0.29781453401361796,
+        "sign_flip_detected": 0.0
+      }
+    }
+  ]
+}

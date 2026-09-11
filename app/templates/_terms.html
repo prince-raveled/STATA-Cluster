@@ -1,0 +1,26 @@
+{#
+  Inline definitions. `{{ dfn('specification') }}` renders the term with a dotted
+  underline and an explanation that appears on hover, on keyboard focus, and on tap.
+
+  No JavaScript: a CSS tooltip driven by :hover and :focus-within. `tabindex="0"` makes
+  it keyboard-reachable, which also makes it work on touch, where hover does not exist.
+  The explanation is in the markup rather than a `title` attribute because screen
+  readers and mobile browsers treat `title` inconsistently, and because a tooltip
+  nobody on a phone can open is not an explanation.
+#}
+{% macro dfn(key, label=None) -%}
+{%- set t = TERM(key) -%}
+<span class="dfn" tabindex="0" role="note" aria-label="{{ t.term }}: {{ t.short }}"
+  >{{ label or t.term }}<span class="dfn-pop" aria-hidden="true"
+    ><b>{{ t.term }}</b>{{ t.short }}{% if t.spec %}<i>spec section {{ t.spec }}</i>{% endif %}</span
+  ></span>
+{%- endmacro %}
+
+{#
+  A section label. Replaces the old "§16.2 — per-taxon robustness" eyebrows: the plain
+  words lead, and the specification reference is a small marker for the few readers who
+  want it rather than the heading everyone else has to decode.
+#}
+{% macro section_label(text, spec='') -%}
+<p class="eyebrow">{{ text }}{% if spec %}<span class="spec-ref" title="Section {{ spec }} of the frozen specification">spec {{ spec }}</span>{% endif %}</p>
+{%- endmacro %}

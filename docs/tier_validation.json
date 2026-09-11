@@ -1,0 +1,260 @@
+{
+  "design": "stratified 50/50 discovery/validation splits of published cohorts",
+  "mode": "quick",
+  "reanalysed": true,
+  "n_splits": 75,
+  "n_cohorts": 25,
+  "n_observations": 12564,
+  "reference_spec": {
+    "rarefaction": "none",
+    "prev_filter": 0.1,
+    "transform": "raw",
+    "method": "wilcoxon",
+    "fdr_method": "bh",
+    "fdr_threshold": 0.05
+  },
+  "min_specs_for_tier": 10,
+  "definitions": {
+    "replicated_majority": {
+      "label": "majority of held-out specifications",
+      "by_tier": [
+        {
+          "tier": "ROBUST",
+          "n_taxa": 60,
+          "n_cohorts": 5,
+          "replication_rate": 0.9,
+          "ci_low": 0.6,
+          "ci_high": 0.9345794392523364
+        },
+        {
+          "tier": "CONDITIONAL",
+          "n_taxa": 351,
+          "n_cohorts": 12,
+          "replication_rate": 0.5128205128205128,
+          "ci_low": 0.38930237489397795,
+          "ci_high": 0.6044507501630789
+        },
+        {
+          "tier": "FRAGILE",
+          "n_taxa": 2029,
+          "n_cohorts": 25,
+          "replication_rate": 0.12419911286347955,
+          "ci_low": 0.08104818401486316,
+          "ci_high": 0.1698969915425718
+        },
+        {
+          "tier": "UNSTABLE",
+          "n_taxa": 1468,
+          "n_cohorts": 25,
+          "replication_rate": 0.023841961852861037,
+          "ci_low": 0.010770517884573184,
+          "ci_high": 0.04243100888775428
+        },
+        {
+          "tier": "NOT DETECTED",
+          "n_taxa": 8656,
+          "n_cohorts": 23,
+          "replication_rate": 0.031769870609981515,
+          "ci_low": 0.02375116548907684,
+          "ci_high": 0.040893788990465724
+        }
+      ],
+      "discrimination": {
+        "n": 3908,
+        "n_replicated": 521,
+        "auc": 0.7854472928273227,
+        "auc_p": 4.599757985595141e-121,
+        "trend_rho": 0.3743142346132457,
+        "trend_p": 3.1476061204360473e-130,
+        "robust_rate": 0.9,
+        "other_rate": 0.12136174636174636,
+        "risk_ratio": 7.415845824411135
+      },
+      "null_rate": 0.0067653613498885705,
+      "leave_one_cohort_out": [
+        {
+          "dropped": "NielsenHB_2014",
+          "ROBUST": 0.9090909090909091,
+          "n_ROBUST": 55,
+          "CONDITIONAL": 0.5265486725663717,
+          "n_CONDITIONAL": 226,
+          "FRAGILE": 0.10728402032749859,
+          "n_FRAGILE": 1771,
+          "UNSTABLE": 0.022932592077831826,
+          "n_UNSTABLE": 1439,
+          "auc": 0.7879257462907718
+        },
+        {
+          "dropped": "QinJ_2012",
+          "ROBUST": 0.896551724137931,
+          "n_ROBUST": 58,
+          "CONDITIONAL": 0.5249266862170088,
+          "n_CONDITIONAL": 341,
+          "FRAGILE": 0.12106918238993711,
+          "n_FRAGILE": 1908,
+          "UNSTABLE": 0.023709902370990237,
+          "n_UNSTABLE": 1434,
+          "auc": 0.7920122148218103
+        },
+        {
+          "dropped": "cdi_schubert_cdi",
+          "ROBUST": 0.7272727272727273,
+          "n_ROBUST": 11,
+          "CONDITIONAL": 0.5222222222222223,
+          "n_CONDITIONAL": 270,
+          "FRAGILE": 0.125,
+          "n_FRAGILE": 1960,
+          "UNSTABLE": 0.018258426966292134,
+          "n_UNSTABLE": 1424,
+          "auc": 0.7665617433414044
+        },
+        {
+          "dropped": "edd_singh",
+          "ROBUST": 0.9137931034482759,
+          "n_ROBUST": 58,
+          "CONDITIONAL": 0.4609375,
+          "n_CONDITIONAL": 256,
+          "FRAGILE": 0.12203913491246138,
+          "n_FRAGILE": 1942,
+          "UNSTABLE": 0.019787985865724382,
+          "n_UNSTABLE": 1415,
+          "auc": 0.7759879755540745
+        },
+        {
+          "dropped": "ob_goodrich_OB",
+          "ROBUST": 0.9137931034482759,
+          "n_ROBUST": 58,
+          "CONDITIONAL": 0.5089285714285714,
+          "n_CONDITIONAL": 336,
+          "FRAGILE": 0.13137472283813748,
+          "n_FRAGILE": 1804,
+          "UNSTABLE": 0.02250351617440225,
+          "n_UNSTABLE": 1422,
+          "auc": 0.7931394495758008
+        }
+      ]
+    },
+    "replicated_reference": {
+      "label": "one pre-specified held-out analysis",
+      "by_tier": [
+        {
+          "tier": "ROBUST",
+          "n_taxa": 60,
+          "n_cohorts": 5,
+          "replication_rate": 0.8666666666666667,
+          "ci_low": 0.15384615384615385,
+          "ci_high": 0.9668874172185431
+        },
+        {
+          "tier": "CONDITIONAL",
+          "n_taxa": 351,
+          "n_cohorts": 12,
+          "replication_rate": 0.5783475783475783,
+          "ci_low": 0.3669697627707508,
+          "ci_high": 0.7236482109040167
+        },
+        {
+          "tier": "FRAGILE",
+          "n_taxa": 2029,
+          "n_cohorts": 25,
+          "replication_rate": 0.11877772301626417,
+          "ci_low": 0.056281065265931504,
+          "ci_high": 0.1995429444002845
+        },
+        {
+          "tier": "UNSTABLE",
+          "n_taxa": 1468,
+          "n_cohorts": 25,
+          "replication_rate": 0.0388283378746594,
+          "ci_low": 0.00600781041388518,
+          "ci_high": 0.08746698500530847
+        },
+        {
+          "tier": "NOT DETECTED",
+          "n_taxa": 8656,
+          "n_cohorts": 23,
+          "replication_rate": 0.01132162661737523,
+          "ci_low": 0.005410197794992891,
+          "ci_high": 0.017989445822165443
+        }
+      ],
+      "discrimination": {
+        "n": 3908,
+        "n_replicated": 553,
+        "auc": 0.7731245098541218,
+        "auc_p": 1.317528279467264e-116,
+        "trend_rho": 0.36724294153940557,
+        "trend_p": 4.6012225657835715e-125,
+        "robust_rate": 0.8666666666666667,
+        "other_rate": 0.1301975051975052,
+        "risk_ratio": 6.6565535595475716
+      },
+      "null_rate": 7.95924864692773e-05,
+      "leave_one_cohort_out": [
+        {
+          "dropped": "NielsenHB_2014",
+          "ROBUST": 0.9090909090909091,
+          "n_ROBUST": 55,
+          "CONDITIONAL": 0.6371681415929203,
+          "n_CONDITIONAL": 226,
+          "FRAGILE": 0.10502540937323546,
+          "n_FRAGILE": 1771,
+          "UNSTABLE": 0.03683113273106324,
+          "n_UNSTABLE": 1439,
+          "auc": 0.7766952090227881
+        },
+        {
+          "dropped": "QinJ_2012",
+          "ROBUST": 0.896551724137931,
+          "n_ROBUST": 58,
+          "CONDITIONAL": 0.5953079178885631,
+          "n_CONDITIONAL": 341,
+          "FRAGILE": 0.12368972746331237,
+          "n_FRAGILE": 1908,
+          "UNSTABLE": 0.0397489539748954,
+          "n_UNSTABLE": 1434,
+          "auc": 0.7774457012488541
+        },
+        {
+          "dropped": "cdi_schubert_cdi",
+          "ROBUST": 0.36363636363636365,
+          "n_ROBUST": 11,
+          "CONDITIONAL": 0.5555555555555556,
+          "n_CONDITIONAL": 270,
+          "FRAGILE": 0.10612244897959183,
+          "n_FRAGILE": 1960,
+          "UNSTABLE": 0.028792134831460675,
+          "n_UNSTABLE": 1424,
+          "auc": 0.7534748582443446
+        },
+        {
+          "dropped": "edd_singh",
+          "ROBUST": 0.8620689655172413,
+          "n_ROBUST": 58,
+          "CONDITIONAL": 0.49609375,
+          "n_CONDITIONAL": 256,
+          "FRAGILE": 0.10504634397528322,
+          "n_FRAGILE": 1942,
+          "UNSTABLE": 0.022614840989399292,
+          "n_UNSTABLE": 1415,
+          "auc": 0.7794518094405725
+        },
+        {
+          "dropped": "ob_goodrich_OB",
+          "ROBUST": 0.896551724137931,
+          "n_ROBUST": 58,
+          "CONDITIONAL": 0.5863095238095238,
+          "n_CONDITIONAL": 336,
+          "FRAGILE": 0.13137472283813748,
+          "n_FRAGILE": 1804,
+          "UNSTABLE": 0.03938115330520394,
+          "n_UNSTABLE": 1422,
+          "auc": 0.7786912956848867
+        }
+      ]
+    }
+  },
+  "verdict": {
+    "failures": []
+  }
+}

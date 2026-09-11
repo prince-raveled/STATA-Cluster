@@ -1,0 +1,161 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Lint and test (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Generate the demo datasets
+        run: python examples/make_examples.py
+
+      - name: Test
+        run: pytest -q
+
+  reference-validation:
+    name: Compare against reference implementations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install, with scikit-bio for the comparisons
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install "scikit-bio>=0.7.1" conorm
+
+      - name: Regenerate the BIOM fixtures with biom-format itself
+        run: python tests/reference/make_format_fixtures.py
+
+      - name: TMM against conorm and analytic ground truth
+        run: python tests/reference/compare_tmm.py
+
+      - name: ALDEx2 against analytic ground truth
+        run: python tests/reference/compare_aldex2.py
+
+      - name: scikit-bio — multi_replace, clr, ancombc
+        run: python tests/reference/compare_scikit_bio.py
+
+      - name: Adversarial tier boundaries and untrusted-input handling
+        run: pytest tests/test_tier_boundaries.py tests/test_security.py tests/test_evidence.py -q
+
+      - name: Parsers against the real files
+        run: |
+          python examples/make_examples.py
+          pytest tests/test_real_formats.py -q
+
+  r-reference:
+    name: Compare against edgeR and ALDEx2 in R
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Cache the R library
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: r-bioc-${{ runner.os }}-edger-aldex2-v1
+
+      - name: Install edgeR and ALDEx2
+        run: |
+          install.packages("BiocManager")
+          BiocManager::install(c("edgeR", "ALDEx2"), ask = FALSE, update = FALSE)
+        shell: Rscript {0}
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: TMM and ALDEx2 against the R packages
+        run: python tests/reference/compare_r.py
+
+  docker:
+    name: Build the image and run it
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Everything about the image a daemon is not needed for
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python deploy/verify_image.py
+
+      - name: Build
+        run: docker build -t microverse:ci .
+
+      - name: Start
+        run: |
+          docker run -d --name microverse -p 8000:8000 microverse:ci
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8000/healthz > /dev/null; then
+              echo "healthy after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "never became healthy"; docker logs microverse; exit 1
+
+      - name: Run a whole analysis through the container
+        run: |
+          set -euo pipefail
+          curl -fsS http://127.0.0.1:8000/healthz
+          token=$(curl -fsS -o /dev/null -w '%{redirect_url}' \
+                  http://127.0.0.1:8000/demo/ibd_genus | sed 's|.*/||')
+          test -n "$token"
+          curl -fsS -X POST -d 'mode=quick' \
+               "http://127.0.0.1:8000/run/$token" -o /dev/null
+          for i in $(seq 1 180); do
+            status=$(curl -fsS "http://127.0.0.1:8000/api/jobs/$token" \
+                     | python -c 'import json,sys; print(json.load(sys.stdin)["status"])')
+            [ "$status" = "done" ] && break
+            [ "$status" = "error" ] && { echo "run failed"; exit 1; }
+            sleep 1
+          done
+          test "$status" = "done"
+          curl -fsS "http://127.0.0.1:8000/results/$token" -o /dev/null
+          curl -fsS "http://127.0.0.1:8000/download/$token/bundle" -o bundle.zip
+          test -s bundle.zip
+          echo "container served a complete run"
+
+      - name: Container logs
+        if: always()
+        run: docker logs microverse

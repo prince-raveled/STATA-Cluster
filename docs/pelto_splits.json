@@ -1,0 +1,2488 @@
+{
+  "source": "Pelto et al., arXiv:2404.02691; Zenodo 10.5281/zenodo.15047338",
+  "n_whole_cohorts": 2,
+  "n_split_pairs": 24,
+  "elementary": [
+    "wilcoxon",
+    "ttest",
+    "linear",
+    "logistic"
+  ],
+  "sophisticated": [
+    "ancombc",
+    "aldex2",
+    "pydeseq2"
+  ],
+  "cohorts": [
+    {
+      "slug": "whole_16S_asd_son",
+      "study": "asd_son",
+      "disease": "ASD",
+      "type": "16S",
+      "n_samples": 103,
+      "n_taxa": 77,
+      "n_case": 59,
+      "n_control": 44,
+      "n_specifications": 792,
+      "runtime_seconds": 12.07,
+      "matched_all_methods": {
+        "n_taxa_matched": 77,
+        "methods": {
+          "wilcoxon": {
+            "n_specs_per_taxon": 12,
+            "median_sd_neglog10p": 0.0,
+            "median_cv_effect_native": 0.0,
+            "mean_frac_significant": 0.0,
+            "mean_sign_consistency": 1.0,
+            "frac_taxa_detected": 0.0,
+            "frac_detected_unstable": 0.0
+          },
+          "ttest": {
+            "n_specs_per_taxon": 12,
+            "median_sd_neglog10p": 0.0,
+            "median_cv_effect_native": 0.0,
+            "mean_frac_significant": 0.0,
+            "mean_sign_consistency": 1.0,
+            "frac_taxa_detected": 0.0,
+            "frac_detected_unstable": 0.0
+          },
+          "linear": {
+            "n_specs_per_taxon": 12,
+            "median_sd_neglog10p": 0.0,
+            "median_cv_effect_native": 0.0,
+            "mean_frac_significant": 0.0,
+            "mean_sign_consistency": 1.0,
+            "frac_taxa_detected": 0.0,
+            "frac_detected_unstable": 0.0
+          },
+          "logistic": {
+            "n_specs_per_taxon": 12,
+            "median_sd_neglog10p": 0.0,
+            "median_cv_effect_native": 0.0,
+            "mean_frac_significant": 0.0,
+            "mean_sign_consistency": 1.0,
+            "frac_taxa_detected": 0.0,
+            "frac_detected_unstable": 0.0
+          },
+          "ancombc": {
+            "n_specs_per_taxon": 12,
+            "median_sd_neglog10p": 0.009239013018154527,
+            "median_cv_effect_native": 0.020173776894807816,
+            "mean_frac_significant": 0.004329004329004329,
+            "mean_sign_consistency": 1.0,
+            "frac_taxa_detected": 0.012987012987012988,
+            "frac_detected_unstable": 1.0
+          },
+          "aldex2": {
+            "n_specs_per_taxon": 12,
+            "median_sd_neglog10p": 0.006801441045433626,
+            "median_cv_effect_native": 0.07891558855772018,
+            "mean_frac_significant": 0.0,
+            "mean_sign_consistency": 0.987012987012987,
+            "frac_taxa_detected": 0.0,
+            "frac_detected_unstable": 0.0
+          },
+          "pydeseq2": {
+            "n_specs_per_taxon": 12,
+            "median_sd_neglog10p": 0.000667209884154171,
+            "median_cv_effect_native": 9.573279385222122e-05,
+            "mean_frac_significant": 0.004329004329004329,
+            "mean_sign_consistency": 1.0,
+            "frac_taxa_detected": 0.012987012987012988,
+            "frac_detected_unstable": 1.0
+          }
+        }
+      },
+      "matched_rarefiable": {
+        "n_taxa_matched": 77,
+        "methods": {
+          "wilcoxon": {
+            "n_specs_per_taxon": 120,
+            "median_sd_neglog10p": 0.18110113695320454,
+            "median_cv_effect_native": 0.809370219707489,
+            "mean_frac_significant": 0.0005762255762255762,
+            "mean_sign_consistency": 0.8340178967785955,
+            "frac_taxa_detected": 0.025974025974025976,
+            "frac_detected_unstable": 1.0
+          },
+          "ttest": {
+            "n_specs_per_taxon": 120,
+            "median_sd_neglog10p": 0.1846612905200762,
+            "median_cv_effect_native": 0.9281130433082581,
+            "mean_frac_significant": 0.0,
+            "mean_sign_consistency": 0.85745512483084,
+            "frac_taxa_detected": 0.0,
+            "frac_detected_unstable": 0.0
+          },
+          "linear": {
+            "n_specs_per_taxon": 120,
+            "median_sd_neglog10p": 0.18376222198354564,
+            "median_cv_effect_native": 0.9281130433082581,
+            "mean_frac_significant": 0.0,
+            "mean_sign_consistency": 0.85745512483084,
+            "frac_taxa_detected": 0.0,
+            "frac_detected_unstable": 0.0
+          },
+          "logistic": {
+            "n_specs_per_taxon": 120,
+            "median_sd_neglog10p": 0.2043317958567339,
+            "median_cv_effect_native": 0.9673559665679932,
+            "mean_frac_significant": 0.0,
+            "mean_sign_consistency": 0.8043298403140553,
+            "frac_taxa_detected": 0.0,
+            "frac_detected_unstable": 0.0
+          },
+          "aldex2": {
+            "n_specs_per_taxon": 108,
+            "median_sd_neglog10p": 0.049132281667656805,
+            "median_cv_effect_native": 0.8359504342079163,
+            "mean_frac_significant": 0.0,
+            "mean_sign_consistency": 0.8393668683211686,
+            "frac_taxa_detected": 0.0,
+            "frac_detected_unstable": 0.0
+          }
+        }
+      }
+    },
+    {
+      "slug": "whole_16S_crc_zhao",
+      "study": "crc_zhao",
+      "disease": "CRC",
+      "type": "16S",
+      "n_samples": 32,
+      "n_taxa": 45,
+      "n_case": 14,
+      "n_control": 18,
+      "n_specifications": 252,
+      "runtime_seconds": 62.62,
+      "matched_all_methods": {
+        "n_taxa_matched": 45,
+        "methods": {
+          "wilcoxon": {
+            "n_specs_per_taxon": 12,
+            "median_sd_neglog10p": 0.0,
+            "median_cv_effect_native": 0.0,
+            "mean_frac_significant": 0.016666666666666666,
+            "mean_sign_consistency": 1.0,
+            "frac_taxa_detected": 0.044444444444444446,
+            "frac_detected_unstable": 1.0
+          },
+          "ttest": {
+            "n_specs_per_taxon": 12,
+            "median_sd_neglog10p": 0.0,
+            "median_cv_effect_native": 0.0,
+            "mean_frac_significant": 0.0037037037037037034,
+            "mean_sign_consistency": 1.0,
+            "frac_taxa_detected": 0.044444444444444446,
+            "frac_detected_unstable": 1.0
+          },
+          "linear": {
+            "n_specs_per_taxon": 12,
+            "median_sd_neglog10p": 0.0,
+            "median_cv_effect_native": 0.0,
+            "mean_frac_significant": 0.0,
+            "mean_sign_consistency": 1.0,
+            "frac_taxa_detected": 0.0,
+            "frac_detected_unstable": 0.0
+          },
+          "logistic": {
+            "n_specs_per_taxon": 12,
+            "median_sd_neglog10p": 0.0,
+            "median_cv_effect_native": 0.0,
+            "mean_frac_significant": 0.0,
+            "mean_sign_consistency": 1.0,
+            "frac_taxa_detected": 0.0,
+            "frac_detected_unstable": 0.0
+          },
+          "ancombc": {
+            "n_specs_per_taxon": 12,
+            "median_sd_neglog10p": 0.04504029831673917,
+            "median_cv_effect_native": 0.07073243707418442,
+            "mean_frac_significant": 0.08148148148148147,
+            "mean_sign_consistency": 0.9944444444444445,
+            "frac_taxa_detected": 0.15555555555555556,
+            "frac_detected_unstable": 0.7142857142857143
+          },
+          "aldex2": {
+            "n_specs_per_taxon": 12,
+            "median_sd_neglog10p": 0.01243329788050907,
+            "median_cv_effect_native": 0.039517782628536224,
+            "mean_frac_significant": 0.0,
+            "mean_sign_consistency": 0.9944444444444445,
+            "frac_taxa_detected": 0.0,
+            "frac_detected_unstable": 0.0
+          },
+          "pydeseq2": {
+            "n_specs_per_taxon": 12,
+            "median_sd_neglog10p": 0.03839016159105412,
+            "median_cv_effect_native": 0.062424950301647186,
+            "mean_frac_significant": 0.04814814814814815,
+            "mean_sign_consistency": 0.9888888888888889,
+            "frac_taxa_detected": 0.08888888888888889,
+            "frac_detected_unstable": 0.75
+          }
+        }
+      },
+      "matched_rarefiable": {
+        "n_taxa_matched": 45,
+        "methods": {
+          "wilcoxon": {
+            "n_specs_per_taxon": 48,
+            "median_sd_neglog10p": 0.07902507539962769,
+            "median_cv_effect_native": 0.11481994390487671,
+            "mean_frac_significant": 0.008119658119658119,
+            "mean_sign_consistency": 0.9944444444444445,
+            "frac_taxa_detected": 0.044444444444444446,
+            "frac_detected_unstable": 1.0
+          },
+          "ttest": {
+            "n_specs_per_taxon": 48,
+            "median_sd_neglog10p": 0.05133763077623324,
+            "median_cv_effect_native": 0.10253272950649261,
+            "mean_frac_significant": 0.012037037037037037,
+            "mean_sign_consistency": 0.9883838383838384,
+            "frac_taxa_detected": 0.044444444444444446,
+            "frac_detected_unstable": 1.0
+          },
+          "linear": {
+            "n_specs_per_taxon": 48,
+            "median_sd_neglog10p": 0.05508361761917302,
+            "median_cv_effect_native": 0.10253272950649261,
+            "mean_frac_significant": 0.0018518518518518517,
+            "mean_sign_consistency": 0.9883838383838384,
+            "frac_taxa_detected": 0.044444444444444446,
+            "frac_detected_unstable": 1.0
+          },
+          "logistic": {
+            "n_specs_per_taxon": 48,
+            "median_sd_neglog10p": 0.07481860439960922,
+            "median_cv_effect_native": 0.12807303667068481,
+            "mean_frac_significant": 0.0,
+            "mean_sign_consistency": 1.0,
+            "frac_taxa_detected": 0.0,
+            "frac_detected_unstable": 0.0
+          },
+          "aldex2": {
+            "n_specs_per_taxon": 36,
+            "median_sd_neglog10p": 0.03414293232464447,
+            "median_cv_effect_native": 0.22170282900333405,
+            "mean_frac_significant": 0.0,
+            "mean_sign_consistency": 0.9759259259259261,
+            "frac_taxa_detected": 0.0,
+            "frac_detected_unstable": 0.0
+          }
+        }
+      }
+    }
+  ],
+  "splits": [
+    {
+      "study": "BedarfJR_2017",
+      "disease": "PD",
+      "type": "Shotgun",
+      "iter": 1,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 129,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.321724042287499,
+          "evidence_spearman": 0.09033958762529155,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ttest": {
+          "n_taxa": 129,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.25,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.25707177996422187,
+          "evidence_spearman": 0.15920728980322005,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "linear": {
+          "n_taxa": 129,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.25,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.25707177996422187,
+          "evidence_spearman": 0.17306015205724512,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "logistic": {
+          "n_taxa": 129,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.05,
+          "top_same_sign": 0.0,
+          "effect_spearman": 0.2767833554759127,
+          "evidence_spearman": 0.006841698131731399,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ancombc": {
+          "n_taxa": 129,
+          "n_called_a": 1,
+          "n_called_b": 2,
+          "top_k": 20,
+          "top_overlap": 0.1,
+          "top_same_sign": 0.5,
+          "effect_spearman": 0.28231216457960645,
+          "evidence_spearman": -0.01631261180679786,
+          "replication_rate": 0.0,
+          "called_jaccard": 0.0
+        },
+        "aldex2": {
+          "n_taxa": 129,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.2764814400715564,
+          "evidence_spearman": 0.03333519677996423,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "pydeseq2": {
+          "n_taxa": 129,
+          "n_called_a": 17,
+          "n_called_b": 14,
+          "top_k": 20,
+          "top_overlap": 0.2,
+          "top_same_sign": 0.75,
+          "effect_spearman": 0.08616274870549578,
+          "evidence_spearman": 0.10373143016380984,
+          "replication_rate": 0.058823529411764705,
+          "called_jaccard": 0.03333333333333333
+        }
+      }
+    },
+    {
+      "study": "asd_son",
+      "disease": "ASD",
+      "type": "16S",
+      "iter": 1,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 71,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 14,
+          "top_overlap": 0.14285714285714285,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.17738108220229995,
+          "evidence_spearman": 0.04101274312541918,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ttest": {
+          "n_taxa": 71,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 14,
+          "top_overlap": 0.35714285714285715,
+          "top_same_sign": 0.6,
+          "effect_spearman": 0.190360415503131,
+          "evidence_spearman": 0.11991951710261568,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "linear": {
+          "n_taxa": 71,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 14,
+          "top_overlap": 0.21428571428571427,
+          "top_same_sign": 0.6666666666666666,
+          "effect_spearman": 0.190360415503131,
+          "evidence_spearman": 0.12578806170355464,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "logistic": {
+          "n_taxa": 71,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 14,
+          "top_overlap": 0.14285714285714285,
+          "top_same_sign": 1.0,
+          "effect_spearman": -0.03476769992568774,
+          "evidence_spearman": 0.3063621571223599,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ancombc": {
+          "n_taxa": 71,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 14,
+          "top_overlap": 0.21428571428571427,
+          "top_same_sign": 0.3333333333333333,
+          "effect_spearman": 0.13125419181757209,
+          "evidence_spearman": -0.1288732394366197,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "aldex2": {
+          "n_taxa": 71,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 14,
+          "top_overlap": 0.14285714285714285,
+          "top_same_sign": 0.5,
+          "effect_spearman": 0.02816901408450704,
+          "evidence_spearman": -0.12924211938296445,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "pydeseq2": {
+          "n_taxa": 71,
+          "n_called_a": 0,
+          "n_called_b": 2,
+          "top_k": 14,
+          "top_overlap": 0.21428571428571427,
+          "top_same_sign": 0.0,
+          "effect_spearman": -0.14356136820925552,
+          "evidence_spearman": 0.06140174379610998,
+          "replication_rate": NaN,
+          "called_jaccard": 0.0
+        }
+      }
+    },
+    {
+      "study": "BedarfJR_2017",
+      "disease": "PD",
+      "type": "Shotgun",
+      "iter": 2,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 122,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.1,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.17640156637522555,
+          "evidence_spearman": 0.022299955554569803,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ttest": {
+          "n_taxa": 122,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.2,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.073521004821212,
+          "evidence_spearman": -0.0036910855492513737,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "linear": {
+          "n_taxa": 122,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.073521004821212,
+          "evidence_spearman": -0.009130232204638806,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "logistic": {
+          "n_taxa": 122,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.10189956177023356,
+          "evidence_spearman": -0.04074774812088915,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ancombc": {
+          "n_taxa": 122,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 0.6666666666666666,
+          "effect_spearman": 0.17868224610982053,
+          "evidence_spearman": -0.10258045542113733,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "aldex2": {
+          "n_taxa": 122,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.2,
+          "top_same_sign": 0.75,
+          "effect_spearman": 0.17589988797869283,
+          "evidence_spearman": -0.06629083903628631,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "pydeseq2": {
+          "n_taxa": 122,
+          "n_called_a": 13,
+          "n_called_b": 13,
+          "top_k": 20,
+          "top_overlap": 0.4,
+          "top_same_sign": 0.375,
+          "effect_spearman": -0.14517978534814616,
+          "evidence_spearman": 0.05442300514188922,
+          "replication_rate": 0.15384615384615385,
+          "called_jaccard": 0.1
+        }
+      }
+    },
+    {
+      "study": "asd_son",
+      "disease": "ASD",
+      "type": "16S",
+      "iter": 2,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 66,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 13,
+          "top_overlap": 0.23076923076923078,
+          "top_same_sign": 0.6666666666666666,
+          "effect_spearman": 0.2223973613893896,
+          "evidence_spearman": 0.23051873499634695,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ttest": {
+          "n_taxa": 66,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 13,
+          "top_overlap": 0.23076923076923078,
+          "top_same_sign": 0.6666666666666666,
+          "effect_spearman": 0.206011898549212,
+          "evidence_spearman": 0.0993006993006993,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "linear": {
+          "n_taxa": 66,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 13,
+          "top_overlap": 0.23076923076923078,
+          "top_same_sign": 0.6666666666666666,
+          "effect_spearman": 0.206011898549212,
+          "evidence_spearman": 0.10869429078384303,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "logistic": {
+          "n_taxa": 66,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 13,
+          "top_overlap": 0.38461538461538464,
+          "top_same_sign": 0.8,
+          "effect_spearman": -0.003694787524359905,
+          "evidence_spearman": 0.2978529631835082,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ancombc": {
+          "n_taxa": 66,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 13,
+          "top_overlap": 0.15384615384615385,
+          "top_same_sign": 0.5,
+          "effect_spearman": 0.18062832689698363,
+          "evidence_spearman": 0.03379605469157708,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "aldex2": {
+          "n_taxa": 66,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 13,
+          "top_overlap": 0.3076923076923077,
+          "top_same_sign": 0.75,
+          "effect_spearman": 0.15962843127022233,
+          "evidence_spearman": 0.09011585429495879,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "pydeseq2": {
+          "n_taxa": 66,
+          "n_called_a": 0,
+          "n_called_b": 1,
+          "top_k": 13,
+          "top_overlap": 0.15384615384615385,
+          "top_same_sign": 0.5,
+          "effect_spearman": -0.09600250495772886,
+          "evidence_spearman": 0.16058866506627703,
+          "replication_rate": NaN,
+          "called_jaccard": 0.0
+        }
+      }
+    },
+    {
+      "study": "BedarfJR_2017",
+      "disease": "PD",
+      "type": "Shotgun",
+      "iter": 3,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 131,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.2,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.3359330782995598,
+          "evidence_spearman": 0.041271430280391666,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ttest": {
+          "n_taxa": 131,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.3,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.17569529706934287,
+          "evidence_spearman": 0.07616505631772807,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "linear": {
+          "n_taxa": 131,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.25,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.17569529706934287,
+          "evidence_spearman": 0.0745689425078738,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "logistic": {
+          "n_taxa": 131,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.2976784318977303,
+          "evidence_spearman": 0.00700498965567973,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ancombc": {
+          "n_taxa": 131,
+          "n_called_a": 3,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.27451022260182567,
+          "evidence_spearman": -0.007404046335344046,
+          "replication_rate": 0.0,
+          "called_jaccard": 0.0
+        },
+        "aldex2": {
+          "n_taxa": 131,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.25483905407569524,
+          "evidence_spearman": -0.0760636310254631,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "pydeseq2": {
+          "n_taxa": 131,
+          "n_called_a": 20,
+          "n_called_b": 13,
+          "top_k": 20,
+          "top_overlap": 0.35,
+          "top_same_sign": 0.7142857142857143,
+          "effect_spearman": 0.2011637528538949,
+          "evidence_spearman": 0.019679569735479498,
+          "replication_rate": 0.2,
+          "called_jaccard": 0.14814814814814814
+        }
+      }
+    },
+    {
+      "study": "asd_son",
+      "disease": "ASD",
+      "type": "16S",
+      "iter": 3,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 67,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 13,
+          "top_overlap": 0.3076923076923077,
+          "top_same_sign": 0.25,
+          "effect_spearman": -0.015475952903612053,
+          "evidence_spearman": 0.1540426211190039,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ttest": {
+          "n_taxa": 67,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 13,
+          "top_overlap": 0.23076923076923078,
+          "top_same_sign": 0.0,
+          "effect_spearman": -0.0006385186367627106,
+          "evidence_spearman": -0.007702131055950196,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "linear": {
+          "n_taxa": 67,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 13,
+          "top_overlap": 0.38461538461538464,
+          "top_same_sign": 0.0,
+          "effect_spearman": -0.0006385186367627106,
+          "evidence_spearman": -0.0002394444887860165,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "logistic": {
+          "n_taxa": 67,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 13,
+          "top_overlap": 0.3076923076923077,
+          "top_same_sign": 0.25,
+          "effect_spearman": -0.15318406879142285,
+          "evidence_spearman": 0.3218921063442844,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ancombc": {
+          "n_taxa": 67,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 13,
+          "top_overlap": 0.15384615384615385,
+          "top_same_sign": 0.0,
+          "effect_spearman": -0.06389177109106872,
+          "evidence_spearman": 0.10603400111740764,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "aldex2": {
+          "n_taxa": 67,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 13,
+          "top_overlap": 0.23076923076923078,
+          "top_same_sign": 0.3333333333333333,
+          "effect_spearman": -0.10120520392688963,
+          "evidence_spearman": -0.017758799584962886,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "pydeseq2": {
+          "n_taxa": 67,
+          "n_called_a": 2,
+          "n_called_b": 2,
+          "top_k": 13,
+          "top_overlap": 0.3076923076923077,
+          "top_same_sign": 0.25,
+          "effect_spearman": -0.030209913001835748,
+          "evidence_spearman": 0.04094500758240882,
+          "replication_rate": 0.0,
+          "called_jaccard": 0.0
+        }
+      }
+    },
+    {
+      "study": "FengQ_2015_CRC",
+      "disease": "CRC",
+      "type": "Shotgun",
+      "iter": 1,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 223,
+          "n_called_a": 3,
+          "n_called_b": 3,
+          "top_k": 20,
+          "top_overlap": 0.3,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.5515533993097299,
+          "evidence_spearman": 0.2718099271849091,
+          "replication_rate": 0.3333333333333333,
+          "called_jaccard": 0.2
+        },
+        "ttest": {
+          "n_taxa": 223,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.2,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.32390229755700606,
+          "evidence_spearman": 0.009601650016448221,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "linear": {
+          "n_taxa": 223,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.25,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.32390229755700606,
+          "evidence_spearman": 0.06043423307997299,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "logistic": {
+          "n_taxa": 223,
+          "n_called_a": 2,
+          "n_called_b": 1,
+          "top_k": 20,
+          "top_overlap": 0.4,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.4463674656833561,
+          "evidence_spearman": 0.2501785030565899,
+          "replication_rate": 0.5,
+          "called_jaccard": 0.5
+        },
+        "ancombc": {
+          "n_taxa": 223,
+          "n_called_a": 24,
+          "n_called_b": 3,
+          "top_k": 20,
+          "top_overlap": 0.25,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.5292648510137299,
+          "evidence_spearman": 0.04229032844503697,
+          "replication_rate": 0.08333333333333333,
+          "called_jaccard": 0.08
+        },
+        "aldex2": {
+          "n_taxa": 223,
+          "n_called_a": 2,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.25,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.516763119621864,
+          "evidence_spearman": 0.18653691327458144,
+          "replication_rate": 0.0,
+          "called_jaccard": 0.0
+        },
+        "pydeseq2": {
+          "n_taxa": 223,
+          "n_called_a": 60,
+          "n_called_b": 26,
+          "top_k": 20,
+          "top_overlap": 0.1,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.35330241356026104,
+          "evidence_spearman": -0.07203780494139239,
+          "replication_rate": 0.13333333333333333,
+          "called_jaccard": 0.10256410256410256
+        }
+      }
+    },
+    {
+      "study": "cdi_schubert_cdi",
+      "disease": "CDI",
+      "type": "16S",
+      "iter": 1,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 78,
+          "n_called_a": 56,
+          "n_called_b": 61,
+          "top_k": 15,
+          "top_overlap": 0.6666666666666666,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9528816667384054,
+          "evidence_spearman": 0.8508327115922053,
+          "replication_rate": 0.9464285714285714,
+          "called_jaccard": 0.828125
+        },
+        "ttest": {
+          "n_taxa": 78,
+          "n_called_a": 31,
+          "n_called_b": 38,
+          "top_k": 15,
+          "top_overlap": 0.5333333333333333,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.8705598199269083,
+          "evidence_spearman": 0.5473134460476232,
+          "replication_rate": 0.7741935483870968,
+          "called_jaccard": 0.5333333333333333
+        },
+        "linear": {
+          "n_taxa": 78,
+          "n_called_a": 32,
+          "n_called_b": 39,
+          "top_k": 15,
+          "top_overlap": 0.6,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.8705598199269083,
+          "evidence_spearman": 0.5868688273751564,
+          "replication_rate": 0.78125,
+          "called_jaccard": 0.5434782608695652
+        },
+        "logistic": {
+          "n_taxa": 78,
+          "n_called_a": 53,
+          "n_called_b": 60,
+          "top_k": 15,
+          "top_overlap": 0.6666666666666666,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.8930479592983044,
+          "evidence_spearman": 0.8633340077899743,
+          "replication_rate": 0.9811320754716981,
+          "called_jaccard": 0.8524590163934426
+        },
+        "ancombc": {
+          "n_taxa": 78,
+          "n_called_a": 55,
+          "n_called_b": 52,
+          "top_k": 15,
+          "top_overlap": 0.7333333333333333,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9575867170803879,
+          "evidence_spearman": 0.8237458743787857,
+          "replication_rate": 0.8363636363636363,
+          "called_jaccard": 0.7540983606557377
+        },
+        "aldex2": {
+          "n_taxa": 78,
+          "n_called_a": 32,
+          "n_called_b": 38,
+          "top_k": 15,
+          "top_overlap": 0.6666666666666666,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9599893777108967,
+          "evidence_spearman": 0.8103415571770002,
+          "replication_rate": 0.9375,
+          "called_jaccard": 0.75
+        },
+        "pydeseq2": {
+          "n_taxa": 78,
+          "n_called_a": 41,
+          "n_called_b": 48,
+          "top_k": 15,
+          "top_overlap": 0.6666666666666666,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.8605698099368985,
+          "evidence_spearman": 0.6440015680522009,
+          "replication_rate": 0.8292682926829268,
+          "called_jaccard": 0.6181818181818182
+        }
+      }
+    },
+    {
+      "study": "FengQ_2015_CRC",
+      "disease": "CRC",
+      "type": "Shotgun",
+      "iter": 2,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 222,
+          "n_called_a": 1,
+          "n_called_b": 16,
+          "top_k": 20,
+          "top_overlap": 0.25,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.5348768528863372,
+          "evidence_spearman": 0.3127255836349001,
+          "replication_rate": 1.0,
+          "called_jaccard": 0.0625
+        },
+        "ttest": {
+          "n_taxa": 222,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.2,
+          "top_same_sign": 0.75,
+          "effect_spearman": 0.4030121674542672,
+          "evidence_spearman": 0.11380877458429556,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "linear": {
+          "n_taxa": 222,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.25,
+          "top_same_sign": 0.8,
+          "effect_spearman": 0.4030121674542672,
+          "evidence_spearman": 0.15616206673975075,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "logistic": {
+          "n_taxa": 222,
+          "n_called_a": 1,
+          "n_called_b": 4,
+          "top_k": 20,
+          "top_overlap": 0.25,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.49576532977861176,
+          "evidence_spearman": 0.30792439129003873,
+          "replication_rate": 1.0,
+          "called_jaccard": 0.25
+        },
+        "ancombc": {
+          "n_taxa": 222,
+          "n_called_a": 4,
+          "n_called_b": 14,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.5049924018533885,
+          "evidence_spearman": 0.09988587698954358,
+          "replication_rate": 0.25,
+          "called_jaccard": 0.058823529411764705
+        },
+        "aldex2": {
+          "n_taxa": 222,
+          "n_called_a": 0,
+          "n_called_b": 4,
+          "top_k": 20,
+          "top_overlap": 0.2,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.5002936706972582,
+          "evidence_spearman": 0.1744919442096968,
+          "replication_rate": NaN,
+          "called_jaccard": 0.0
+        },
+        "pydeseq2": {
+          "n_taxa": 222,
+          "n_called_a": 32,
+          "n_called_b": 19,
+          "top_k": 20,
+          "top_overlap": 0.2,
+          "top_same_sign": 0.75,
+          "effect_spearman": 0.32593060158346365,
+          "evidence_spearman": 0.18247123206236898,
+          "replication_rate": 0.15625,
+          "called_jaccard": 0.1111111111111111
+        }
+      }
+    },
+    {
+      "study": "cdi_schubert_cdi",
+      "disease": "CDI",
+      "type": "16S",
+      "iter": 2,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 79,
+          "n_called_a": 58,
+          "n_called_b": 60,
+          "top_k": 15,
+          "top_overlap": 0.7333333333333333,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9583125403181637,
+          "evidence_spearman": 0.8902872444011684,
+          "replication_rate": 0.9482758620689655,
+          "called_jaccard": 0.873015873015873
+        },
+        "ttest": {
+          "n_taxa": 79,
+          "n_called_a": 35,
+          "n_called_b": 36,
+          "top_k": 15,
+          "top_overlap": 0.6666666666666666,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.8642161635832522,
+          "evidence_spearman": 0.5956913339824732,
+          "replication_rate": 0.7428571428571429,
+          "called_jaccard": 0.5777777777777777
+        },
+        "linear": {
+          "n_taxa": 79,
+          "n_called_a": 31,
+          "n_called_b": 39,
+          "top_k": 15,
+          "top_overlap": 0.5333333333333333,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.8642161635832522,
+          "evidence_spearman": 0.6053554040895813,
+          "replication_rate": 0.8387096774193549,
+          "called_jaccard": 0.5909090909090909
+        },
+        "logistic": {
+          "n_taxa": 79,
+          "n_called_a": 57,
+          "n_called_b": 56,
+          "top_k": 15,
+          "top_overlap": 0.7333333333333333,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9094732102234099,
+          "evidence_spearman": 0.9045126739784642,
+          "replication_rate": 0.8947368421052632,
+          "called_jaccard": 0.8225806451612904
+        },
+        "ancombc": {
+          "n_taxa": 79,
+          "n_called_a": 50,
+          "n_called_b": 52,
+          "top_k": 15,
+          "top_overlap": 0.6,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9549415774099318,
+          "evidence_spearman": 0.8354186952288217,
+          "replication_rate": 0.86,
+          "called_jaccard": 0.7288135593220338
+        },
+        "aldex2": {
+          "n_taxa": 79,
+          "n_called_a": 34,
+          "n_called_b": 32,
+          "top_k": 15,
+          "top_overlap": 0.7333333333333333,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9580574488802337,
+          "evidence_spearman": 0.830744888023369,
+          "replication_rate": 0.8529411764705882,
+          "called_jaccard": 0.7837837837837838
+        },
+        "pydeseq2": {
+          "n_taxa": 79,
+          "n_called_a": 45,
+          "n_called_b": 37,
+          "top_k": 15,
+          "top_overlap": 0.7333333333333333,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9031645569620254,
+          "evidence_spearman": 0.7114410905550147,
+          "replication_rate": 0.6666666666666666,
+          "called_jaccard": 0.5769230769230769
+        }
+      }
+    },
+    {
+      "study": "FengQ_2015_CRC",
+      "disease": "CRC",
+      "type": "Shotgun",
+      "iter": 3,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 221,
+          "n_called_a": 3,
+          "n_called_b": 8,
+          "top_k": 20,
+          "top_overlap": 0.2,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.4783249924025521,
+          "evidence_spearman": 0.17756765170237934,
+          "replication_rate": 0.6666666666666666,
+          "called_jaccard": 0.2222222222222222
+        },
+        "ttest": {
+          "n_taxa": 221,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.3354553236906178,
+          "evidence_spearman": -0.022349828232181172,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "linear": {
+          "n_taxa": 221,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.3354553236906178,
+          "evidence_spearman": 0.006753977342212636,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "logistic": {
+          "n_taxa": 221,
+          "n_called_a": 0,
+          "n_called_b": 1,
+          "top_k": 20,
+          "top_overlap": 0.25,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.4109382170529011,
+          "evidence_spearman": 0.14122979796770868,
+          "replication_rate": NaN,
+          "called_jaccard": 0.0
+        },
+        "ancombc": {
+          "n_taxa": 221,
+          "n_called_a": 6,
+          "n_called_b": 12,
+          "top_k": 20,
+          "top_overlap": 0.2,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.4442215971627736,
+          "evidence_spearman": 0.06282699812111577,
+          "replication_rate": 0.16666666666666666,
+          "called_jaccard": 0.058823529411764705
+        },
+        "aldex2": {
+          "n_taxa": 221,
+          "n_called_a": 1,
+          "n_called_b": 1,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.46824018588724464,
+          "evidence_spearman": 0.04752798870445929,
+          "replication_rate": 0.0,
+          "called_jaccard": 0.0
+        },
+        "pydeseq2": {
+          "n_taxa": 221,
+          "n_called_a": 49,
+          "n_called_b": 54,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 0.6666666666666666,
+          "effect_spearman": 0.46430231136113487,
+          "evidence_spearman": 0.029477358889123593,
+          "replication_rate": 0.20408163265306123,
+          "called_jaccard": 0.1111111111111111
+        }
+      }
+    },
+    {
+      "study": "cdi_schubert_cdi",
+      "disease": "CDI",
+      "type": "16S",
+      "iter": 3,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 77,
+          "n_called_a": 56,
+          "n_called_b": 60,
+          "top_k": 15,
+          "top_overlap": 0.7333333333333333,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9565560303159636,
+          "evidence_spearman": 0.879751827120248,
+          "replication_rate": 0.9285714285714286,
+          "called_jaccard": 0.8125
+        },
+        "ttest": {
+          "n_taxa": 77,
+          "n_called_a": 36,
+          "n_called_b": 31,
+          "top_k": 15,
+          "top_overlap": 0.6666666666666666,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.858062989641937,
+          "evidence_spearman": 0.6036069193963931,
+          "replication_rate": 0.6111111111111112,
+          "called_jaccard": 0.4888888888888889
+        },
+        "linear": {
+          "n_taxa": 77,
+          "n_called_a": 32,
+          "n_called_b": 33,
+          "top_k": 15,
+          "top_overlap": 0.6,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.858062989641937,
+          "evidence_spearman": 0.5868342184131659,
+          "replication_rate": 0.6875,
+          "called_jaccard": 0.5116279069767442
+        },
+        "logistic": {
+          "n_taxa": 77,
+          "n_called_a": 56,
+          "n_called_b": 58,
+          "top_k": 15,
+          "top_overlap": 0.7333333333333333,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9022721447216517,
+          "evidence_spearman": 0.8511899676155117,
+          "replication_rate": 0.8928571428571429,
+          "called_jaccard": 0.78125
+        },
+        "ancombc": {
+          "n_taxa": 77,
+          "n_called_a": 48,
+          "n_called_b": 51,
+          "top_k": 15,
+          "top_overlap": 0.6666666666666666,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9418476260581523,
+          "evidence_spearman": 0.7939691887060306,
+          "replication_rate": 0.8541666666666666,
+          "called_jaccard": 0.7068965517241379
+        },
+        "aldex2": {
+          "n_taxa": 77,
+          "n_called_a": 28,
+          "n_called_b": 33,
+          "top_k": 15,
+          "top_overlap": 0.6,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9480782375519217,
+          "evidence_spearman": 0.8548556706451442,
+          "replication_rate": 0.9642857142857143,
+          "called_jaccard": 0.7941176470588235
+        },
+        "pydeseq2": {
+          "n_taxa": 77,
+          "n_called_a": 35,
+          "n_called_b": 41,
+          "top_k": 15,
+          "top_overlap": 0.8,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9145065460854933,
+          "evidence_spearman": 0.7302434407697566,
+          "replication_rate": 0.8571428571428571,
+          "called_jaccard": 0.6521739130434783
+        }
+      }
+    },
+    {
+      "study": "FengQ_2015_adenoma",
+      "disease": "adenoma",
+      "type": "Shotgun",
+      "iter": 1,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 211,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.05,
+          "top_same_sign": 0.0,
+          "effect_spearman": -0.05509907319369174,
+          "evidence_spearman": -0.011030216047033041,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ttest": {
+          "n_taxa": 211,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 0.6666666666666666,
+          "effect_spearman": -0.09570138347747219,
+          "evidence_spearman": 0.05272160549814131,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "linear": {
+          "n_taxa": 211,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 0.6666666666666666,
+          "effect_spearman": -0.09570138347747219,
+          "evidence_spearman": 0.06154750194811002,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "logistic": {
+          "n_taxa": 211,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.0,
+          "top_same_sign": NaN,
+          "effect_spearman": 0.08929381314705462,
+          "evidence_spearman": -0.024150720892705844,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ancombc": {
+          "n_taxa": 211,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.05,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.03259794841660173,
+          "evidence_spearman": -0.07211328419412119,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "aldex2": {
+          "n_taxa": 211,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.05,
+          "top_same_sign": 1.0,
+          "effect_spearman": -0.04449994251478648,
+          "evidence_spearman": -0.07078345958789489,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "pydeseq2": {
+          "n_taxa": 211,
+          "n_called_a": 5,
+          "n_called_b": 13,
+          "top_k": 20,
+          "top_overlap": 0.05,
+          "top_same_sign": 0.0,
+          "effect_spearman": -0.033386134566497624,
+          "evidence_spearman": -0.046453162325468506,
+          "replication_rate": 0.0,
+          "called_jaccard": 0.0
+        }
+      }
+    },
+    {
+      "study": "cdi_schubert_diarrhea",
+      "disease": "diarrhea",
+      "type": "16S",
+      "iter": 1,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 78,
+          "n_called_a": 62,
+          "n_called_b": 62,
+          "top_k": 15,
+          "top_overlap": 0.7333333333333333,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9366068944586358,
+          "evidence_spearman": 0.8122636856814072,
+          "replication_rate": 0.8870967741935484,
+          "called_jaccard": 0.7971014492753623
+        },
+        "ttest": {
+          "n_taxa": 78,
+          "n_called_a": 30,
+          "n_called_b": 43,
+          "top_k": 15,
+          "top_overlap": 0.6,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.8833753801778783,
+          "evidence_spearman": 0.5472881548830916,
+          "replication_rate": 0.8,
+          "called_jaccard": 0.4897959183673469
+        },
+        "linear": {
+          "n_taxa": 78,
+          "n_called_a": 33,
+          "n_called_b": 42,
+          "top_k": 15,
+          "top_overlap": 0.6,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.8833753801778783,
+          "evidence_spearman": 0.5574299118602916,
+          "replication_rate": 0.8181818181818182,
+          "called_jaccard": 0.5625
+        },
+        "logistic": {
+          "n_taxa": 78,
+          "n_called_a": 59,
+          "n_called_b": 55,
+          "top_k": 15,
+          "top_overlap": 0.6,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.8459962570362316,
+          "evidence_spearman": 0.8002731570666787,
+          "replication_rate": 0.864406779661017,
+          "called_jaccard": 0.8095238095238095
+        },
+        "ancombc": {
+          "n_taxa": 78,
+          "n_called_a": 50,
+          "n_called_b": 54,
+          "top_k": 15,
+          "top_overlap": 0.4666666666666667,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.955892209056766,
+          "evidence_spearman": 0.4034675064836099,
+          "replication_rate": 0.72,
+          "called_jaccard": 0.5294117647058824
+        },
+        "aldex2": {
+          "n_taxa": 78,
+          "n_called_a": 28,
+          "n_called_b": 35,
+          "top_k": 15,
+          "top_overlap": 0.7333333333333333,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9430190063101455,
+          "evidence_spearman": 0.7926630331693622,
+          "replication_rate": 0.9285714285714286,
+          "called_jaccard": 0.7027027027027027
+        },
+        "pydeseq2": {
+          "n_taxa": 78,
+          "n_called_a": 59,
+          "n_called_b": 45,
+          "top_k": 15,
+          "top_overlap": 0.6666666666666666,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.89994815311271,
+          "evidence_spearman": 0.7972659388230697,
+          "replication_rate": 0.7288135593220338,
+          "called_jaccard": 0.7049180327868853
+        }
+      }
+    },
+    {
+      "study": "FengQ_2015_adenoma",
+      "disease": "adenoma",
+      "type": "Shotgun",
+      "iter": 2,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 205,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.1,
+          "top_same_sign": 0.5,
+          "effect_spearman": 0.24783097616554944,
+          "evidence_spearman": 0.08152346327787517,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ttest": {
+          "n_taxa": 205,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.1,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.14135198005320998,
+          "evidence_spearman": -0.018895126130016298,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "linear": {
+          "n_taxa": 205,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.1,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.14135198005320998,
+          "evidence_spearman": -0.004375200234012619,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "logistic": {
+          "n_taxa": 205,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.1,
+          "top_same_sign": 0.5,
+          "effect_spearman": 0.22961789151791195,
+          "evidence_spearman": -0.028548818327640123,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ancombc": {
+          "n_taxa": 205,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.0,
+          "top_same_sign": NaN,
+          "effect_spearman": 0.28976891253778325,
+          "evidence_spearman": 0.0898761683219345,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "aldex2": {
+          "n_taxa": 205,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.1,
+          "top_same_sign": 0.5,
+          "effect_spearman": 0.2463080330403532,
+          "evidence_spearman": 0.09857224443175326,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "pydeseq2": {
+          "n_taxa": 205,
+          "n_called_a": 3,
+          "n_called_b": 3,
+          "top_k": 20,
+          "top_overlap": 0.05,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.11657589391427894,
+          "evidence_spearman": 0.001207672270897466,
+          "replication_rate": 0.0,
+          "called_jaccard": 0.0
+        }
+      }
+    },
+    {
+      "study": "cdi_schubert_diarrhea",
+      "disease": "diarrhea",
+      "type": "16S",
+      "iter": 2,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 75,
+          "n_called_a": 58,
+          "n_called_b": 57,
+          "top_k": 15,
+          "top_overlap": 0.6666666666666666,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9551635846372687,
+          "evidence_spearman": 0.8614509246088193,
+          "replication_rate": 0.8793103448275862,
+          "called_jaccard": 0.796875
+        },
+        "ttest": {
+          "n_taxa": 75,
+          "n_called_a": 38,
+          "n_called_b": 31,
+          "top_k": 15,
+          "top_overlap": 0.6,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.8791465149359886,
+          "evidence_spearman": 0.5309530583214793,
+          "replication_rate": 0.6578947368421053,
+          "called_jaccard": 0.5681818181818182
+        },
+        "linear": {
+          "n_taxa": 75,
+          "n_called_a": 32,
+          "n_called_b": 27,
+          "top_k": 15,
+          "top_overlap": 0.6,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.8791465149359886,
+          "evidence_spearman": 0.5328307254623044,
+          "replication_rate": 0.625,
+          "called_jaccard": 0.5128205128205128
+        },
+        "logistic": {
+          "n_taxa": 75,
+          "n_called_a": 51,
+          "n_called_b": 55,
+          "top_k": 15,
+          "top_overlap": 0.8,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.8731239244994866,
+          "evidence_spearman": 0.8598477843374351,
+          "replication_rate": 0.9411764705882353,
+          "called_jaccard": 0.8275862068965517
+        },
+        "ancombc": {
+          "n_taxa": 75,
+          "n_called_a": 48,
+          "n_called_b": 51,
+          "top_k": 15,
+          "top_overlap": 0.4666666666666667,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9727169274537695,
+          "evidence_spearman": 0.43115220483641536,
+          "replication_rate": 0.7291666666666666,
+          "called_jaccard": 0.546875
+        },
+        "aldex2": {
+          "n_taxa": 75,
+          "n_called_a": 29,
+          "n_called_b": 30,
+          "top_k": 15,
+          "top_overlap": 0.6666666666666666,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9659174964438122,
+          "evidence_spearman": 0.898918918918919,
+          "replication_rate": 0.9310344827586207,
+          "called_jaccard": 0.84375
+        },
+        "pydeseq2": {
+          "n_taxa": 75,
+          "n_called_a": 39,
+          "n_called_b": 55,
+          "top_k": 15,
+          "top_overlap": 0.6666666666666666,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.8532005689900427,
+          "evidence_spearman": 0.6860792628455882,
+          "replication_rate": 0.8461538461538461,
+          "called_jaccard": 0.55
+        }
+      }
+    },
+    {
+      "study": "FengQ_2015_adenoma",
+      "disease": "adenoma",
+      "type": "Shotgun",
+      "iter": 3,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 213,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.1,
+          "top_same_sign": 0.5,
+          "effect_spearman": 0.07850003446208169,
+          "evidence_spearman": -0.033186085910177625,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ttest": {
+          "n_taxa": 213,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.08172540799372144,
+          "evidence_spearman": -0.015572184650842808,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "linear": {
+          "n_taxa": 213,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.08172540799372144,
+          "evidence_spearman": -0.004351270734972344,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "logistic": {
+          "n_taxa": 213,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 0.3333333333333333,
+          "effect_spearman": 0.12109604709944775,
+          "evidence_spearman": 0.04137385826810536,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ancombc": {
+          "n_taxa": 213,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.05,
+          "top_same_sign": 0.0,
+          "effect_spearman": 0.16801691829694443,
+          "evidence_spearman": -0.003770107862835627,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "aldex2": {
+          "n_taxa": 213,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.25,
+          "top_same_sign": 0.4,
+          "effect_spearman": 0.14137656125431836,
+          "evidence_spearman": 0.05550353789107418,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "pydeseq2": {
+          "n_taxa": 213,
+          "n_called_a": 9,
+          "n_called_b": 10,
+          "top_k": 20,
+          "top_overlap": 0.05,
+          "top_same_sign": 0.0,
+          "effect_spearman": 0.005918423608127339,
+          "evidence_spearman": 0.016578048614662687,
+          "replication_rate": 0.0,
+          "called_jaccard": 0.0
+        }
+      }
+    },
+    {
+      "study": "cdi_schubert_diarrhea",
+      "disease": "diarrhea",
+      "type": "16S",
+      "iter": 3,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 77,
+          "n_called_a": 58,
+          "n_called_b": 60,
+          "top_k": 15,
+          "top_overlap": 0.7333333333333333,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9424120934103709,
+          "evidence_spearman": 0.814921920185078,
+          "replication_rate": 0.8793103448275862,
+          "called_jaccard": 0.7611940298507462
+        },
+        "ttest": {
+          "n_taxa": 77,
+          "n_called_a": 34,
+          "n_called_b": 38,
+          "top_k": 15,
+          "top_overlap": 0.6,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.8735475051264523,
+          "evidence_spearman": 0.4676113360323887,
+          "replication_rate": 0.7352941176470589,
+          "called_jaccard": 0.5319148936170213
+        },
+        "linear": {
+          "n_taxa": 77,
+          "n_called_a": 30,
+          "n_called_b": 38,
+          "top_k": 15,
+          "top_overlap": 0.5333333333333333,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.8735475051264523,
+          "evidence_spearman": 0.5067301119932698,
+          "replication_rate": 0.8,
+          "called_jaccard": 0.5454545454545454
+        },
+        "logistic": {
+          "n_taxa": 77,
+          "n_called_a": 52,
+          "n_called_b": 57,
+          "top_k": 15,
+          "top_overlap": 0.8,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.8472914174542874,
+          "evidence_spearman": 0.7974602842298814,
+          "replication_rate": 0.9038461538461539,
+          "called_jaccard": 0.7580645161290323
+        },
+        "ancombc": {
+          "n_taxa": 77,
+          "n_called_a": 54,
+          "n_called_b": 50,
+          "top_k": 15,
+          "top_overlap": 0.5333333333333333,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9572006940427992,
+          "evidence_spearman": 0.5268415794731584,
+          "replication_rate": 0.6851851851851852,
+          "called_jaccard": 0.5522388059701493
+        },
+        "aldex2": {
+          "n_taxa": 77,
+          "n_called_a": 34,
+          "n_called_b": 27,
+          "top_k": 15,
+          "top_overlap": 0.7333333333333333,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.9374572795625425,
+          "evidence_spearman": 0.8030127766969871,
+          "replication_rate": 0.7058823529411765,
+          "called_jaccard": 0.6486486486486487
+        },
+        "pydeseq2": {
+          "n_taxa": 77,
+          "n_called_a": 56,
+          "n_called_b": 41,
+          "top_k": 15,
+          "top_overlap": 0.6,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.8256217466743783,
+          "evidence_spearman": 0.5655040059011006,
+          "replication_rate": 0.6071428571428571,
+          "called_jaccard": 0.5396825396825397
+        }
+      }
+    },
+    {
+      "study": "GhensiP_2019_mucositis",
+      "disease": "mucositis",
+      "type": "Shotgun",
+      "iter": 1,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 134,
+          "n_called_a": 13,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.35,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.645809953030776,
+          "evidence_spearman": 0.3205475170513146,
+          "replication_rate": 0.0,
+          "called_jaccard": 0.0
+        },
+        "ttest": {
+          "n_taxa": 134,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.2,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.33533834586466166,
+          "evidence_spearman": 0.1740794773002157,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "linear": {
+          "n_taxa": 134,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.05,
+          "top_same_sign": 0.0,
+          "effect_spearman": 0.33533834586466166,
+          "evidence_spearman": -0.2831182433696181,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "logistic": {
+          "n_taxa": 134,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.35,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.520141118205776,
+          "evidence_spearman": 0.20653889919647242,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ancombc": {
+          "n_taxa": 134,
+          "n_called_a": 2,
+          "n_called_b": 1,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.665546951957007,
+          "evidence_spearman": 0.1213456526889363,
+          "replication_rate": 0.0,
+          "called_jaccard": 0.0
+        },
+        "aldex2": {
+          "n_taxa": 134,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.3,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.6360403496302947,
+          "evidence_spearman": 0.10840783550917095,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "pydeseq2": {
+          "n_taxa": 134,
+          "n_called_a": 46,
+          "n_called_b": 31,
+          "top_k": 20,
+          "top_overlap": 0.05,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.34830901670748243,
+          "evidence_spearman": 0.06823036226187956,
+          "replication_rate": 0.2391304347826087,
+          "called_jaccard": 0.16666666666666666
+        }
+      }
+    },
+    {
+      "study": "cdi_vincent_v3v5",
+      "disease": "CDI",
+      "type": "16S",
+      "iter": 1,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 95,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 19,
+          "top_overlap": 0.10526315789473684,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.6181236457361157,
+          "evidence_spearman": 0.15724382361927716,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ttest": {
+          "n_taxa": 95,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 19,
+          "top_overlap": 0.15789473684210525,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.30233502254569317,
+          "evidence_spearman": -0.07183650615901456,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "linear": {
+          "n_taxa": 95,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 19,
+          "top_overlap": 0.15789473684210525,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.30233502254569317,
+          "evidence_spearman": -0.06886222306251243,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "logistic": {
+          "n_taxa": 95,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 19,
+          "top_overlap": 0.5263157894736842,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.6879532314840325,
+          "evidence_spearman": 0.2525822375845351,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ancombc": {
+          "n_taxa": 95,
+          "n_called_a": 4,
+          "n_called_b": 11,
+          "top_k": 19,
+          "top_overlap": 0.3157894736842105,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.6368701007838746,
+          "evidence_spearman": 0.2623320268756999,
+          "replication_rate": 0.0,
+          "called_jaccard": 0.0
+        },
+        "aldex2": {
+          "n_taxa": 95,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 19,
+          "top_overlap": 0.3684210526315789,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.6141377379619262,
+          "evidence_spearman": 0.19991601343784993,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "pydeseq2": {
+          "n_taxa": 95,
+          "n_called_a": 10,
+          "n_called_b": 5,
+          "top_k": 19,
+          "top_overlap": 0.21052631578947367,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.6559770436730123,
+          "evidence_spearman": 0.08777995520716685,
+          "replication_rate": 0.1,
+          "called_jaccard": 0.07142857142857142
+        }
+      }
+    },
+    {
+      "study": "GhensiP_2019_mucositis",
+      "disease": "mucositis",
+      "type": "Shotgun",
+      "iter": 2,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 137,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.4,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.6696086015624744,
+          "evidence_spearman": 0.4382351676871162,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ttest": {
+          "n_taxa": 137,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.25,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.42002538876547124,
+          "evidence_spearman": 0.177670020721713,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "linear": {
+          "n_taxa": 137,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.15,
+          "top_same_sign": 0.6666666666666666,
+          "effect_spearman": 0.42002538876547124,
+          "evidence_spearman": -0.08591576903690704,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "logistic": {
+          "n_taxa": 137,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.4,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.5293872532911608,
+          "evidence_spearman": 0.3892546193580849,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ancombc": {
+          "n_taxa": 137,
+          "n_called_a": 0,
+          "n_called_b": 1,
+          "top_k": 20,
+          "top_overlap": 0.2,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.6859027012899732,
+          "evidence_spearman": 0.18828289805290568,
+          "replication_rate": NaN,
+          "called_jaccard": 0.0
+        },
+        "aldex2": {
+          "n_taxa": 137,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.35,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.698200384565124,
+          "evidence_spearman": 0.15015307932122388,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "pydeseq2": {
+          "n_taxa": 137,
+          "n_called_a": 35,
+          "n_called_b": 22,
+          "top_k": 20,
+          "top_overlap": 0.2,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.34609501429893424,
+          "evidence_spearman": 0.18307446748931244,
+          "replication_rate": 0.17142857142857143,
+          "called_jaccard": 0.11764705882352941
+        }
+      }
+    },
+    {
+      "study": "cdi_vincent_v3v5",
+      "disease": "CDI",
+      "type": "16S",
+      "iter": 2,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 97,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 19,
+          "top_overlap": 0.2631578947368421,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.642608377254378,
+          "evidence_spearman": 0.20686310612386163,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ttest": {
+          "n_taxa": 97,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 19,
+          "top_overlap": 0.15789473684210525,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.34401415051038975,
+          "evidence_spearman": -0.13811241112224776,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "linear": {
+          "n_taxa": 97,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 19,
+          "top_overlap": 0.15789473684210525,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.3438583917194572,
+          "evidence_spearman": -0.1443914434283387,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "logistic": {
+          "n_taxa": 97,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 19,
+          "top_overlap": 0.47368421052631576,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.5953463443197217,
+          "evidence_spearman": 0.2212779431738393,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ancombc": {
+          "n_taxa": 97,
+          "n_called_a": 1,
+          "n_called_b": 0,
+          "top_k": 19,
+          "top_overlap": 0.3157894736842105,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.6786065333988034,
+          "evidence_spearman": 0.2273038081211866,
+          "replication_rate": 0.0,
+          "called_jaccard": 0.0
+        },
+        "aldex2": {
+          "n_taxa": 97,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 19,
+          "top_overlap": 0.47368421052631576,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.6988743951188723,
+          "evidence_spearman": 0.3817062907637282,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "pydeseq2": {
+          "n_taxa": 97,
+          "n_called_a": 11,
+          "n_called_b": 1,
+          "top_k": 19,
+          "top_overlap": 0.3157894736842105,
+          "top_same_sign": 0.8333333333333334,
+          "effect_spearman": 0.5271013044393015,
+          "evidence_spearman": -0.058962760361876705,
+          "replication_rate": 0.0,
+          "called_jaccard": 0.0
+        }
+      }
+    },
+    {
+      "study": "GhensiP_2019_mucositis",
+      "disease": "mucositis",
+      "type": "Shotgun",
+      "iter": 3,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 133,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.35,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.7007023441841048,
+          "evidence_spearman": 0.4673404632435141,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ttest": {
+          "n_taxa": 133,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.25,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.39671600983462724,
+          "evidence_spearman": 0.24622274818661305,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "linear": {
+          "n_taxa": 133,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.05,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.39671600983462724,
+          "evidence_spearman": -0.015175319574376919,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "logistic": {
+          "n_taxa": 133,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.4,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.5480288975448359,
+          "evidence_spearman": 0.3796206053905459,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ancombc": {
+          "n_taxa": 133,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.35,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.7229777292620969,
+          "evidence_spearman": 0.3028585711225146,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "aldex2": {
+          "n_taxa": 133,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 20,
+          "top_overlap": 0.35,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.7116281205047899,
+          "evidence_spearman": 0.26776915150835023,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "pydeseq2": {
+          "n_taxa": 133,
+          "n_called_a": 34,
+          "n_called_b": 21,
+          "top_k": 20,
+          "top_overlap": 0.2,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.35427612450393275,
+          "evidence_spearman": 0.1700196896583385,
+          "replication_rate": 0.29411764705882354,
+          "called_jaccard": 0.2222222222222222
+        }
+      }
+    },
+    {
+      "study": "cdi_vincent_v3v5",
+      "disease": "CDI",
+      "type": "16S",
+      "iter": 3,
+      "methods": {
+        "wilcoxon": {
+          "n_taxa": 89,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 17,
+          "top_overlap": 0.29411764705882354,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.6599361434223155,
+          "evidence_spearman": 0.24606079698474742,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ttest": {
+          "n_taxa": 89,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 17,
+          "top_overlap": 0.0,
+          "top_same_sign": NaN,
+          "effect_spearman": 0.2754437492917214,
+          "evidence_spearman": 0.0044943820224719105,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "linear": {
+          "n_taxa": 89,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 17,
+          "top_overlap": 0.0,
+          "top_same_sign": NaN,
+          "effect_spearman": 0.2754437492917214,
+          "evidence_spearman": 0.004868913857677903,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "logistic": {
+          "n_taxa": 89,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 17,
+          "top_overlap": 0.5294117647058824,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.6621410819575626,
+          "evidence_spearman": 0.30245177651551974,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "ancombc": {
+          "n_taxa": 89,
+          "n_called_a": 7,
+          "n_called_b": 3,
+          "top_k": 17,
+          "top_overlap": 0.5294117647058824,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.6475938355261049,
+          "evidence_spearman": 0.2983656792645557,
+          "replication_rate": 0.14285714285714285,
+          "called_jaccard": 0.1111111111111111
+        },
+        "aldex2": {
+          "n_taxa": 89,
+          "n_called_a": 0,
+          "n_called_b": 0,
+          "top_k": 17,
+          "top_overlap": 0.4117647058823529,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.6784644194756555,
+          "evidence_spearman": 0.21779026217228467,
+          "replication_rate": NaN,
+          "called_jaccard": NaN
+        },
+        "pydeseq2": {
+          "n_taxa": 89,
+          "n_called_a": 17,
+          "n_called_b": 6,
+          "top_k": 17,
+          "top_overlap": 0.23529411764705882,
+          "top_same_sign": 0.75,
+          "effect_spearman": 0.390721824991488,
+          "evidence_spearman": 0.21075927817500853,
+          "replication_rate": 0.058823529411764705,
+          "called_jaccard": 0.045454545454545456
+        }
+      }
+    }
+  ]
+}

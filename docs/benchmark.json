@@ -1,0 +1,56 @@
+{
+  "machine": {
+    "python": "3.14.6",
+    "cpus": 12
+  },
+  "runs": [
+    {
+      "n_taxa": 120,
+      "n_samples": 40,
+      "mode": "quick",
+      "n_specifications": 1236,
+      "n_result_rows": 148320,
+      "bundle_mb": 1.52,
+      "timings": {
+        "multiverse": 0.394,
+        "robustness": 0.039,
+        "attribution": 3.277,
+        "export_long_csv": 0.785,
+        "export_bundle": 0.052
+      },
+      "total_seconds": 4.55
+    },
+    {
+      "n_taxa": 380,
+      "n_samples": 120,
+      "mode": "quick",
+      "n_specifications": 1596,
+      "n_result_rows": 606480,
+      "bundle_mb": 11.34,
+      "timings": {
+        "multiverse": 1.195,
+        "robustness": 0.119,
+        "attribution": 4.24,
+        "export_long_csv": 3.427,
+        "export_bundle": 0.291
+      },
+      "total_seconds": 9.27
+    },
+    {
+      "n_taxa": 1500,
+      "n_samples": 60,
+      "mode": "quick",
+      "n_specifications": 1596,
+      "n_result_rows": 2392320,
+      "bundle_mb": 41.77,
+      "timings": {
+        "multiverse": 2.063,
+        "robustness": 0.451,
+        "attribution": 8.372,
+        "export_long_csv": 13.465,
+        "export_bundle": 1.029
+      },
+      "total_seconds": 25.38
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — MicroVerse{% endblock %}
+{% block content %}
+<section class="section shell shell-narrow">
+  <p class="eyebrow">MicroVerse cannot continue</p>
+  <h1 style="font-size:clamp(28px,3.4vw,42px);max-width:18ch">{{ title }}</h1>
+  <p class="lede" style="margin-top:20px;font-size:17px">{{ message }}</p>
+  {% if hint %}<p class="note" style="margin-top:22px">{{ hint }}</p>{% endif %}
+  <div class="row" style="margin-top:30px">
+    <a class="button button-primary" href="/">Back to the start <span aria-hidden="true">&rarr;</span></a>
+    <a class="text-action" href="/about">Read the input rules</a>
+  </div>
+</section>
+{% endblock %}

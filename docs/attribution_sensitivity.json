@@ -1,0 +1,739 @@
+{
+  "cohorts": [
+    {
+      "cohort": "cdi_schubert",
+      "description": "C. difficile infection \u2014 Schubert 2014",
+      "n_samples": 247,
+      "n_taxa": 159,
+      "runtime_seconds": 3.1,
+      "targets": {
+        "effect": {
+          "leader": "rarefaction",
+          "leader_share": 88.92413557095824,
+          "explained_variance": 0.0158160810852207,
+          "estimator_agreement": 0.5,
+          "converged": true,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.92,
+          "leader_distribution": {
+            "rarefaction": 0.92,
+            "transform": 0.07,
+            "prev_filter": 0.01
+          },
+          "mixedlm_leader": "rarefaction",
+          "within_leader": "rarefaction",
+          "fallback_leader": "rarefaction"
+        },
+        "significance": {
+          "leader": "transform",
+          "leader_share": 55.89923149635852,
+          "explained_variance": 0.20943675375752735,
+          "estimator_agreement": 0.5428571428571429,
+          "converged": false,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.9833333333333333,
+          "leader_distribution": {
+            "transform": 0.9833333333333333,
+            "rarefaction": 0.01,
+            "method": 0.006666666666666667
+          },
+          "mixedlm_leader": "transform",
+          "within_leader": "transform",
+          "fallback_leader": "transform"
+        }
+      }
+    },
+    {
+      "cohort": "cdi_vincent_v3v5",
+      "description": "C. difficile infection \u2014 Vincent 2013",
+      "n_samples": 50,
+      "n_taxa": 183,
+      "runtime_seconds": 4.3,
+      "targets": {
+        "effect": {
+          "leader": "rarefaction",
+          "leader_share": 77.09189965267957,
+          "explained_variance": 0.009403359694012736,
+          "estimator_agreement": 1.0,
+          "converged": true,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.9966666666666667,
+          "leader_distribution": {
+            "rarefaction": 0.9966666666666667,
+            "transform": 0.0033333333333333335
+          },
+          "mixedlm_leader": "rarefaction",
+          "within_leader": "rarefaction",
+          "fallback_leader": "rarefaction"
+        },
+        "significance": {
+          "leader": "rarefaction",
+          "leader_share": 37.14712260973527,
+          "explained_variance": 0.137146379924329,
+          "estimator_agreement": 0.8857142857142858,
+          "converged": true,
+          "evidence": "consistent",
+          "leader_win_probability": 0.5166666666666667,
+          "leader_distribution": {
+            "rarefaction": 0.5166666666666667,
+            "transform": 0.48333333333333334
+          },
+          "mixedlm_leader": "rarefaction",
+          "within_leader": "transform",
+          "fallback_leader": "transform"
+        }
+      }
+    },
+    {
+      "cohort": "crc_zackular",
+      "description": "Colorectal cancer \u2014 Zackular 2014",
+      "n_samples": 60,
+      "n_taxa": 132,
+      "runtime_seconds": 3.2,
+      "targets": {
+        "effect": {
+          "leader": "rarefaction",
+          "leader_share": 70.553237753891,
+          "explained_variance": 0.006530387251761582,
+          "estimator_agreement": 1.0,
+          "converged": true,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.4033333333333333,
+          "leader_distribution": {
+            "transform": 0.5966666666666667,
+            "rarefaction": 0.4033333333333333
+          },
+          "mixedlm_leader": "rarefaction",
+          "within_leader": "rarefaction",
+          "fallback_leader": "rarefaction"
+        },
+        "significance": {
+          "leader": "rarefaction",
+          "leader_share": 67.24157826195776,
+          "explained_variance": 0.001394337914373378,
+          "estimator_agreement": 0.7714285714285715,
+          "converged": false,
+          "evidence": "exploratory",
+          "leader_win_probability": 1.0,
+          "leader_distribution": {
+            "rarefaction": 1.0
+          },
+          "mixedlm_leader": "rarefaction",
+          "within_leader": "rarefaction",
+          "fallback_leader": "rarefaction"
+        }
+      }
+    },
+    {
+      "cohort": "crc_zhao",
+      "description": "Colorectal cancer \u2014 Wang 2012",
+      "n_samples": 102,
+      "n_taxa": 837,
+      "runtime_seconds": 1.4,
+      "targets": {
+        "effect": {
+          "leader": "rank",
+          "leader_share": 93.1403369744408,
+          "explained_variance": 0.04281169584831446,
+          "estimator_agreement": -0.5,
+          "converged": true,
+          "evidence": "exploratory",
+          "leader_win_probability": NaN,
+          "leader_distribution": {
+            "prev_filter": 1.0
+          },
+          "mixedlm_leader": "rank",
+          "within_leader": "prev_filter",
+          "fallback_leader": "prev_filter"
+        },
+        "significance": {
+          "leader": "method",
+          "leader_share": 50.63393719921588,
+          "explained_variance": 0.04250348297431039,
+          "estimator_agreement": -0.48571428571428577,
+          "converged": false,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.10666666666666667,
+          "leader_distribution": {
+            "transform": 0.8933333333333333,
+            "method": 0.10666666666666667
+          },
+          "mixedlm_leader": "rank",
+          "within_leader": "method",
+          "fallback_leader": "prev_filter"
+        }
+      }
+    },
+    {
+      "cohort": "crc_xiang",
+      "description": "Colorectal cancer \u2014 Chen 2012",
+      "n_samples": 43,
+      "n_taxa": 136,
+      "runtime_seconds": 2.6,
+      "targets": {
+        "effect": {
+          "leader": "rarefaction",
+          "leader_share": 99.01730133331142,
+          "explained_variance": 0.0691733227205068,
+          "estimator_agreement": 0.5,
+          "converged": true,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.9966666666666667,
+          "leader_distribution": {
+            "rarefaction": 0.9966666666666667,
+            "prev_filter": 0.0033333333333333335
+          },
+          "mixedlm_leader": "rarefaction",
+          "within_leader": "rarefaction",
+          "fallback_leader": "rarefaction"
+        },
+        "significance": {
+          "leader": "rarefaction",
+          "leader_share": 31.764835025020627,
+          "explained_variance": 0.0012186757876276877,
+          "estimator_agreement": 0.6,
+          "converged": false,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.35,
+          "leader_distribution": {
+            "transform": 0.65,
+            "rarefaction": 0.35
+          },
+          "mixedlm_leader": "prev_filter",
+          "within_leader": "rarefaction",
+          "fallback_leader": "rarefaction"
+        }
+      }
+    },
+    {
+      "cohort": "ibd_huttenhower",
+      "description": "Crohn's disease \u2014 Papa 2012",
+      "n_samples": 146,
+      "n_taxa": 168,
+      "runtime_seconds": 1.3,
+      "targets": {
+        "effect": {
+          "leader": "rarefaction",
+          "leader_share": 72.70176088768994,
+          "explained_variance": 0.0177200113632604,
+          "estimator_agreement": 1.0,
+          "converged": true,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.8733333333333333,
+          "leader_distribution": {
+            "rarefaction": 0.8733333333333333,
+            "transform": 0.12666666666666668
+          },
+          "mixedlm_leader": "rarefaction",
+          "within_leader": "rarefaction",
+          "fallback_leader": "rarefaction"
+        },
+        "significance": {
+          "leader": "transform",
+          "leader_share": 70.93848285657734,
+          "explained_variance": 0.2511324589777547,
+          "estimator_agreement": 1.0,
+          "converged": false,
+          "evidence": "exploratory",
+          "leader_win_probability": 1.0,
+          "leader_distribution": {
+            "transform": 1.0
+          },
+          "mixedlm_leader": "transform",
+          "within_leader": "transform",
+          "fallback_leader": "transform"
+        }
+      }
+    },
+    {
+      "cohort": "ob_escobar",
+      "description": "Obesity \u2014 Escobar 2014",
+      "n_samples": 20,
+      "n_taxa": 93,
+      "runtime_seconds": 3.5,
+      "targets": {
+        "effect": {
+          "leader": "rarefaction",
+          "leader_share": 98.42352425196141,
+          "explained_variance": 0.04048213723821026,
+          "estimator_agreement": 1.0,
+          "converged": true,
+          "evidence": "exploratory",
+          "leader_win_probability": 1.0,
+          "leader_distribution": {
+            "rarefaction": 1.0
+          },
+          "mixedlm_leader": "rarefaction",
+          "within_leader": "rarefaction",
+          "fallback_leader": "rarefaction"
+        },
+        "significance": {
+          "leader": "fdr_threshold",
+          "leader_share": 28.55418198026876,
+          "explained_variance": 0.007128709932710864,
+          "estimator_agreement": 0.7142857142857143,
+          "converged": true,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.35,
+          "leader_distribution": {
+            "rarefaction": 0.4033333333333333,
+            "fdr_threshold": 0.35,
+            "method": 0.21,
+            "transform": 0.03666666666666667
+          },
+          "mixedlm_leader": "fdr_threshold",
+          "within_leader": "fdr_threshold",
+          "fallback_leader": "fdr_threshold"
+        }
+      }
+    },
+    {
+      "cohort": "ob_ross",
+      "description": "Obesity \u2014 Ross 2015",
+      "n_samples": 63,
+      "n_taxa": 158,
+      "runtime_seconds": 3.1,
+      "targets": {
+        "effect": {
+          "leader": "rarefaction",
+          "leader_share": 90.4698285400221,
+          "explained_variance": 0.012210844881328509,
+          "estimator_agreement": 1.0,
+          "converged": true,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.9966666666666667,
+          "leader_distribution": {
+            "rarefaction": 0.9966666666666667,
+            "transform": 0.0033333333333333335
+          },
+          "mixedlm_leader": "rarefaction",
+          "within_leader": "rarefaction",
+          "fallback_leader": "rarefaction"
+        },
+        "significance": {
+          "leader": "rarefaction",
+          "leader_share": 53.17978818382129,
+          "explained_variance": 0.0007498710926036045,
+          "estimator_agreement": 0.942857142857143,
+          "converged": false,
+          "evidence": "exploratory",
+          "leader_win_probability": 1.0,
+          "leader_distribution": {
+            "rarefaction": 1.0
+          },
+          "mixedlm_leader": "rarefaction",
+          "within_leader": "rarefaction",
+          "fallback_leader": "rarefaction"
+        }
+      }
+    },
+    {
+      "cohort": "t1d_mejialeon",
+      "description": "Type 1 diabetes \u2014 Mejia-Leon 2014",
+      "n_samples": 29,
+      "n_taxa": 112,
+      "runtime_seconds": 3.1,
+      "targets": {
+        "effect": {
+          "leader": "transform",
+          "leader_share": 47.44254159362047,
+          "explained_variance": 0.01173304011647347,
+          "estimator_agreement": 0.5,
+          "converged": true,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.2966666666666667,
+          "leader_distribution": {
+            "rarefaction": 0.7033333333333334,
+            "transform": 0.2966666666666667
+          },
+          "mixedlm_leader": "transform",
+          "within_leader": "transform",
+          "fallback_leader": "rarefaction"
+        },
+        "significance": {
+          "leader": "method",
+          "leader_share": 31.870765877233612,
+          "explained_variance": 0.007693738324439203,
+          "estimator_agreement": 0.4285714285714286,
+          "converged": false,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.62,
+          "leader_distribution": {
+            "method": 0.62,
+            "rarefaction": 0.19666666666666666,
+            "fdr_threshold": 0.14666666666666667,
+            "transform": 0.03666666666666667
+          },
+          "mixedlm_leader": "method",
+          "within_leader": "method",
+          "fallback_leader": "fdr_threshold"
+        }
+      }
+    },
+    {
+      "cohort": "autism_kb",
+      "description": "Autism \u2014 Kang 2013",
+      "n_samples": 39,
+      "n_taxa": 114,
+      "runtime_seconds": 2.2,
+      "targets": {
+        "effect": {
+          "leader": "transform",
+          "leader_share": 54.44277026356371,
+          "explained_variance": 0.0028312320305105,
+          "estimator_agreement": 0.5,
+          "converged": true,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.02,
+          "leader_distribution": {
+            "rarefaction": 0.98,
+            "transform": 0.02
+          },
+          "mixedlm_leader": "transform",
+          "within_leader": "transform",
+          "fallback_leader": "rarefaction"
+        },
+        "significance": {
+          "leader": "transform",
+          "leader_share": 48.200221911012235,
+          "explained_variance": 0.009398287749876277,
+          "estimator_agreement": 0.6571428571428573,
+          "converged": false,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.9233333333333333,
+          "leader_distribution": {
+            "transform": 0.9233333333333333,
+            "rarefaction": 0.05333333333333334,
+            "fdr_threshold": 0.023333333333333334
+          },
+          "mixedlm_leader": "transform",
+          "within_leader": "transform",
+          "fallback_leader": "fdr_threshold"
+        }
+      }
+    },
+    {
+      "cohort": "asd_son",
+      "description": "Autism \u2014 Son 2015",
+      "n_samples": 103,
+      "n_taxa": 103,
+      "runtime_seconds": 3.5,
+      "targets": {
+        "effect": {
+          "leader": "rarefaction",
+          "leader_share": 82.63092357273612,
+          "explained_variance": 0.01661117131518497,
+          "estimator_agreement": 0.5,
+          "converged": true,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.9633333333333334,
+          "leader_distribution": {
+            "rarefaction": 0.9633333333333334,
+            "prev_filter": 0.02666666666666667,
+            "transform": 0.01
+          },
+          "mixedlm_leader": "rarefaction",
+          "within_leader": "rarefaction",
+          "fallback_leader": "rarefaction"
+        },
+        "significance": {
+          "leader": "rarefaction",
+          "leader_share": 0.0,
+          "explained_variance": NaN,
+          "estimator_agreement": NaN,
+          "converged": false,
+          "evidence": "exploratory",
+          "leader_win_probability": 1.0,
+          "leader_distribution": {
+            "rarefaction": 1.0
+          },
+          "mixedlm_leader": "rarefaction",
+          "within_leader": "rarefaction",
+          "fallback_leader": "rarefaction"
+        }
+      }
+    },
+    {
+      "cohort": "mhe_zhang",
+      "description": "Hepatic encephalopathy \u2014 Zhang 2013",
+      "n_samples": 52,
+      "n_taxa": 101,
+      "runtime_seconds": 0.7,
+      "targets": {
+        "effect": {
+          "leader": "transform",
+          "leader_share": 91.02444850274347,
+          "explained_variance": 0.1042054765200513,
+          "estimator_agreement": NaN,
+          "converged": true,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.9966666666666667,
+          "leader_distribution": {
+            "transform": 0.9966666666666667,
+            "prev_filter": 0.0033333333333333335
+          },
+          "mixedlm_leader": "transform",
+          "within_leader": "transform",
+          "fallback_leader": "transform"
+        },
+        "significance": {
+          "leader": "method",
+          "leader_share": 65.89099532574588,
+          "explained_variance": 0.16743293454955743,
+          "estimator_agreement": 0.8999999999999998,
+          "converged": false,
+          "evidence": "exploratory",
+          "leader_win_probability": 1.0,
+          "leader_distribution": {
+            "method": 1.0
+          },
+          "mixedlm_leader": "method",
+          "within_leader": "method",
+          "fallback_leader": "transform"
+        }
+      }
+    },
+    {
+      "cohort": "hiv_dinh",
+      "description": "HIV \u2014 Dinh 2015",
+      "n_samples": 36,
+      "n_taxa": 104,
+      "runtime_seconds": 3.3,
+      "targets": {
+        "effect": {
+          "leader": "transform",
+          "leader_share": 94.54798790755233,
+          "explained_variance": 0.07639139315329846,
+          "estimator_agreement": 1.0,
+          "converged": true,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.9366666666666666,
+          "leader_distribution": {
+            "transform": 0.9366666666666666,
+            "rarefaction": 0.06333333333333334
+          },
+          "mixedlm_leader": "transform",
+          "within_leader": "transform",
+          "fallback_leader": "transform"
+        },
+        "significance": {
+          "leader": "rarefaction",
+          "leader_share": 0.0,
+          "explained_variance": NaN,
+          "estimator_agreement": NaN,
+          "converged": false,
+          "evidence": "exploratory",
+          "leader_win_probability": 1.0,
+          "leader_distribution": {
+            "rarefaction": 1.0
+          },
+          "mixedlm_leader": "rarefaction",
+          "within_leader": "rarefaction",
+          "fallback_leader": "rarefaction"
+        }
+      }
+    },
+    {
+      "cohort": "edd_singh",
+      "description": "Diarrhoeal illness \u2014 Singh 2015",
+      "n_samples": 304,
+      "n_taxa": 233,
+      "runtime_seconds": 2.9,
+      "targets": {
+        "effect": {
+          "leader": "transform",
+          "leader_share": 44.44162286067014,
+          "explained_variance": 0.007373104729269997,
+          "estimator_agreement": -1.0,
+          "converged": true,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.11333333333333333,
+          "leader_distribution": {
+            "rarefaction": 0.7666666666666667,
+            "prev_filter": 0.12,
+            "transform": 0.11333333333333333
+          },
+          "mixedlm_leader": "transform",
+          "within_leader": "transform",
+          "fallback_leader": "rarefaction"
+        },
+        "significance": {
+          "leader": "transform",
+          "leader_share": 45.47069696658476,
+          "explained_variance": 0.2853098926300668,
+          "estimator_agreement": 0.4285714285714286,
+          "converged": false,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.03666666666666667,
+          "leader_distribution": {
+            "rarefaction": 0.9633333333333334,
+            "transform": 0.03666666666666667
+          },
+          "mixedlm_leader": "rarefaction",
+          "within_leader": "transform",
+          "fallback_leader": "transform"
+        }
+      }
+    },
+    {
+      "cohort": "nash_chan",
+      "description": "NASH \u2014 Wong 2013",
+      "n_samples": 54,
+      "n_taxa": 88,
+      "runtime_seconds": 1.6,
+      "targets": {
+        "effect": {
+          "leader": "prev_filter",
+          "leader_share": 53.235344451837975,
+          "explained_variance": 0.006859372376159079,
+          "estimator_agreement": -0.5,
+          "converged": true,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.10333333333333333,
+          "leader_distribution": {
+            "rarefaction": 0.8666666666666667,
+            "prev_filter": 0.10333333333333333,
+            "transform": 0.03
+          },
+          "mixedlm_leader": "prev_filter",
+          "within_leader": "rarefaction",
+          "fallback_leader": "rarefaction"
+        },
+        "significance": {
+          "leader": "rarefaction",
+          "leader_share": 54.36023480622381,
+          "explained_variance": 0.002690146649613645,
+          "estimator_agreement": 0.14285714285714288,
+          "converged": false,
+          "evidence": "exploratory",
+          "leader_win_probability": 1.0,
+          "leader_distribution": {
+            "rarefaction": 1.0
+          },
+          "mixedlm_leader": "rarefaction",
+          "within_leader": "rarefaction",
+          "fallback_leader": "rarefaction"
+        }
+      }
+    },
+    {
+      "cohort": "ra_littman",
+      "description": "Rheumatoid arthritis \u2014 Scher 2013",
+      "n_samples": 98,
+      "n_taxa": 112,
+      "runtime_seconds": 2.1,
+      "targets": {
+        "effect": {
+          "leader": "rarefaction",
+          "leader_share": 60.967805346272726,
+          "explained_variance": 0.019735527291234845,
+          "estimator_agreement": 1.0,
+          "converged": true,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.8633333333333333,
+          "leader_distribution": {
+            "rarefaction": 0.8633333333333333,
+            "transform": 0.13666666666666666
+          },
+          "mixedlm_leader": "rarefaction",
+          "within_leader": "rarefaction",
+          "fallback_leader": "rarefaction"
+        },
+        "significance": {
+          "leader": "method",
+          "leader_share": 30.30029000981915,
+          "explained_variance": 0.004920837290324553,
+          "estimator_agreement": -0.028571428571428574,
+          "converged": false,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.72,
+          "leader_distribution": {
+            "method": 0.72,
+            "transform": 0.22666666666666666,
+            "rarefaction": 0.04666666666666667,
+            "prev_filter": 0.006666666666666667
+          },
+          "mixedlm_leader": "prev_filter",
+          "within_leader": "method",
+          "fallback_leader": "method"
+        }
+      }
+    },
+    {
+      "cohort": "par_scheperjans",
+      "description": "Parkinson's \u2014 Scheperjans 2015",
+      "n_samples": 148,
+      "n_taxa": 125,
+      "runtime_seconds": 2.4,
+      "targets": {
+        "effect": {
+          "leader": "transform",
+          "leader_share": 47.08132963182368,
+          "explained_variance": 0.007597101225105485,
+          "estimator_agreement": 0.5,
+          "converged": true,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.25333333333333335,
+          "leader_distribution": {
+            "rarefaction": 0.7433333333333333,
+            "transform": 0.25333333333333335,
+            "prev_filter": 0.0033333333333333335
+          },
+          "mixedlm_leader": "transform",
+          "within_leader": "transform",
+          "fallback_leader": "rarefaction"
+        },
+        "significance": {
+          "leader": "transform",
+          "leader_share": 25.84267717244081,
+          "explained_variance": 0.015135703520163912,
+          "estimator_agreement": -0.3714285714285715,
+          "converged": false,
+          "evidence": "exploratory",
+          "leader_win_probability": 0.6333333333333333,
+          "leader_distribution": {
+            "transform": 0.6333333333333333,
+            "rarefaction": 0.36666666666666664
+          },
+          "mixedlm_leader": "transform",
+          "within_leader": "transform",
+          "fallback_leader": "fdr_threshold"
+        }
+      }
+    }
+  ],
+  "summary": {
+    "effect": {
+      "median_explained_variance": 0.0158160810852207,
+      "median_agreement": 0.5,
+      "same_leader_cohorts": 11,
+      "n_cohorts": 17,
+      "median_leader_win_probability": 0.8966666666666667,
+      "n_reportable": 0,
+      "leader_counts": {
+        "rarefaction": 9,
+        "rank": 1,
+        "transform": 6,
+        "prev_filter": 1
+      }
+    },
+    "significance": {
+      "median_explained_variance": 0.009398287749876277,
+      "median_agreement": 0.6,
+      "same_leader_cohorts": 8,
+      "n_cohorts": 17,
+      "median_leader_win_probability": 0.9233333333333333,
+      "n_reportable": 3,
+      "leader_counts": {
+        "transform": 5,
+        "rarefaction": 7,
+        "method": 4,
+        "fdr_threshold": 1
+      }
+    }
+  },
+  "thresholds": {
+    "min_explained_variance": 0.1,
+    "min_estimator_agreement": 0.6
+  }
+}
