@@ -70,10 +70,16 @@ def test_configure_page_reports_both_grid_counts(client):
 def test_results_page_renders(client, finished):
     response = client.get(f"/results/{finished}")
     assert response.status_code == 200
-    # The sections a results page must always carry, by their §-anchored headings.
-    for fragment in ("per-taxon robustness", "choice attribution", "specification curve",
-                     "the grid that ran", "methods paragraph", "the full table"):
+    # The sections a results page must always carry. Headings are plain language now,
+    # so these match what a researcher actually sees rather than specification numbers.
+    for fragment in ("how each taxon held up", "which choice is driving this",
+                     "one taxon, every analysis", "what was actually run",
+                     "methods paragraph", "every taxon, sortable"):
         assert fragment in response.text.lower(), fragment
+    # The orientation panel and the inline definitions are part of the contract: a
+    # first-time reader must be able to find out what a "specification" is.
+    assert "WHAT HAPPENED" in response.text
+    assert 'class="dfn"' in response.text
     assert 'id="curve"' in response.text
     assert 'id="taxa-table"' in response.text
 
@@ -337,3 +343,70 @@ def test_a_hostile_taxon_name_is_never_emitted_as_markup(client):
     # The API returns it as data, which is correct — it is a JSON string, not markup.
     taxa = client.get(f"/api/jobs/{token}/results").json()["taxa"]
     assert any(payload in row["taxon"] for row in taxa)
+
+def test_taxon_evidence_page_renders_for_every_tier(client, finished):
+    """The page a researcher lands on after clicking a taxon name."""
+    table = client.get(f"/api/jobs/{finished}/results").json()["taxa"]
+    seen = set()
+    for row in table:
+        tier = row.get("tier") or row.get("robustness_tier")
+        if tier in seen:
+            continue
+        seen.add(tier)
+        response = client.get(f"/results/{finished}/taxon/{row['taxon_id']}")
+        assert response.status_code == 200, tier
+        body = response.text
+        assert "Which choice is responsible?" in body, tier
+        assert "Stability, broken apart." in body, tier
+        # The limits must travel with the evidence, on every tier.
+        assert "not independent evidence" in body, tier
+        assert "Nothing here is causal" in body, tier
+    assert len(seen) >= 3, "expected several tiers in the demo"
+
+
+def test_taxon_page_refuses_an_unknown_taxon(client, finished):
+    response = client.get(f"/results/{finished}/taxon/999999")
+    assert response.status_code == 404
+    assert "taxa" in response.text.lower()
+
+
+def test_taxon_page_never_states_a_probability_of_being_real(client, finished):
+    """The share-of-analyses reading is the whole point; it must not drift.
+
+    Checks for an *affirmative* probability claim. The page deliberately contains the
+    negated form ("it does not mean a 72% chance the difference is real"), which is the
+    disclaimer, so a plain substring search would flag the safeguard as the offence.
+    """
+    import re
+
+    table = client.get(f"/api/jobs/{finished}/results").json()["taxa"]
+    body = client.get(f"/results/{finished}/taxon/{table[0]['taxon_id']}").text
+    assert "not probabilities about the biology" in body
+    assert "does not mean" in body, "the probability disclaimer is missing"
+
+    lowered = body.lower()
+    # "<number>% chance/probability ..." with no negation in the ten words before it.
+    affirmative = re.compile(
+        r"(?<!not )(?<!never )\d+%\s+(chance|probability)")
+    for match in affirmative.finditer(lowered):
+        window = lowered[max(0, match.start() - 90):match.start()]
+        assert "not " in window or "never" in window, (
+            f"affirmative probability claim: ...{lowered[match.start()-70:match.end()+40]}")
+    for forbidden in ("independent pieces of evidence", "posterior probability"):
+        assert forbidden not in lowered, forbidden
+
+
+def test_validation_page_renders_the_matrix(client):
+    response = client.get("/validation")
+    assert response.status_code == 200
+    for fragment in ("Empirically validated", "Exploratory",
+                     "no held-out experiment",
+                     "not validated against an external implementation"):
+        assert fragment in response.text, fragment
+
+
+def test_glossary_terms_reach_the_results_page(client, finished):
+    """Inline definitions are how a first-time reader learns the vocabulary."""
+    body = client.get(f"/results/{finished}").text
+    assert body.count('class="dfn"') >= 5, "too few terms are explained in place"
+    assert "dfn-pop" in body

@@ -8,6 +8,11 @@ from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 
 from .. import config, services
+from ..core.instability import (
+    FINGERPRINT_LABELS,
+    analyse_taxon,
+    stability_fingerprint,
+)
 from ..core.report import (
     attribution_csv,
     build_zip,
@@ -18,7 +23,7 @@ from ..core.report import (
     specification_curve,
     specifications_csv,
 )
-from ..core.robustness import verdict_sentence
+from ..core.robustness import locate_declared, verdict_sentence
 from ..core.validation import DatasetError, NotFoundError
 from ..templating import templates
 
@@ -89,6 +94,45 @@ def results_page(request: Request, token: str):
             "declared_spec": (run.specs[run.declared_spec_id]
                               if run.declared_spec_id >= 0 else None),
             "citations": citation_list(),
+        },
+    )
+
+
+@router.get("/results/{token}/taxon/{taxon_id}", response_class=HTMLResponse,
+            include_in_schema=False)
+def taxon_evidence(request: Request, token: str, taxon_id: int):
+    """Everything known about one taxon, in one place.
+
+    The robustness table gives a tier and a few numbers; this answers the question a
+    researcher actually has next — why did this taxon's answer move, and which choice
+    moved it — without making them open a CSV.
+    """
+    job, run, summary, attribution = _require(token)
+    if not 0 <= taxon_id < len(run.taxa_names):
+        raise NotFoundError(
+            f"No taxon {taxon_id} in this run.",
+            f"This run has {len(run.taxa_names)} taxa.")
+
+    rows = summary.table[summary.table["taxon_id"] == taxon_id]
+    if rows.empty:
+        raise NotFoundError(
+            "That taxon was filtered out of every specification, so it has no results.",
+            "Lower the prevalence filter, or pick a taxon from the table.")
+    row = rows.iloc[0]
+
+    evidence = analyse_taxon(run, taxon_id)
+    ranked = list(summary.table["taxon_id"]).index(taxon_id)
+    return templates.TemplateResponse(
+        request, "taxon.html",
+        {
+            "job": job, "token": token, "run": run, "summary": summary,
+            "row": row, "evidence": evidence,
+            "fingerprint": stability_fingerprint(row),
+            "fingerprint_labels": FINGERPRINT_LABELS,
+            "declared": locate_declared(run, taxon_id),
+            "rank_in_table": ranked + 1,
+            "n_taxa": len(summary.table),
+            "neighbours": services.taxon_neighbours(summary, taxon_id),
         },
     )
 

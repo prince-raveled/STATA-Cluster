@@ -733,3 +733,134 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
   .orient-step { border-right: 0; border-bottom: 1px solid var(--rule); }
   .orient-step:last-child { border-bottom: 0; }
 }
+
+/* --- taxon evidence page -------------------------------------------------- */
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 0;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  color: var(--grey);
+  border-bottom: 1px solid var(--rule);
+  flex-wrap: wrap;
+}
+.crumbs a { color: var(--accent); text-decoration: none; }
+.crumbs a:hover { text-decoration: underline; }
+.crumbs-end { margin-left: auto; display: flex; gap: 16px; }
+
+.taxon-name {
+  font-size: clamp(26px, 3.4vw, 40px);
+  margin: 6px 0 18px;
+  word-break: break-word;
+}
+.taxon-headline {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--grey);
+}
+.taxon-headline.robust      { border-left-color: var(--robust); }
+.taxon-headline.conditional { border-left-color: var(--conditional); }
+.taxon-headline.fragile     { border-left-color: var(--fragile); }
+.taxon-headline.unstable    { border-left-color: var(--unstable); }
+.taxon-headline.undetected,
+.taxon-headline.insufficient { border-left-color: var(--grey); }
+.taxon-headline p { margin: 0; font-size: 16px; line-height: 1.55; }
+
+/* stability fingerprint */
+.fingerprint {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0;
+  border: 1px solid var(--rule);
+}
+.fp-cell {
+  padding: 18px 18px 16px;
+  border-right: 1px solid var(--rule);
+  text-align: center;
+}
+.fp-cell:last-child { border-right: 0; }
+.fp-bar {
+  height: 74px;
+  width: 26px;
+  margin: 0 auto 10px;
+  border: 1px solid var(--rule);
+  display: flex;
+  align-items: flex-end;
+}
+.fp-bar span { display: block; width: 100%; background: var(--accent); }
+.fp-cell b {
+  display: block;
+  font-size: 21px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.fp-name {
+  display: block;
+  margin: 5px 0 7px;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+.fp-cell p { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--grey); }
+@media (max-width: 640px) {
+  .fp-cell { border-right: 0; border-bottom: 1px solid var(--rule); }
+  .fp-cell:last-child { border-bottom: 0; }
+}
+
+/* which choice is responsible */
+.influence-list { border: 1px solid var(--rule); }
+.influence { border-bottom: 1px solid var(--rule); }
+.influence:last-child { border-bottom: 0; }
+.influence > summary {
+  display: grid;
+  grid-template-columns: minmax(140px, 200px) 1fr 58px;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 18px;
+  cursor: pointer;
+  list-style: none;
+}
+.influence > summary::-webkit-details-marker { display: none; }
+.influence > summary:hover { background: var(--paper-2, transparent); }
+.influence > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.inf-name { font-family: var(--sans); font-size: 13.5px; font-weight: 600; }
+.inf-bar { height: 8px; background: var(--rule); display: block; }
+.inf-bar span { display: block; height: 100%; background: var(--accent); }
+.inf-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 13.5px;
+  font-weight: 650;
+}
+.influence-body { padding: 4px 18px 20px; }
+.inf-sentence {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 70ch;
+}
+@media (max-width: 620px) {
+  .influence > summary { grid-template-columns: 1fr 52px; }
+  .inf-bar { grid-column: 1 / -1; order: 3; }
+}
+
+.limits-list { margin: 14px 0 0; padding-left: 20px; }
+.limits-list li { margin-bottom: 11px; font-size: 13.5px; line-height: 1.62; }
+
+.taxon-link {
+  font-family: var(--serif);
+  font-size: 15px;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+}
+.taxon-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.taxon-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

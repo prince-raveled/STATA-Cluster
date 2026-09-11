@@ -243,3 +243,18 @@ def table_records(summary) -> list:
             "direction": row.direction,
         })
     return records
+
+def taxon_neighbours(summary, taxon_id: int) -> dict:
+    """The taxa either side of this one in the ranked table, for previous/next links."""
+    ids = list(summary.table["taxon_id"])
+    labels = list(summary.table["label"])
+    try:
+        position = ids.index(taxon_id)
+    except ValueError:
+        return {}
+    out = {}
+    if position > 0:
+        out["previous"] = {"id": int(ids[position - 1]), "label": labels[position - 1]}
+    if position + 1 < len(ids):
+        out["next"] = {"id": int(ids[position + 1]), "label": labels[position + 1]}
+    return out

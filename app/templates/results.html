@@ -372,9 +372,12 @@
     initialSort: [{ column: "frac_significant", dir: "desc" }],
     columnDefaults: { headerHozAlign: "left" },
     columns: [
+      /* The taxon name links to its evidence page. Escaped explicitly: the label comes
+         from an uploaded file, and a results URL is shareable. */
       { title: "Taxon", field: "label", minWidth: 180, headerFilter: "input", frozen: true,
-        formatter: (cell) => '<span style="font-family:var(--serif);font-size:15px">'
-          + escapeHtml(cell.getValue()) + "</span>" },
+        formatter: (cell) => '<a class="taxon-link" href="/results/' + token
+          + "/taxon/" + encodeURIComponent(cell.getRow().getData().taxon_id) + '">'
+          + escapeHtml(cell.getValue()) + "</a>" },
       { title: "Tier", field: "tier", width: 138, headerFilter: "list",
         headerFilterParams: { values: true },
         formatter: (cell) => {

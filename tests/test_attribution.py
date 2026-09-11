@@ -92,7 +92,7 @@ def test_method_is_excluded_from_the_effect_decomposition(attribution):
     """§14 makes the effect estimator method-independent; see SPEC §24."""
     assert "method" not in attribution["effect"].shares
     assert "method" in attribution["significance"].shares
-    assert "excluded" in attribution["effect"].note
+    assert "left out of this chart" in attribution["effect"].note
 
 
 def test_fdr_forks_only_appear_in_the_significance_decomposition(attribution):
@@ -143,9 +143,9 @@ def test_attribution_survives_a_mixedlm_failure(dataset, monkeypatch):
     result = attribute(run_multiverse(dataset, mode="quick"), bootstrap=False)
     for target in ("effect", "significance"):
         assert result[target].converged is False
-        # The ladder drops to taxon fixed effects, which is exact and cannot fail to
-        # fit; the §17 group-means fallback is still computed and still reported.
-        assert "fixed effects" in result[target].estimator
+        # The ladder drops to a per-taxon adjusted comparison, which is exact and
+        # cannot fail to fit; the backup variance comparison is still reported.
+        assert "Per-taxon adjusted" in result[target].estimator
         assert result[target].fallback_shares
         assert abs(sum(result[target].shares.values()) - 100.0) < 1e-6
         assert result[target].evidence == "exploratory", (
@@ -162,5 +162,5 @@ def test_attribution_falls_all_the_way_to_the_group_means_estimator(dataset, mon
                         lambda *a, **k: ({}, float("nan"), {"reason": "forced"}))
     result = attribute(run_multiverse(dataset, mode="quick"), bootstrap=False)
     for target in ("effect", "significance"):
-        assert "group means" in result[target].estimator
+        assert "Simple variance comparison" in result[target].estimator
         assert abs(sum(result[target].shares.values()) - 100.0) < 1e-6
