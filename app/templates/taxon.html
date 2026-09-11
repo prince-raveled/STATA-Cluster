@@ -20,16 +20,38 @@
     <p class="eyebrow">Evidence for one taxon</p>
     <h1 class="taxon-name">{{ evidence.name }}</h1>
     <div class="taxon-headline {{ TIERS[row.robustness_tier].class }}">
-      <span class="tier {{ TIERS[row.robustness_tier].class }}">{{ row.robustness_tier }}</span>
+      <div class="taxon-status">
+        <span class="tier {{ TIERS[row.robustness_tier].class }}">{{ row.robustness_tier }}</span>
+        <span class="taxon-status-blurb">{{ TIERS[row.robustness_tier].blurb }}</span>
+      </div>
       <p>{{ evidence.headline() }}</p>
     </div>
-    <p class="muted" style="font-size:13px;max-width:70ch;margin:14px 0 0">
-      Direction: <b>{{ row.direction }}</b>.
-      Typical effect <b class="num">{{ row.median_effect|signed(2) }}</b> log2 fold change
-      (middle half of estimates {{ row.iqr_low|signed(2) }} to {{ row.iqr_high|signed(2) }}).
-      Tested in <b class="num">{{ row.n_specs_tested|commafy }}</b> of
-      {{ row.n_specs_eligible|commafy }} analyses.
-    </p>
+    {#  The same five figures that were in the sentence below the headline, in the
+        order a reader needs them: what the difference is, how often it held, whether
+        it kept its direction, how much it moved, and how much of the grid saw it.
+        Prose hid them; a strip lets them be compared down the column. #}
+    <dl class="evidence-strip">
+      <div>
+        <dt>Typical effect</dt>
+        <dd class="num">{{ row.median_effect|signed(2) }}<small>log2 fold change · {{ row.direction }}</small></dd>
+      </div>
+      <div>
+        <dt>{{ dfn('significance_rate', 'How often significant') }}</dt>
+        <dd class="num">{{ row.frac_significant|percent(0) }}<small>of the analyses that tested it</small></dd>
+      </div>
+      <div>
+        <dt>{{ dfn('direction_agreement', 'Direction agreement') }}</dt>
+        <dd class="num">{{ row.sign_consistency|percent(0) }}<small>agree on which group is higher</small></dd>
+      </div>
+      <div>
+        <dt>Effect range</dt>
+        <dd class="num">{{ row.iqr_low|signed(2) }} to {{ row.iqr_high|signed(2) }}<small>middle half of the estimates</small></dd>
+      </div>
+      <div>
+        <dt>Analyses run</dt>
+        <dd class="num">{{ row.n_specs_tested|commafy }}<small>of {{ row.n_specs_eligible|commafy }} that could have tested it</small></dd>
+      </div>
+    </dl>
   </section>
 
   <!-- ============ stability fingerprint ============ -->
@@ -234,13 +256,24 @@
     </div>
   </section>
 
+  <!-- ============ provenance ============ -->
   <section class="section-tight">
-    <p class="muted" style="font-size:13px">
-      Every number on this page is in
-      <a href="/download/{{ token }}/long">the full results export</a>, one row per
-      analysis. <a href="/download/{{ token }}/bundle">The complete bundle</a> adds the
-      provenance manifest needed to reproduce it.
-    </p>
+    <details class="provenance">
+      <summary>Where these numbers come from</summary>
+      <div class="provenance-body">
+        <p>Every figure on this page is derived from the stored per-analysis results for
+          this taxon — nothing here is recomputed for display.</p>
+        <ul>
+          <li><a href="/download/{{ token }}/long">The full results export</a> holds one
+            row per analysis for every taxon, including this one.</li>
+          <li><a href="/download/{{ token }}/manifest">The run manifest</a> records the
+            version, every random seed, the grid accounting and the dataset
+            fingerprint.</li>
+          <li><a href="/download/{{ token }}/bundle">The complete bundle</a> contains
+            both, plus the methods paragraph and the robustness table.</li>
+        </ul>
+      </div>
+    </details>
   </section>
 
 </div>

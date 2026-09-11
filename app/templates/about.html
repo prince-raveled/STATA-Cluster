@@ -18,6 +18,22 @@
   </div>
 </section>
 
+{#  The page is long and its sections are genuinely independent — a reader arrives
+    wanting one of them, not all eight. Every target already had an id for its
+    aria-labelledby, so this is navigation over existing structure. #}
+<section class="section-tight shell" aria-labelledby="contents-title">
+  <h2 id="contents-title" class="contents-title">On this page</h2>
+  <ol class="contents">
+    <li><a href="#forks-title"><b>How analyses are compared</b><span>The seven contested choices, and why each is defensible</span></a></li>
+    <li><a href="#tiers-title"><b>How robustness is decided</b><span>Two numbers, six tiers, and what each one means</span></a></li>
+    <li><a href="#norm-title"><b>Reading a result honestly</b><span>Why there is no "best specification" export</span></a></li>
+    <li><a href="#scope-title"><b>What is out of scope</b><span>Designs and steps MicroVerse deliberately does not handle</span></a></li>
+    <li><a href="#limitations"><b>Limitations</b><span>What the tool is not, stated plainly</span></a></li>
+    <li><a href="#glossary"><b>Glossary</b><span>Every term this site uses, defined once</span></a></li>
+    <li><a href="#refs-title"><b>Sources</b><span>The published work this is built on</span></a></li>
+  </ol>
+</section>
+
 <section class="band">
   <span class="band-number">01</span>
   <p>Tierney et al. showed that <b>84% of published microbiome associations</b> could be recovered
@@ -209,10 +225,10 @@
 </section>
 
 <!-- ============ what it is not ============ -->
-<section class="section-tight shell">
+<section class="section-tight shell" id="limitations" aria-labelledby="not-title">
   <div class="card card-paper">
     <p class="eyebrow">Stated plainly</p>
-    <h2 style="margin-bottom:20px">What MicroVerse is not.</h2>
+    <h2 id="not-title" style="margin-bottom:20px">What MicroVerse is not.</h2>
     <div class="split prose">
       <div>
         <p><b>Not a new statistical method.</b> It orchestrates published methods inside a

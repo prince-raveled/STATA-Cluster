@@ -3,141 +3,197 @@
 {% block title %}Configure the run — MicroVerse{% endblock %}
 
 {% block content %}
+{#  A guided setup rather than a settings form. The six steps are the order a
+    researcher actually needs them in: what was read, whether the design can answer the
+    question, what the analysis will vary, how much of it to run, an optional
+    declaration, and a review before committing.
+
+    Only two of the six ask for input. The rest are things MicroVerse determined from
+    the files, shown before the run rather than after it — which is the point of the
+    page, and why they are steps rather than a sidebar. #}
 <section class="section-tight shell">
-  <p class="eyebrow">Step 02 — choose the grid</p>
-  <div class="section-heading" style="margin-bottom:26px">
+  <p class="eyebrow">Step 2 of 3 — configure</p>
+  <div class="section-heading" style="margin-bottom:var(--space-6)">
     <div>
-      <h1 style="font-size:clamp(30px,3.6vw,44px)">Your dataset can be analysed.</h1>
+      <h1 style="font-size:clamp(28px,3vw,40px)">Your dataset can be analysed.</h1>
       <p class="micro" style="margin-top:10px">{{ job.dataset_name }}</p>
     </div>
-    <p>Everything below was read from your files rather than assumed. Check it, then pick
-      how many analyses to run.</p>
+    <p>Everything below was read from your files rather than assumed. Check it, then
+      choose how much of the analysis space to run.</p>
   </div>
 
-  <!-- ---------------- scientific readiness ---------------- -->
-  <section class="readiness readiness-{{ readiness.worst }}" aria-labelledby="readiness-title">
-    <div class="readiness-head">
-      <div>
-        <p class="eyebrow" style="margin:0">Before you run it</p>
-        <h2 id="readiness-title" class="mt0" style="font-size:20px">{{ readiness.headline() }}</h2>
+  <form class="setup" method="post" action="/run/{{ token }}"
+        {#  Single-quoted attribute: `tojson` emits double quotes, which silently
+            terminate a double-quoted attribute and left Alpine with a truncated,
+            unparseable expression. JS strings inside therefore use double quotes. #}
+        x-data='{
+          mode: "quick",
+          declare: false,
+          counts: {{ {"quick": (previews.get("quick").n_valid if previews.get("quick") else 0),
+                      "full": (previews.get("full").n_valid if previews.get("full") else 0),
+                      "covariate": (previews.get("covariate").n_valid if previews.get("covariate") else 0)}|tojson }},
+          labels: {{ {"quick": MODE_LABELS["quick"], "full": MODE_LABELS["full"],
+                      "covariate": MODE_LABELS["covariate"]}|tojson }}
+        }'>
+
+    <!-- ---------------- 01 · data ---------------- -->
+    <section class="setup-step" aria-labelledby="parsed-title">
+      <div class="setup-head">
+        <span class="setup-number" aria-hidden="true">01</span>
+        <div>
+          <h2 id="parsed-title">Your data</h2>
+          <p>Orientation, value type and taxonomic rank are detected, not assumed.</p>
+        </div>
       </div>
-      <p class="readiness-note">Passing validation means the software can process your
-        files. It does not mean the data can answer the question. These are separate,
-        and this is the second one. <b>Nothing here blocks the analysis.</b></p>
-    </div>
-
-    {% if readiness.flagged %}
-      <ul class="readiness-list">
-        {% for check in readiness.flagged %}
-          <li class="readiness-item level-{{ check.level }}">
-            <span class="readiness-level">{{ check.label }}</span>
-            <div>
-              <b>{{ check.title }}</b>
-              <p>{{ check.detail }}</p>
-              {% if check.advice %}<p class="readiness-advice">{{ check.advice }}</p>{% endif %}
-            </div>
-          </li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-
-    <details class="readiness-all">
-      <summary>All {{ readiness.checks|length }} checks</summary>
-      <ul class="readiness-list">
-        {% for check in readiness.checks %}
-          <li class="readiness-item level-{{ check.level }}">
-            <span class="readiness-level">{{ check.label }}</span>
-            <div><b>{{ check.title }}</b><p>{{ check.detail }}</p></div>
-          </li>
-        {% endfor %}
-      </ul>
-    </details>
-  </section>
-
-  <div class="split split-wide">
-
-    <!-- ---------------- what was parsed ---------------- -->
-    <div class="stack">
-      <section class="card" aria-labelledby="parsed-title">
-        <h2 id="parsed-title" class="mt0" style="font-size:22px">What was parsed</h2>
-        <p class="muted" style="font-size:13.5px;margin:6px 0 20px">
-          Orientation, value type and taxonomic rank are detected, not assumed.</p>
-
+      <div class="setup-body">
         <dl class="kv">
           <dt>Samples</dt>
           <dd>{{ summary.n_samples }}
             <span class="muted">({{ summary.n_group_a }} {{ summary.group_a }} · {{ summary.n_group_b }} {{ summary.group_b }})</span></dd>
-          <dt>Grouping column</dt><dd><code>{{ summary.group_column }}</code></dd>
           <dt>Taxa</dt>
           <dd>{{ summary.n_taxa|commafy }}{% if summary.collapsed_from %}
             <span class="muted">(from {{ summary.collapsed_from }})</span>{% endif %}</dd>
           <dt>Format</dt><dd>{{ summary.format }} · {{ summary.value_type }}</dd>
-          <dt>Input rank</dt><dd>{{ summary.input_rank }}</dd>
           <dt>Library sizes</dt>
           <dd>{{ summary.min_library|commafy }}–{{ summary.max_library|commafy }}
             <span class="muted">median {{ summary.median_library|commafy }}</span></dd>
           <dt>Sparsity</dt><dd>{{ summary.sparsity|percent(1) }} zeros</dd>
-          <dt>Rarefaction depths</dt><dd>{{ depths|join(", ") }}</dd>
-          <dt>Taxonomic levels</dt>
-          <dd>{{ ranks|join(" + ") }}{% if ranks|length == 1 %}
-            <span class="muted">(one level)</span>{% endif %}</dd>
         </dl>
 
         {% if summary.warnings or summary.notes or dropped_depths %}
-          <div style="margin-top:20px;display:grid;gap:9px">
+          <div style="margin-top:var(--space-5);display:grid;gap:9px">
             {% for warning in summary.warnings %}<p class="warn" style="margin:0">{{ warning }}</p>{% endfor %}
             {% for note in summary.notes %}<p class="note" style="margin:0">{{ note }}</p>{% endfor %}
             {% for note in dropped_depths %}<p class="note" style="margin:0">{{ note }}</p>{% endfor %}
           </div>
         {% endif %}
-      </section>
+      </div>
+    </section>
 
-      {% set preview = previews.get("quick") %}
-      {% if preview %}
-      <section class="card card-paper" aria-labelledby="grid-title">
-        <h2 id="grid-title" class="mt0" style="font-size:22px">The grid, before you run it</h2>
-        <p class="muted" style="font-size:13.5px;margin:6px 0 18px">
-          Both counts are always reported: how many specifications the grid enumerates, and how
-          many survive the validity matrix. The ratio is itself informative.</p>
-
-        <div class="metrics">
-          <div><b>{{ preview.n_enumerated|commafy }}</b><span>enumerated</span></div>
-          <div><b>{{ preview.n_valid|commafy }}</b><span>statistically valid</span></div>
-          <div><b>{{ preview.n_pruned|commafy }}</b><span>pruned as incoherent</span></div>
+    <!-- ---------------- 02 · study design ---------------- -->
+    <section class="setup-step" aria-labelledby="readiness-title">
+      <div class="setup-head">
+        <span class="setup-number" aria-hidden="true">02</span>
+        <div>
+          <h2 id="readiness-title">Study design</h2>
+          <p>Passing validation means the software can process your files. It does not
+            mean the data can answer the question. These are separate, and this is the
+            second one. <b>Nothing here blocks the analysis.</b></p>
         </div>
-        <p class="footnote">
-          Those {{ preview.n_valid|commafy }} specifications reduce to
-          <b>{{ preview.n_matrices|commafy }}</b> preprocessed matrices and
-          <b>{{ preview.n_fits|commafy }}</b> model fits, because FDR is applied post-hoc to
-          stored p-values and matrices are shared across methods.
-        </p>
+      </div>
+      <div class="setup-body">
+        <dl class="kv">
+          <dt>Comparison</dt>
+          <dd><b>{{ summary.group_a }}</b> against <b>{{ summary.group_b }}</b>
+            <span class="muted">from <code>{{ summary.group_column }}</code></span></dd>
+          <dt>Group sizes</dt>
+          <dd>{{ summary.n_group_a }} and {{ summary.n_group_b }}</dd>
+          <dt>Covariates available</dt>
+          <dd>{% if dataset.covariate_columns %}{{ dataset.covariate_columns|join(", ") }}
+            {% else %}<span class="muted">none usable in your metadata</span>{% endif %}</dd>
+        </dl>
 
-        {% if preview.pruned_reasons %}
-          <h3 style="margin:24px 0 10px;font-size:16px">Why specifications were pruned</h3>
-          <div class="table-wrap" tabindex="0" role="region" aria-label="Reasons specifications were pruned, scrollable">
-            <table class="data">
-              <thead><tr><th scope="col">Reason</th><th scope="col" class="num">Specifications</th></tr></thead>
-              <tbody>
-                {% for reason, count in preview.pruned_reasons.items() %}
-                  <tr><td>{{ reason }}</td><td class="num">{{ count|commafy }}</td></tr>
-                {% endfor %}
-              </tbody>
-            </table>
+        <div class="readiness readiness-{{ readiness.worst }}" style="margin-top:var(--space-5)">
+          <p class="readiness-headline">{{ readiness.headline() }}</p>
+
+          {% if readiness.flagged %}
+            <ul class="readiness-list">
+              {% for check in readiness.flagged %}
+                <li class="readiness-item level-{{ check.level }}">
+                  <span class="readiness-level">{{ check.label }}</span>
+                  <div>
+                    <b>{{ check.title }}</b>
+                    <p>{{ check.detail }}</p>
+                    {% if check.advice %}<p class="readiness-advice">{{ check.advice }}</p>{% endif %}
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+
+          <details class="readiness-all">
+            <summary>All {{ readiness.checks|length }} checks</summary>
+            <ul class="readiness-list">
+              {% for check in readiness.checks %}
+                <li class="readiness-item level-{{ check.level }}">
+                  <span class="readiness-level">{{ check.label }}</span>
+                  <div><b>{{ check.title }}</b><p>{{ check.detail }}</p></div>
+                </li>
+              {% endfor %}
+            </ul>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------------- 03 · what varies ---------------- -->
+    <section class="setup-step" aria-labelledby="grid-title">
+      <div class="setup-head">
+        <span class="setup-number" aria-hidden="true">03</span>
+        <div>
+          <h2 id="grid-title">What the analysis will vary</h2>
+          <p>These are not settings for you to choose. MicroVerse runs every defensible
+            value of each and reports how much your result depends on them.</p>
+        </div>
+      </div>
+      <div class="setup-body">
+        <dl class="kv">
+          <dt>Rarefaction depths</dt><dd>{{ depths|join(", ") }}</dd>
+          <dt>Taxonomic levels</dt>
+          <dd>{{ ranks|join(" + ") }}{% if ranks|length == 1 %}
+            <span class="muted">(one level — no taxonomy supplied)</span>{% endif %}</dd>
+          <dt>Prevalence filters</dt><dd>0%, 5%, 10%, 20%</dd>
+          <dt>Transformations</dt><dd>raw counts, TSS, CLR, TMM</dd>
+        </dl>
+
+        {% set preview = previews.get("quick") %}
+        {% if preview %}
+          <div class="metrics" style="margin-top:var(--space-5)">
+            <div><b>{{ preview.n_enumerated|commafy }}</b><span>{{ dfn('enumerated', 'considered') }}</span></div>
+            <div><b>{{ preview.n_valid|commafy }}</b><span>{{ dfn('valid', 'statistically valid') }}</span></div>
+            <div><b>{{ preview.n_pruned|commafy }}</b><span>{{ dfn('pruned', 'ruled out') }}</span></div>
           </div>
+          <p class="footnote">
+            Those {{ preview.n_valid|commafy }} analyses reduce to
+            <b>{{ preview.n_matrices|commafy }}</b> preprocessed matrices and
+            <b>{{ preview.n_fits|commafy }}</b> model fits, because multiple-testing
+            correction is applied afterwards to stored p-values and matrices are shared
+            across methods.
+          </p>
+
+          {% if preview.pruned_reasons %}
+            <details style="margin-top:var(--space-4)">
+              <summary>Why {{ preview.n_pruned|commafy }} combinations were ruled out</summary>
+              <div class="table-wrap" tabindex="0" role="region"
+                   aria-label="Reasons combinations were ruled out, scrollable"
+                   style="margin-top:var(--space-3)">
+                <table class="data">
+                  <thead><tr><th scope="col">Ruled out because</th><th scope="col" class="num">How many</th></tr></thead>
+                  <tbody>
+                    {% for reason, count in preview.pruned_reasons.items() %}
+                      <tr><td>{{ reason }}</td><td class="num">{{ count|commafy }}</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          {% endif %}
+          {% for note in preview.notes %}<p class="note" style="margin-top:10px">{{ note }}</p>{% endfor %}
         {% endif %}
-        {% for note in preview.notes %}<p class="note" style="margin-top:10px">{{ note }}</p>{% endfor %}
-      </section>
-      {% endif %}
-    </div>
+      </div>
+    </section>
 
-    <!-- ---------------- run configuration ---------------- -->
-    <form class="stack" method="post" action="/run/{{ token }}" x-data="{mode:'quick', declare:false}">
-      <section class="card" aria-labelledby="mode-title">
-        <h2 id="mode-title" class="mt0" style="font-size:22px">Choose a mode</h2>
-        <p class="muted" style="font-size:13.5px;margin:6px 0 18px">
-          Three modes, never one crossed grid — fully crossing all seven forks is over 500,000
-          specifications, which is not achievable in web-request time.</p>
-
+    <!-- ---------------- 04 · mode ---------------- -->
+    <section class="setup-step setup-step-input" aria-labelledby="mode-title">
+      <div class="setup-head">
+        <span class="setup-number" aria-hidden="true">04</span>
+        <div>
+          <h2 id="mode-title">How much to run</h2>
+          <p>Three modes, never one crossed grid — fully crossing all seven choices is
+            over 500,000 analyses, which is not achievable in web-request time.</p>
+        </div>
+      </div>
+      <div class="setup-body">
         <fieldset style="border:0;padding:0;margin:0">
           <legend class="visually-hidden">Analysis mode</legend>
           <div class="choice">
@@ -161,9 +217,8 @@
           </div>
         </fieldset>
 
-        <div x-show="mode === 'covariate'" x-cloak style="margin-top:20px">
-          <p class="label" style="font:400 10px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--grey);margin:0 0 6px">
-            Covariates to vary</p>
+        <div x-show="mode === 'covariate'" x-cloak style="margin-top:var(--space-5)">
+          <p class="setup-sublabel">Covariates to vary</p>
           <p class="muted" style="font-size:12.5px;margin:0 0 10px">
             Every subset is enumerated — all 2<sup>k</sup> when k ≤ 6, otherwise 64 random
             subsets stratified by size. The null and full models are always included.</p>
@@ -173,21 +228,27 @@
             {% endfor %}
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="card card-paper" aria-labelledby="declare-title">
-        <h2 id="declare-title" class="mt0" style="font-size:20px">Declare your own pipeline</h2>
-        <p class="muted" style="font-size:13.5px;margin:6px 0 14px">
-          Optional. Tell MicroVerse the pipeline you would otherwise have reported, and it
-          locates it in the distribution — the percentile of significance it sits at, marked on
-          every specification curve.</p>
-
-        <label class="check-row" style="border-top:1px solid var(--line-soft)">
+    <!-- ---------------- 05 · declare (optional) ---------------- -->
+    <section class="setup-step setup-step-input" aria-labelledby="declare-title">
+      <div class="setup-head">
+        <span class="setup-number" aria-hidden="true">05</span>
+        <div>
+          <h2 id="declare-title">Your own pipeline <span class="setup-optional">optional</span></h2>
+          <p>Tell MicroVerse the pipeline you would otherwise have reported, and it locates
+            that pipeline in the distribution — the percentile of significance it sits at,
+            marked on every specification curve.</p>
+        </div>
+      </div>
+      <div class="setup-body">
+        <label class="check-row">
           <input type="checkbox" name="declare" value="1" x-model="declare">
           <span>I have a pipeline to declare</span>
         </label>
 
-        <div x-show="declare" x-cloak class="split" style="gap:0 16px;margin-top:18px">
+        <div x-show="declare" x-cloak class="declare-grid">
           <label class="field"><span class="label">Rarefaction</span>
             <select name="declared_rarefaction">
               {% for d in depths %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
@@ -208,29 +269,57 @@
               <option value="raw">raw counts</option>
               <option value="tmm">TMM</option>
             </select></label>
-          <label class="field"><span class="label">DA method</span>
+          <label class="field"><span class="label">Statistical test</span>
             <select name="declared_method">
               {% for key, label in METHOD_LABELS.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
             </select></label>
-          <label class="field"><span class="label">FDR method</span>
+          <label class="field"><span class="label">Multiple-testing method</span>
             <select name="declared_fdr_method">
               <option value="bh">Benjamini-Hochberg</option>
               <option value="by">Benjamini-Yekutieli</option>
             </select></label>
-          <label class="field"><span class="label">FDR threshold</span>
+          <label class="field"><span class="label">Significance threshold</span>
             <select name="declared_fdr_threshold">
               <option value="0.05">0.05</option><option value="0.1">0.10</option>
             </select></label>
         </div>
-      </section>
-
-      <div class="row">
-        <button class="button button-primary" type="submit">
-          Run the multiverse <span aria-hidden="true">→</span></button>
-        <a class="text-action" href="/">Start over</a>
       </div>
-    </form>
-  </div>
+    </section>
+
+    <!-- ---------------- 06 · review and run ---------------- -->
+    <section class="setup-step setup-step-run" aria-labelledby="review-title">
+      <div class="setup-head">
+        <span class="setup-number" aria-hidden="true">06</span>
+        <div>
+          <h2 id="review-title">Review and run</h2>
+          <p>What is about to happen, from the choices above.</p>
+        </div>
+      </div>
+      <div class="setup-body">
+        <dl class="kv review-kv">
+          <dt>Dataset</dt>
+          <dd>{{ summary.n_samples }} samples · {{ summary.n_taxa|commafy }} taxa</dd>
+          <dt>Comparison</dt>
+          <dd>{{ summary.group_a }} against {{ summary.group_b }}</dd>
+          <dt>Mode</dt>
+          <dd><b x-text="labels[mode]">{{ MODE_LABELS['quick'] }}</b></dd>
+          <dt>Analyses to run</dt>
+          <dd><b class="num" x-text="counts[mode].toLocaleString()">{{ previews.get('quick').n_valid|commafy if previews.get('quick') else '—' }}</b></dd>
+          <dt>Declared pipeline</dt>
+          <dd><span x-text="declare ? 'yes — located in the distribution' : 'none'">none</span></dd>
+        </dl>
+
+        <div class="row" style="margin-top:var(--space-5)">
+          <button class="button button-primary" type="submit">
+            Run the multiverse <span aria-hidden="true">→</span></button>
+          <a class="text-action" href="/">Start over</a>
+        </div>
+        <p class="footnote" style="margin-top:var(--space-4)">
+          Results are kept for {{ RETENTION_DAYS }} days at a shareable link. Nothing is
+          sent anywhere else.</p>
+      </div>
+    </section>
+  </form>
 </section>
 {% endblock %}
 

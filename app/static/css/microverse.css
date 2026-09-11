@@ -74,6 +74,7 @@
   --shadow-soft: 0 1px 2px rgba(44, 58, 46, .05);
   --gutter: clamp(22px, 4.5vw, 68px);
   --measure: 1320px;
+  --header-h: 76px;           /* the sticky header; see the wrap breakpoint below */
 
   /* One spacing scale, so rhythm is chosen rather than improvised. */
   --space-1: 4px;
@@ -143,6 +144,14 @@ em.accent { font-style: italic; color: var(--accent); }
 /* ---- shell --------------------------------------------------------------- */
 .shell { max-width: var(--measure); margin: 0 auto; padding: 0 var(--gutter); }
 .shell-narrow { max-width: 880px; }
+
+/* The header is sticky, so anything jumped to by an in-page link lands underneath it.
+   `scroll-margin-top` offsets every plausible anchor target by the header's height.
+   That height is not one number: below 860px the nav wraps onto its own row and the
+   header grows to about 141px, so `--header-h` is redefined at the same breakpoint
+   rather than hard-coding the desktop value and quietly losing the heading on a
+   tablet. `:where()` keeps specificity at zero so it never competes with a real rule. */
+:where(h1, h2, h3, [id]) { scroll-margin-top: calc(var(--header-h) + var(--space-4)); }
 
 .site-header {
   position: sticky; top: 0; z-index: 30;
@@ -563,6 +572,9 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
   .section-heading { grid-template-columns: 1fr; gap: 18px; }
 }
 @media (max-width: 860px) {
+  /* The nav wraps to its own row here, so the sticky header is taller and every
+     anchor offset has to grow with it. */
+  :root { --header-h: 132px; }
   .site-header { min-height: 64px; gap: 14px; flex-wrap: wrap; }
   .site-nav { order: 3; width: 100%; margin-left: 0; gap: 18px; overflow-x: auto; border-top: 1px solid var(--line); }
   .site-nav a { padding: 12px 0 10px; font-size: 13px; }
@@ -989,20 +1001,22 @@ main, .shell { overflow-x: clip; }
   border: 1px solid var(--rule);
   border-top: 3px solid var(--grey);
   padding: 20px 22px;
-  margin-bottom: 26px;
 }
 .readiness-ok      { border-top-color: var(--robust); }
 .readiness-note    { border-top-color: var(--accent); }
 .readiness-caution { border-top-color: var(--conditional); }
 .readiness-serious { border-top-color: var(--fragile); }
-.readiness-head {
-  display: grid;
-  grid-template-columns: minmax(240px, 1fr) minmax(240px, 1.1fr);
-  gap: 12px 30px;
-  align-items: start;
+.readiness-headline {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.35;
+  color: var(--ink);
 }
-.readiness-note-text,
-.readiness-note { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--grey); }
+/* `.readiness-note` is a level modifier on the container (worst == "note"), so it must
+   not also be a text class — listing both here applied 12.5px grey body type to the
+   whole panel whenever that level came up. */
+.readiness-note-text { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--grey); }
 .readiness-list { list-style: none; margin: 18px 0 0; padding: 0; }
 .readiness-item {
   display: grid;
@@ -1029,7 +1043,6 @@ main, .shell { overflow-x: clip; }
 .readiness-all { margin-top: 16px; font-size: 13px; }
 .readiness-all summary { cursor: pointer; font-family: var(--sans); font-weight: 600; }
 @media (max-width: 680px) {
-  .readiness-head { grid-template-columns: 1fr; }
   .readiness-item { grid-template-columns: 1fr; gap: 4px; }
 }
 
@@ -1140,3 +1153,159 @@ main, .shell { overflow-x: clip; }
   .flow-steps { grid-template-columns: 1fr; }
   .flow-steps li { padding-right: 0; }
 }
+
+/* --- guided setup ---------------------------------------------------------
+   A numbered sequence rather than a settings form. Each step is separated by a
+   rule and led by its number, so the order reads as a procedure. Only steps 04
+   and 05 take input; the rest are what MicroVerse determined from the files,
+   shown before the run rather than after it. */
+.setup { display: block; }
+.setup-step { border-top: 1px solid var(--rule); padding: var(--space-6) 0; }
+.setup-step:first-child { border-top: 0; padding-top: 0; }
+.setup-head {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 0 var(--space-4);
+  align-items: start;
+  margin-bottom: var(--space-5);
+}
+.setup-number {
+  font: 400 12px var(--mono);
+  letter-spacing: .12em;
+  color: var(--accent);
+  padding-top: 7px;
+}
+.setup-head h2 { font-size: 23px; margin: 0 0 var(--space-2); }
+.setup-head p { margin: 0; font-size: 13.5px; line-height: 1.65; color: var(--grey); max-width: 74ch; }
+.setup-body { padding-left: calc(56px + var(--space-4)); }
+
+/* The two steps that actually ask for something are marked by their number, so a
+   reader scanning for "what do I have to do" finds them without reading. */
+.setup-step-input .setup-number,
+.setup-step-run .setup-number { color: var(--ink); font-weight: 500; }
+.setup-step-input .setup-number::after,
+.setup-step-run .setup-number::after {
+  content: ""; display: block; width: 18px; height: 2px;
+  margin-top: 7px; background: var(--accent-mid);
+}
+.setup-optional {
+  margin-left: 9px; font: 400 11px var(--mono); letter-spacing: .06em;
+  text-transform: uppercase; color: var(--grey);
+}
+.setup-sublabel {
+  margin: 0 0 6px;
+  font: 400 10px var(--mono); letter-spacing: .09em;
+  text-transform: uppercase; color: var(--grey);
+}
+.declare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0 var(--space-4);
+  margin-top: var(--space-4);
+}
+/* The review restates the choices rather than re-styling them: same key/value
+   treatment as every other summary on the page. */
+.review-kv dd b { font-weight: 600; }
+.setup-step-run { border-top-width: 2px; border-top-color: var(--ink); }
+
+@media (max-width: 760px) {
+  .setup-head { grid-template-columns: 1fr; gap: var(--space-2); }
+  .setup-number { padding-top: 0; }
+  .setup-body { padding-left: 0; }
+  .setup-step-input .setup-number::after,
+  .setup-step-run .setup-number::after { display: none; }
+}
+
+/* --- taxon evidence strip -------------------------------------------------
+   The five figures a reader needs first, on one rule, in the order the brief
+   puts them. A definition list rather than cards: these are one set of facts
+   about one taxon, not five separate things. */
+.evidence-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0;
+  margin: var(--space-5) 0 0;
+  border-top: 1px solid var(--rule);
+}
+.evidence-strip > div {
+  padding: var(--space-4) var(--space-4) var(--space-4) 0;
+  border-right: 1px solid var(--line-soft);
+}
+.evidence-strip > div:last-child { border-right: 0; }
+.evidence-strip dt {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+.evidence-strip dd {
+  margin: 0;
+  font: 500 20px/1.15 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+/* The caption lives inside its <dd>: a <dl> grouping <div> may contain only <dt> and
+   <dd>, and it describes that value anyway. */
+.evidence-strip small {
+  display: block; margin-top: 6px;
+  font-family: var(--sans); font-size: 11.5px; line-height: 1.45;
+  color: var(--grey); font-variant-numeric: normal;
+}
+
+/* The status word on its own does not say what it means; the tier's definition
+   sits beside it so a reader never has to look the label up. */
+.taxon-status { display: flex; flex-direction: column; gap: 6px; min-width: 168px; }
+.taxon-status-blurb { font-size: 12px; line-height: 1.5; color: var(--grey); }
+
+@media (max-width: 760px) {
+  .evidence-strip > div { border-right: 0; border-bottom: 1px solid var(--line-soft); padding-right: 0; }
+  .evidence-strip > div:last-child { border-bottom: 0; }
+  .taxon-status { min-width: 0; }
+}
+
+/* A section heading that introduces a block without competing with the page h1. */
+.validation-h2 {
+  font-size: 17px;
+  font-family: var(--sans);
+  font-weight: 650;
+  margin: 0 0 var(--space-4);
+}
+
+/* --- page index ------------------------------------------------------------
+   Navigation over sections that already exist. Numbered by counter rather than
+   by markup so the list stays a list if an entry is added or removed. */
+.contents-title {
+  font: 400 10px var(--mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--grey);
+  margin: 0 0 var(--space-4);
+}
+.contents {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: contents;
+  border-top: 1px solid var(--rule);
+}
+.contents li { counter-increment: contents; border-bottom: 1px solid var(--line-soft); }
+.contents a {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: baseline;
+  padding: var(--space-4) var(--space-4) var(--space-4) 0;
+}
+.contents a::before {
+  content: counter(contents, decimal-leading-zero);
+  font: 400 11px var(--mono);
+  letter-spacing: .08em;
+  color: var(--accent);
+}
+.contents b { display: block; font-size: 14.5px; font-weight: 600; margin-bottom: 3px; }
+.contents span { display: block; font-size: 12.5px; line-height: 1.5; color: var(--grey); }
+.contents a:hover b, .contents a:focus-visible b { color: var(--accent); }

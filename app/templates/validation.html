@@ -15,7 +15,43 @@
     </p>
   </section>
 
+  {#  The strongest claim and the weakest one, before the legend and the matrix. A
+      reader deciding whether to trust a tier should not have to read a key first. Both
+      counts are derived from the same matrix rendered below. #}
+  <section class="section-tight shell" aria-labelledby="headline-title">
+    {% set n_total = VALIDATION_MATRIX|length %}
+    {% set n_reference = VALIDATION_MATRIX|selectattr('grade', 'equalto', 'reference')|list|length %}
+    {% set n_empirical = VALIDATION_MATRIX|selectattr('grade', 'equalto', 'empirical')|list|length %}
+    {% set n_exploratory = VALIDATION_MATRIX|selectattr('grade', 'equalto', 'exploratory')|list|length %}
+    <div class="verdict">
+      <div>
+        <p class="eyebrow on-dark" style="margin-bottom:14px">The short answer</p>
+        <h2 id="headline-title">The robustness tiers predict replication on data they
+          never saw. Most other parts agree with an independent implementation.</h2>
+        <p class="verdict-detail">
+          Of {{ n_total }} components, {{ n_reference }} have been checked against a
+          separate implementation of the same method, {{ n_empirical }} against held-out
+          data, and {{ n_exploratory }} {{ 'is' if n_exploratory == 1 else 'are' }}
+          correct arithmetic that has <b>not</b> been validated against anything —
+          labelled as such wherever it appears.
+        </p>
+        <p class="verdict-guide">
+          <a href="#tier-experiment">The held-out experiment</a>
+          <a href="#limits">What it does not establish</a>
+          <a href="#reproduce">Reproduce every number</a>
+        </p>
+      </div>
+      <div class="verdict-side">
+        <span>Tier ordering, AUC</span>
+        <b>{{ TIER_VALIDATION.auc }}</b>
+        <small>against {{ TIER_VALIDATION.null_rate|percent(1) }} under permuted labels ·
+          {{ TIER_VALIDATION.n_observations|commafy }} taxon observations</small>
+      </div>
+    </div>
+  </section>
+
   <section class="section-tight shell">
+    <h2 class="validation-h2">How to read the table below</h2>
     <div class="grade-key">
       {% for grade in ["internal", "reference", "empirical", "exploratory"] %}
         <div class="grade-key-item">
@@ -58,7 +94,7 @@
 
   <section class="section-tight shell">
     <div class="split split-wide">
-      <div class="card">
+      <div class="card" id="tier-experiment">
         <p class="eyebrow" data-spec="16.2">The tier experiment</p>
         <h2 class="mt0" style="font-size:22px">Do the tiers predict anything?</h2>
         <p class="muted" style="font-size:13.5px;margin:10px 0 16px">
@@ -102,7 +138,7 @@
         </p>
       </div>
 
-      <div class="card card-paper">
+      <div class="card card-paper" id="limits">
         <p class="eyebrow">Limits</p>
         <h2 class="mt0" style="font-size:20px">What it does not establish.</h2>
         <ul style="margin:14px 0 0;padding-left:20px;font-size:13px;line-height:1.65">
@@ -119,7 +155,7 @@
     </div>
   </section>
 
-  <section class="section-tight shell">
+  <section class="section-tight shell" id="reproduce">
     <div class="card">
       <p class="eyebrow">Reproducing all of it</p>
       <h2 class="mt0" style="font-size:20px">Every number on this page is regenerable.</h2>
