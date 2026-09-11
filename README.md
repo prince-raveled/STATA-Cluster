@@ -176,6 +176,13 @@ tree is clean. The post-build audit and what it found — including a stored-XSS
 the results table, a response-header injection in downloads, and a denominator bug for
 specifications that produce no rows — is written up in SPEC §24.1 E.
 
+## Reviewing this
+
+If you have been asked to assess this independently, start with
+[REVIEWING.md](REVIEWING.md) rather than here. It names the five files that contain
+every scientific decision, states where the risk actually is, and lists what has and
+has not been validated. **No external review has taken place.**
+
 ## Validation
 
 `pytest` checks MicroVerse against itself and against statsmodels. A second set of
