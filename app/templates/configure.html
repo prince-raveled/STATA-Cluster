@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_terms.html" import dfn, section_label %}
 {% block title %}Configure the run — MicroVerse{% endblock %}
 
 {% block content %}
@@ -6,12 +7,52 @@
   <p class="eyebrow">Step 02 — choose the grid</p>
   <div class="section-heading" style="margin-bottom:26px">
     <div>
-      <h1 style="font-size:clamp(30px,3.6vw,44px)">Your dataset is valid.</h1>
+      <h1 style="font-size:clamp(30px,3.6vw,44px)">Your dataset can be analysed.</h1>
       <p class="micro" style="margin-top:10px">{{ job.dataset_name }}</p>
     </div>
-    <p>Everything below was read from your files rather than assumed. Check it, then pick how
-      much of the specification space to run.</p>
+    <p>Everything below was read from your files rather than assumed. Check it, then pick
+      how many analyses to run.</p>
   </div>
+
+  <!-- ---------------- scientific readiness ---------------- -->
+  <section class="readiness readiness-{{ readiness.worst }}" aria-labelledby="readiness-title">
+    <div class="readiness-head">
+      <div>
+        <p class="eyebrow" style="margin:0">Before you run it</p>
+        <h2 id="readiness-title" class="mt0" style="font-size:20px">{{ readiness.headline() }}</h2>
+      </div>
+      <p class="readiness-note">Passing validation means the software can process your
+        files. It does not mean the data can answer the question. These are separate,
+        and this is the second one. <b>Nothing here blocks the analysis.</b></p>
+    </div>
+
+    {% if readiness.flagged %}
+      <ul class="readiness-list">
+        {% for check in readiness.flagged %}
+          <li class="readiness-item level-{{ check.level }}">
+            <span class="readiness-level">{{ check.label }}</span>
+            <div>
+              <b>{{ check.title }}</b>
+              <p>{{ check.detail }}</p>
+              {% if check.advice %}<p class="readiness-advice">{{ check.advice }}</p>{% endif %}
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <details class="readiness-all">
+      <summary>All {{ readiness.checks|length }} checks</summary>
+      <ul class="readiness-list">
+        {% for check in readiness.checks %}
+          <li class="readiness-item level-{{ check.level }}">
+            <span class="readiness-level">{{ check.label }}</span>
+            <div><b>{{ check.title }}</b><p>{{ check.detail }}</p></div>
+          </li>
+        {% endfor %}
+      </ul>
+    </details>
+  </section>
 
   <div class="split split-wide">
 

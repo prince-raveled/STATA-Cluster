@@ -83,6 +83,7 @@ def configure(request: Request, token: str):
         )
     from ..core.grid import capabilities_for, enumerate_grid
     from ..core.preprocess import MatrixBuilder
+    from ..core.readiness import assess
 
     builder = MatrixBuilder(dataset)
     capabilities = capabilities_for(dataset)
@@ -103,6 +104,7 @@ def configure(request: Request, token: str):
         {
             "job": job, "token": token, "dataset": dataset,
             "summary": dataset.summary(), "previews": previews,
+            "readiness": assess(dataset),
             "ranks": builder.ranks,
             "depths": list(dict.fromkeys(name for name, _ in depth_levels)),
             "dropped_depths": dropped_depths,

@@ -864,3 +864,54 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
 }
 .taxon-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
 .taxon-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* --- scientific readiness -------------------------------------------------
+   Deliberately not styled as an error. These are advisory: the analysis will
+   run either way, and a researcher can have good reasons to proceed. */
+.readiness {
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--grey);
+  padding: 20px 22px;
+  margin-bottom: 26px;
+}
+.readiness-ok      { border-top-color: var(--robust); }
+.readiness-note    { border-top-color: var(--accent); }
+.readiness-caution { border-top-color: var(--conditional); }
+.readiness-serious { border-top-color: var(--fragile); }
+.readiness-head {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(240px, 1.1fr);
+  gap: 12px 30px;
+  align-items: start;
+}
+.readiness-note-text,
+.readiness-note { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--grey); }
+.readiness-list { list-style: none; margin: 18px 0 0; padding: 0; }
+.readiness-item {
+  display: grid;
+  grid-template-columns: 128px 1fr;
+  gap: 16px;
+  padding: 13px 0;
+  border-top: 1px solid var(--rule);
+}
+.readiness-item b { font-family: var(--sans); font-size: 13.5px; }
+.readiness-item p { margin: 5px 0 0; font-size: 13px; line-height: 1.6; color: var(--grey); }
+.readiness-advice { font-style: italic; }
+.readiness-level {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  padding-top: 3px;
+}
+.level-ok      .readiness-level { color: var(--robust); }
+.level-note    .readiness-level { color: var(--accent); }
+.level-caution .readiness-level { color: var(--conditional); }
+.level-serious .readiness-level { color: var(--fragile); }
+.readiness-all { margin-top: 16px; font-size: 13px; }
+.readiness-all summary { cursor: pointer; font-family: var(--sans); font-weight: 600; }
+@media (max-width: 680px) {
+  .readiness-head { grid-template-columns: 1fr; }
+  .readiness-item { grid-template-columns: 1fr; gap: 4px; }
+}
