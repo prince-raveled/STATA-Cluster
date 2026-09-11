@@ -1,0 +1,78 @@
+{
+  "headline": {
+    "seed": 11,
+    "n_per_group": 25,
+    "n_taxa": 80,
+    "n_taxa_tiered": 79,
+    "n_specifications": 1596,
+    "tiers": {
+      "ROBUST": 0,
+      "CONDITIONAL": 0,
+      "FRAGILE": 0,
+      "UNSTABLE": 57,
+      "INSUFFICIENT": 0,
+      "NOT DETECTED": 22
+    },
+    "n_detected": 57,
+    "n_stable": 0,
+    "unstable_share": 0.7215
+  },
+  "replicates": [
+    {
+      "seed": 12,
+      "n_per_group": 25,
+      "n_taxa": 80,
+      "n_taxa_tiered": 78,
+      "n_specifications": 1596,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 0,
+        "FRAGILE": 2,
+        "UNSTABLE": 53,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 23
+      },
+      "n_detected": 55,
+      "n_stable": 0,
+      "unstable_share": 0.6795
+    },
+    {
+      "seed": 13,
+      "n_per_group": 25,
+      "n_taxa": 80,
+      "n_taxa_tiered": 79,
+      "n_specifications": 1596,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 0,
+        "FRAGILE": 0,
+        "UNSTABLE": 58,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 21
+      },
+      "n_detected": 58,
+      "n_stable": 0,
+      "unstable_share": 0.7342
+    },
+    {
+      "seed": 14,
+      "n_per_group": 25,
+      "n_taxa": 80,
+      "n_taxa_tiered": 78,
+      "n_specifications": 1596,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 0,
+        "FRAGILE": 18,
+        "UNSTABLE": 52,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 8
+      },
+      "n_detected": 70,
+      "n_stable": 0,
+      "unstable_share": 0.6667
+    }
+  ],
+  "n_stable_across_all_runs": 0,
+  "interface_claim": "on a table simulated with no difference between the groups at all, 57 of 79 taxa still landed in UNSTABLE"
+}

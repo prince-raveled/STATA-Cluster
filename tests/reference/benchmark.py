@@ -79,6 +79,84 @@ def measure(n_taxa: int, n_samples: int, mode: str = "quick") -> dict:
     }
 
 
+def describe_machine() -> dict:
+    """Enough about this machine that someone can judge whether the timings transfer.
+
+    A core count alone does not: twelve cores of a laptop under thermal limits and
+    twelve cores of a server are different numbers. Everything here is read from the
+    running system — nothing is filled in by hand, so a field that cannot be determined
+    says "unknown" rather than carrying a guess.
+    """
+    import platform
+
+    machine = {
+        "python": sys.version.split()[0],
+        "cpus": os.cpu_count(),
+        "cpu_model": "unknown",
+        "memory_gb": "unknown",
+        "platform": f"{platform.system()} {platform.release()}",
+        "architecture": platform.machine() or "unknown",
+    }
+
+    processor = (platform.processor() or "").strip()
+    if processor and processor.lower() not in ("", "unknown"):
+        machine["cpu_model"] = processor
+
+    if platform.system() == "Windows":
+        try:
+            import winreg
+
+            key = r"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0"
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key) as handle:
+                machine["cpu_model"] = winreg.QueryValueEx(
+                    handle, "ProcessorNameString")[0].strip()
+        except OSError:
+            pass
+    elif platform.system() == "Linux":
+        try:
+            with open("/proc/cpuinfo", encoding="utf-8") as handle:
+                for line in handle:
+                    if line.startswith("model name"):
+                        machine["cpu_model"] = line.split(":", 1)[1].strip()
+                        break
+        except OSError:
+            pass
+
+    try:                                    # psutil is not a dependency; do without it
+        import psutil
+
+        machine["memory_gb"] = round(psutil.virtual_memory().total / 1024 ** 3, 1)
+    except ImportError:
+        try:
+            import ctypes
+
+            class _Status(ctypes.Structure):
+                _fields_ = [("dwLength", ctypes.c_ulong),
+                            ("dwMemoryLoad", ctypes.c_ulong),
+                            ("ullTotalPhys", ctypes.c_ulonglong),
+                            ("ullAvailPhys", ctypes.c_ulonglong),
+                            ("ullTotalPageFile", ctypes.c_ulonglong),
+                            ("ullAvailPageFile", ctypes.c_ulonglong),
+                            ("ullTotalVirtual", ctypes.c_ulonglong),
+                            ("ullAvailVirtual", ctypes.c_ulonglong),
+                            ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+
+            status = _Status()
+            status.dwLength = ctypes.sizeof(_Status)
+            if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+                machine["memory_gb"] = round(status.ullTotalPhys / 1024 ** 3, 1)
+        except Exception:                                    # noqa: BLE001
+            pass
+
+    for package in ("numpy", "scipy", "pandas"):
+        try:
+            module = __import__(package)
+            machine[f"{package}_version"] = getattr(module, "__version__", "unknown")
+        except ImportError:
+            continue
+    return machine
+
+
 def main() -> None:
     quick = "--quick" in sys.argv
     grid = (
@@ -113,8 +191,7 @@ def main() -> None:
 
     os.makedirs(os.path.dirname(OUTPUT), exist_ok=True)
     with open(OUTPUT, "w", encoding="utf-8") as handle:
-        json.dump({"machine": {"python": sys.version.split()[0],
-                               "cpus": os.cpu_count()}, "runs": rows}, handle, indent=2)
+        json.dump({"machine": describe_machine(), "runs": rows}, handle, indent=2)
     print(f"\nwritten to {os.path.relpath(OUTPUT)}")
 
 

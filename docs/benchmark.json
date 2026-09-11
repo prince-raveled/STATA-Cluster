@@ -1,7 +1,14 @@
 {
   "machine": {
     "python": "3.14.6",
-    "cpus": 12
+    "cpus": 12,
+    "cpu_model": "AMD Ryzen 5 5600H with Radeon Graphics",
+    "memory_gb": 15.3,
+    "platform": "Windows 11",
+    "architecture": "AMD64",
+    "numpy_version": "2.5.3",
+    "scipy_version": "1.18.1",
+    "pandas_version": "3.0.5"
   },
   "runs": [
     {
@@ -52,5 +59,6 @@
       },
       "total_seconds": 25.38
     }
-  ]
+  ],
+  "note": "Timings are from a single laptop, identified above. They are indicative, not a specification: a thermally limited mobile CPU and a server with the same core count give different numbers."
 }

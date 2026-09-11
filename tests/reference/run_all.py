@@ -82,6 +82,25 @@ def _tierney_exported() -> bool:
 
 CHECKS = [
     {
+        # The figure the results page quotes when nothing held up. Recorded so the
+        # sentence in the interface has a measurement behind it rather than a guess.
+        "name": "Noise floor: what a null table reports",
+        "script": "noise_floor.py",
+        "python": MAIN_PYTHON,
+        "requires": lambda: True,
+        "reason": "",
+    },
+    {
+        # Added after the 2026-09-11 audit. Every other reference check compares an
+        # *estimate*; this one compares a p-value distribution, which is how ANCOM-BC's
+        # anti-conservative tail went unnoticed at r = 1.00 agreement on the estimates.
+        "name": "ANCOM-BC null calibration, against R",
+        "script": "ancombc_calibration.py",
+        "python": MAIN_PYTHON,
+        "requires": lambda: True,
+        "reason": "",
+    },
+    {
         "name": "scikit-bio: multi_replace, clr, ancombc",
         "script": "compare_scikit_bio.py",
         "python": SKBIO_PYTHON,

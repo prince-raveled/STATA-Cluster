@@ -1797,3 +1797,40 @@ Scope guard (§21) applies from now on: two-group comparisons only, no
 diversity features, no "best specification" export ever. Ask before adding
 any dependency not listed in §20 — note scikit-bio must be >=0.7.1.
 ```
+
+### §24.8 ANCOM-BC null calibration, and the noise floor (2026-09-12)
+
+Two measurements added after the independent audit of 2026-09-11. Neither changed a
+statistical formula; both changed what the interface is willing to claim.
+
+**ANCOM-BC's p-values are anti-conservative in the tail — inherited, not introduced.**
+Every reference check before this compared *estimates*. On 400 simulated null datasets
+(25 per group, ~60 taxa, no group difference by construction) this implementation
+rejected at 0.027 against a nominal 0.01 and 0.016 against a nominal 0.001, while
+Wilcoxon on the identical data gave 0.009 and 0.0005. The same datasets through R's
+ANCOMBC 2.14.0 gave 0.086 / 0.030 / 0.009 at nominal 0.05 / 0.01 / 0.001 — R is
+anti-conservative too, and more so than this implementation at 0.05 and 0.01.
+
+Decomposing the Wald test locates the mechanism: removing the bias correction drops the
+rate at nominal 0.001 from 0.016 to 0.002, while switching the reference distribution
+from normal to t barely moves it (0.016 to 0.013). The bias term delta varies across
+datasets (sd 0.12) and is subtracted from every taxon's coefficient without its variance
+entering the standard error, which is precisely what the package's default
+`conserve = FALSE` specifies. `conserve = TRUE` exists for this reason; adopting it
+would depart from the reference default this implementation is validated against.
+
+Action: none to the method. `estimate_bias` and the `conserve = FALSE` standard error
+are unchanged. The limitation is documented in REVIEWING.md §8, and
+`tests/reference/ancombc_calibration.py` records the profile so it cannot drift
+unnoticed. ANCOM-BC does not run in Quick mode, so §24.6's tier validation and the
+real-data study are unaffected; the caution applies to Full and covariate mode.
+
+**The noise floor of the UNSTABLE tier.** A null table (25 per group, 80 taxa) puts 57
+of 79 taxa in UNSTABLE and none in ROBUST or CONDITIONAL; across four seeds ROBUST and
+CONDITIONAL were empty every time. The audit had assumed `hiv_dinh` would render the
+zero-detection verdict; it does not — in Quick mode it finds 10 UNSTABLE taxa, so
+`n_detected` is 10. The condition worth telling a reader about is therefore narrower
+than "nothing was detected": it is "nothing reached ROBUST or CONDITIONAL", which is
+what `n_stable` reports and what the results page now states in words.
+Measured by `tests/reference/noise_floor.py`; record in `docs/noise_floor.json`.
+

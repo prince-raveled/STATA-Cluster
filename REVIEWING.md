@@ -97,6 +97,19 @@ replications. The effective number of independent analyses is much smaller and i
 computed anywhere**. If you think the interface implies otherwise at any point, that is a
 bug worth reporting.
 
+**UNSTABLE is what noise looks like, and it fills up.** A table simulated with no
+group difference at all — 25 per group, 80 taxa — still put **57 of 79 taxa in
+UNSTABLE**, and 0 in ROBUST or CONDITIONAL. Repeated over four seeds, ROBUST and
+CONDITIONAL stayed empty every time while UNSTABLE held 52-58 taxa. So "significant in
+at least one of 1,596 analyses" is close to an unmissable bar, and a taxon sitting in
+UNSTABLE is not weak evidence of an effect — it is the absence of evidence either way.
+This is the tiers working, not failing: the separation between the two tiers that carry
+a measured replication rate and the two that do not is exactly what the validation in §6
+is about. It is stated here because a reader scanning a results page will otherwise read
+a long UNSTABLE list as a shortlist of candidates. Measured by
+`tests/reference/noise_floor.py`; record in `docs/noise_floor.json`, and the results page
+says it in words whenever a run produces no ROBUST or CONDITIONAL taxon.
+
 **Quick mode excludes three of the seven tests.** ANCOM-BC, ALDEx2 and PyDESeq2 never run
 in the default mode. Full mode runs them on a *sample* of matrices (e.g. ALDEx2 on 45 of
 216, stated in the interface). Nothing is described as exhaustive that is not.
@@ -135,6 +148,13 @@ Four kinds of evidence, deliberately kept apart in `app/core/evidence.py` and re
 |---|---|---|
 | **Internal** | Implementation matches the specification. Says nothing about whether the specification is a good idea. | Harmonised effect; tier implementation |
 | **Reference** | Agrees with an independent implementation or a published result. | TMM (identical to edgeR), ALDEx2, ANCOM-BC, CLR, parsers, Tierney reproduction |
+
+Reference validation covers **estimates**, not **calibration**. Until 2026-09-11 nothing
+compared a p-value distribution against anything; an estimate can agree with R at
+r = 1.00 while the test built on it rejects at the wrong rate, and for ANCOM-BC it does
+(see §8). `tests/reference/ancombc_calibration.py` closes that gap for ANCOM-BC. The
+other two sophisticated methods, ALDEx2 and PyDESeq2, have **not** had their calibration
+checked, and that remains open.
 | **Empirical** | Predicts something on data it never saw. | **Robustness tiers only** |
 | **Exploratory** | Correct arithmetic, unvalidated. | Fork attribution |
 
@@ -186,6 +206,25 @@ Not a list of future work — these are things that are currently true.
 - ANCOM-BC's bias term differs from R's by 0.020 natural-log units (~2% on the
   fold-change scale), traced to `nloptr` and `scipy` stopping their optimiser at
   different points. Asserted on so it cannot drift; not eliminated.
+- **ANCOM-BC's p-values are anti-conservative in the tail, and so are R's.** Measured on
+  400 simulated null datasets with no group difference by construction (25 per group,
+  ~60 taxa), MicroVerse rejects at 0.027 against a nominal 0.01 and 0.016 against a
+  nominal 0.001. Wilcoxon on the identical datasets gives 0.009 and 0.0005, which rules
+  out the simulation. Running the *same* datasets through R's ANCOMBC 2.14.0 gives 0.086
+  at nominal 0.05, 0.030 at 0.01 and 0.009 at 0.001 — R is anti-conservative too, and at
+  0.05 and 0.01 more so than this implementation. The behaviour is inherited from the
+  method, not introduced here, so nothing in `ancombc.py` was changed.
+  Decomposing the Wald test shows the mechanism: removing the bias correction drops the
+  rate at nominal 0.001 from 0.016 to 0.002. The bias term delta varies across datasets
+  (sd 0.12) and is subtracted from every taxon's coefficient without its variance
+  entering the standard error — which is exactly what ANCOM-BC's default
+  `conserve = FALSE` specifies. The package offers `conserve = TRUE` for this reason;
+  using it would depart from the reference default the implementation is validated
+  against. Practical consequence: ANCOM-BC does not run in Quick mode, so the empirical
+  tier validation and the real-data study are unaffected; in Full and covariate mode,
+  treat ANCOM-BC-only findings with more caution than the count of specifications
+  suggests. Reproduce with `tests/reference/ancombc_calibration.py`; the record is
+  `docs/ancombc_calibration.json`.
 - Two-group comparisons only. No longitudinal, paired, multi-group or continuous
   outcomes. No read processing, no taxonomic classification, no diversity metrics.
 - Specification dependence is acknowledged but not quantified.
