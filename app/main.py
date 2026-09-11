@@ -7,6 +7,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -58,6 +59,13 @@ app.include_router(results.router)
 app.include_router(api.router)
 
 
+#: Routes that answer in JSON even though they are not mounted under /api. The results
+#: page fetches these with `fetch`, so an HTML error page would be unreadable to the
+#: caller. Kept as a predicate rather than a list so a new curve-like route is covered.
+def _wants_json(path: str) -> bool:
+    return path.startswith("/api/") or "/curve/" in path
+
+
 @app.exception_handler(DatasetError)
 async def dataset_error_handler(request: Request, exc: DatasetError):
     """SPEC §8: reject with a clear message, never a stack trace."""
@@ -66,7 +74,7 @@ async def dataset_error_handler(request: Request, exc: DatasetError):
     retry_after = getattr(exc, "retry_after", None)
     if retry_after:
         headers["Retry-After"] = str(int(retry_after))
-    if request.url.path.startswith("/api/"):
+    if _wants_json(request.url.path):
         return JSONResponse(status_code=status, headers=headers,
                             content={"error": exc.message, "hint": exc.hint})
     title = {404: "Not found", 429: "Slow down"}.get(status, "That dataset cannot be run")
@@ -75,6 +83,30 @@ async def dataset_error_handler(request: Request, exc: DatasetError):
         {"message": exc.message, "hint": exc.hint, "title": title},
         status_code=status, headers=headers,
     )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request: Request, exc: RequestValidationError):
+    """One error shape across the whole surface.
+
+    FastAPI's default is `{"detail": [...]}`, which is a second vocabulary on an API
+    whose own errors are `{"error": ..., "hint": ...}`. A client should not have to
+    branch on which layer rejected it.
+    """
+    first = (exc.errors() or [{}])[0]
+    location = ".".join(str(part) for part in first.get("loc", ())[1:]) or "request"
+    message = first.get("msg", "That request could not be understood.")
+    if not _wants_json(request.url.path):
+        return templates.TemplateResponse(
+            request, "error.html",
+            {"message": f"{location}: {message}", "hint": "Check the address and try again.",
+             "title": "That request could not be understood"},
+            status_code=422,
+        )
+    return JSONResponse(status_code=422, content={
+        "error": f"{location}: {message}",
+        "hint": "Check the request against /api/docs.",
+    })
 
 
 @app.exception_handler(ParseError)
@@ -91,11 +123,14 @@ async def parse_error_handler(request: Request, exc: ParseError):
 
 @app.get("/about", response_class=HTMLResponse, include_in_schema=False)
 def about(request: Request):
+    from .core.glossary import glossary_sections
     from .core.report import citation_list
 
+    # The results page sends beginners to /about#glossary. The anchor has to exist.
     return templates.TemplateResponse(
         request, "about.html",
-        {"citations": citation_list(), "retention_days": config.RETENTION_DAYS},
+        {"citations": citation_list(), "retention_days": config.RETENTION_DAYS,
+         "glossary": glossary_sections()},
     )
 
 

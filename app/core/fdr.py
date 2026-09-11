@@ -10,11 +10,33 @@ import numpy as np
 
 
 def adjust(p_values: np.ndarray, method: str = "bh") -> np.ndarray:
-    """Benjamini-Hochberg or Benjamini-Yekutieli adjusted p-values."""
+    """Benjamini-Hochberg or Benjamini-Yekutieli adjusted p-values.
+
+    Non-finite inputs are excluded from the family rather than carried through it. A
+    test that could not be computed is not a test that was performed, so it must
+    neither inflate `n` nor receive an adjusted value — it comes back as NaN and the
+    caller reads that as untested.
+
+    This is a containment rule, not a change to BH/BY. The arithmetic below runs on the
+    finite subset exactly as it always has. It matters because `np.minimum.accumulate`
+    propagates a NaN backwards through the whole sorted vector: before this guard a
+    single non-finite p-value silently turned *every* taxon in that specification
+    non-significant, with no error and no recorded failure.
+    """
     p = np.asarray(p_values, dtype=float)
-    n = p.size
-    if n == 0:
+    if p.size == 0:
         return p.copy()
+
+    finite = np.isfinite(p)
+    if not finite.all():
+        out = np.full(p.shape, np.nan, dtype=float)
+        if finite.any():
+            out[finite] = adjust(p[finite], method)
+        elif method not in ("bh", "by"):
+            raise ValueError(f"Unknown FDR method: {method}")
+        return out
+
+    n = p.size
     order = np.argsort(p, kind="mergesort")
     ranked = p[order]
     ranks = np.arange(1, n + 1, dtype=float)
@@ -34,6 +56,11 @@ def adjust(p_values: np.ndarray, method: str = "bh") -> np.ndarray:
 
 
 def significant(p_values: np.ndarray, method: str, threshold: float):
-    """Return (adjusted p-values, significance mask)."""
+    """Return (adjusted p-values, significance mask).
+
+    A NaN adjusted p-value compares False, which is the right answer: a test that could
+    not be computed is not a discovery.
+    """
     adjusted = adjust(p_values, method)
-    return adjusted, adjusted <= threshold
+    with np.errstate(invalid="ignore"):
+        return adjusted, adjusted <= threshold

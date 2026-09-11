@@ -19,6 +19,28 @@ from ..limits import enforce_rate_limit, run_queue
 router = APIRouter(prefix="/api", tags=["multiverse"])
 
 
+#: Every API error is {"error", "hint"} — the same shape the DatasetError handler
+#: produces — so a client never has to branch on which layer rejected it. A missing
+#: token and an unfinished run are different answers and must not share a message.
+def _no_such_job():
+    return JSONResponse(status_code=404, content={
+        "error": "No such job.",
+        "hint": "The token is unknown or its results have expired.",
+    })
+
+
+def _not_ready(job):
+    """404 when the job does not exist, 409 when it exists but has no results yet."""
+    if job is None:
+        return _no_such_job()
+    return JSONResponse(status_code=409, content={
+        "error": job.error or "This run has not finished.",
+        "hint": job.error_hint or "Poll /api/jobs/{token} until status is 'done'.",
+        "status": job.status,
+        "progress": round(float(job.progress or 0), 3),
+    })
+
+
 @router.get("/info", summary="Server capabilities")
 def info():
     """What this instance supports: formats, modes, methods, and the forks varied."""
@@ -101,7 +123,7 @@ async def create_job(
 def job_status(token: str):
     job = db.get_job(token)
     if job is None:
-        return JSONResponse(status_code=404, content={"error": "No such job."})
+        return _no_such_job()
     payload = job.as_dict()
     payload["expires_at"] = job.expires_at.isoformat() if job.expires_at else None
     return payload
@@ -114,13 +136,8 @@ def job_results(
     limit: int = Query(500, ge=1, le=5000),
 ):
     job, run, summary, attribution = services.load_results(token)
-    if job is None:
-        return JSONResponse(status_code=404, content={"error": "No such job."})
     if run is None:
-        return JSONResponse(status_code=409, content={
-            "error": job.error or "This run has not finished.",
-            "status": job.status, "progress": round(float(job.progress or 0), 3),
-        })
+        return _not_ready(job)
 
     table = summary.table
     if tier:
@@ -140,10 +157,13 @@ def job_results(
 def job_curve(token: str, taxon_id: int):
     job, run, _, _ = services.load_results(token)
     if run is None:
-        return JSONResponse(status_code=404 if job is None else 409,
-                            content={"error": "No finished run for that token."})
+        return _not_ready(job)
     if not 0 <= taxon_id < len(run.taxa_names):
-        return JSONResponse(status_code=404, content={"error": "No such taxon id."})
+        return JSONResponse(status_code=404, content={
+            "error": f"No taxon {taxon_id} in this run.",
+            "hint": f"This run has {len(run.taxa_names)} taxa, numbered 0 to "
+                    f"{len(run.taxa_names) - 1}.",
+        })
     return specification_curve(run, taxon_id)
 
 
@@ -151,8 +171,7 @@ def job_curve(token: str, taxon_id: int):
 def job_locate(token: str, taxon_id: int):
     job, run, _, _ = services.load_results(token)
     if run is None:
-        return JSONResponse(status_code=404 if job is None else 409,
-                            content={"error": "No finished run for that token."})
+        return _not_ready(job)
     located = locate_declared(run, taxon_id)
     if not located:
         return JSONResponse(status_code=404, content={

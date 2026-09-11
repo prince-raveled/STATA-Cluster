@@ -39,6 +39,17 @@ class NotFoundError(DatasetError):
     status_code = 404
 
 
+class RunNotReadyError(DatasetError):
+    """The token is valid; the run behind it has not produced results yet.
+
+    Distinct from both 404 (nothing there) and 422 (the request was wrong). Nothing is
+    wrong with the request — a results URL is meant to be shared, and sharing it a few
+    seconds early must not look like a rejection.
+    """
+
+    status_code = 409
+
+
 @dataclass
 class Dataset:
     """A validated, aligned run input."""
