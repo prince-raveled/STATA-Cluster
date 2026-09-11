@@ -13,7 +13,7 @@ from .core.parsers import parse_abundance, parse_metadata, parse_taxonomy_map
 from .core.report import build_zip, long_results_csv_gz, methods_paragraph, run_manifest
 from .core.robustness import compute_robustness, verdict_sentence
 from .core.runner import run_multiverse
-from .core.validation import DatasetError, validate_dataset
+from .core.validation import DatasetError, NotFoundError, validate_dataset
 from .db import utcnow
 from .limits import run_queue
 
@@ -62,8 +62,9 @@ def build_dataset(abundance_bytes, abundance_name, metadata_bytes, metadata_name
 
 def load_demo(name: str):
     if name not in DEMO_DATASETS:
-        raise DatasetError(f"Unknown demo dataset '{name}'.",
-                           "Available: " + ", ".join(DEMO_DATASETS))
+        # A demo that does not exist is a missing resource, not a malformed request.
+        raise NotFoundError(f"There is no demo dataset called '{name}'.",
+                            "Available: " + ", ".join(DEMO_DATASETS))
     folder = config.EXAMPLES_DIR
     return build_dataset(
         (folder / f"{name}_abundance.tsv").read_bytes(), f"{name}_abundance.tsv",

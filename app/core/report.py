@@ -77,7 +77,24 @@ def specification_curve(run, taxon_id: int, max_points: int = 4000) -> dict:
     """
     rows = run.long[run.long["taxon"] == taxon_id]
     if rows.empty:
-        return {"taxon": run.taxa_display[taxon_id], "n_specs": 0, "points": []}
+        # Same keys as the populated case, all empty. Returning a different shape here
+        # meant the renderer read `data.effect` as undefined and threw, so a taxon the
+        # prevalence filter removed everywhere broke the plot instead of showing that
+        # there was nothing to plot.
+        return {
+            "taxon": run.taxa_display[taxon_id],
+            "taxon_full": run.taxa_names[taxon_id],
+            "taxon_id": int(taxon_id),
+            "n_specs": 0, "n_plotted": 0, "stride": 1,
+            "group_a": run.group_labels[0], "group_b": run.group_labels[1],
+            "effect": [], "significant": [], "p_adjusted": [], "p_raw": [],
+            "spec_id": [], "labels": [],
+            "forks": {}, "fork_labels": {}, "categories": {},
+            "declared_position": -1, "declared": {},
+            "median_effect": float("nan"), "frac_significant": float("nan"),
+            "note": "This taxon was filtered out of every specification, so there is "
+                    "nothing to plot.",
+        }
 
     rows = rows.sort_values("effect_h", kind="mergesort").reset_index(drop=True)
     thinned = rows

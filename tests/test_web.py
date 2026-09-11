@@ -410,3 +410,39 @@ def test_glossary_terms_reach_the_results_page(client, finished):
     body = client.get(f"/results/{finished}").text
     assert body.count('class="dfn"') >= 5, "too few terms are explained in place"
     assert "dfn-pop" in body
+
+def test_an_unknown_demo_is_a_missing_resource_not_a_bad_request(client):
+    """A demo name that does not exist is 404. It was returning 422."""
+    response = client.get("/demo/does_not_exist")
+    assert response.status_code == 404
+    assert "no demo dataset" in response.text.lower()
+
+
+def test_the_curve_payload_has_one_shape_whether_or_not_it_is_empty(client, finished):
+    """The renderer reads data.effect and data.forks directly.
+
+    The empty case used to return {taxon, n_specs, points}, so those came back
+    undefined and the plot threw instead of saying there was nothing to plot.
+    """
+    from app import services
+    from app.core.report import specification_curve
+
+    taxa = client.get(f"/api/jobs/{finished}/results").json()["taxa"]
+    populated = client.get(
+        f"/results/{finished}/curve/{taxa[0]['taxon_id']}").json()
+
+    required = {"taxon", "n_specs", "effect", "significant", "p_adjusted",
+                "forks", "fork_labels", "categories", "labels",
+                "group_a", "group_b", "declared_position"}
+    assert required <= set(populated), required - set(populated)
+
+    _, run, _, _ = services.load_results(finished)
+    tested = set(run.long["taxon"].unique())
+    untested = next((i for i in range(len(run.taxa_names)) if i not in tested), None)
+    if untested is None:
+        pytest.skip("every taxon was tested somewhere in this run")
+    empty = specification_curve(run, untested)
+    assert required <= set(empty), "the empty payload must match the populated one"
+    assert empty["n_specs"] == 0
+    assert empty["effect"] == []
+    assert "nothing to plot" in empty.get("note", "")
