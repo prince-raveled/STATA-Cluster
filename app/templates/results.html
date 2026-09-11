@@ -17,7 +17,45 @@
     <span class="pill">{{ run.runtime_seconds|duration }}</span>
   </div>
 
+  <!-- ============ the finding ============ -->
+  {#  Level 1 of the results hierarchy: what was found, before anything about how to
+      read the page. The headline states it in a sentence; the engine's own verdict
+      sentence follows as the precise version. Both are built from counts already
+      computed -- this is presentation, not arithmetic. #}
+  {% set n_robust = summary.tier_counts['ROBUST'] %}
+  {% set n_conditional = summary.tier_counts['CONDITIONAL'] %}
+  <div class="verdict">
+    <div>
+      <p class="eyebrow on-dark" style="margin-bottom:14px">{{ job.dataset_name }}</p>
+      <h2>
+        {%- if n_robust %}
+          {{ n_robust }} {{ 'taxon' if n_robust == 1 else 'taxa' }} held up across the
+          analyses{% if n_conditional %}, and {{ n_conditional }} more held up under
+          particular choices{% endif %}.
+        {%- elif n_conditional %}
+          No taxon held up throughout, but {{ n_conditional }}
+          {{ 'is' if n_conditional == 1 else 'are' }} defensible under particular choices.
+        {%- else %}
+          No finding here held up across the analyses.
+        {%- endif %}
+      </h2>
+      <p class="verdict-detail">{{ verdict }}</p>
+      <p class="verdict-guide">
+        <a href="#tiers-title">What these labels mean</a>
+        <a href="#attribution-title">Why results change</a>
+        <a href="#table-title">Every taxon</a>
+      </p>
+    </div>
+    <div class="verdict-side">
+      <span>Analyses run</span>
+      <b>{{ grid.n_valid|commafy }}</b>
+      <small>of {{ grid.n_enumerated|commafy }} possible · {{ grid.n_fits|commafy }} statistical models fitted</small>
+    </div>
+  </div>
+
   <!-- ============ how to read this page ============ -->
+  <details class="orient-wrap">
+    <summary>New to multiverse results? How to read this page</summary>
   <div class="orient">
     <div class="orient-step">
       <b>WHAT HAPPENED</b>
@@ -40,22 +78,8 @@
         <a href="/about#glossary">glossary</a>.</p>
     </div>
   </div>
+  </details>
 
-  <!-- ============ the verdict ============ -->
-  <div class="verdict">
-    <div>
-      <p class="eyebrow on-dark" style="margin-bottom:12px">{{ job.dataset_name }}</p>
-      <h2>{{ verdict.split(".")[0] }}.</h2>
-      {% if verdict.split(".")|length > 1 %}
-        <p>{{ verdict.split(".", 1)[1]|trim }}</p>
-      {% endif %}
-    </div>
-    <div class="verdict-side">
-      <span>Analyses run</span>
-      <b>{{ grid.n_valid|commafy }}</b>
-      <small>of {{ grid.n_enumerated|commafy }} possible · {{ grid.n_fits|commafy }} statistical models fitted</small>
-    </div>
-  </div>
 
   {% if n_stable == 0 %}
   <!-- ============ a valid negative result ============ -->
@@ -179,175 +203,99 @@
     </div>
   </section>
 
-  <div class="split split-wide">
-    <!-- ============ §17 attribution ============ -->
-    <section class="card" aria-labelledby="attribution-title">
-      {{ section_label('Which choice is driving this?', '17') }}
-      <h2 id="attribution-title" class="mt0" style="font-size:24px">Where the variation comes from.</h2>
-      <p class="muted" style="font-size:13.5px;margin:8px 0 6px">
-        An attempt to apportion the variation in your results across the seven
-        {{ dfn('fork', 'analytical choices') }}, following Young &amp; Holsteen (2017).
-        The solid bar is the main estimate; the dotted mark is a second, independent
-        estimate — if the two disagree, neither is trustworthy. Percentages are shares
-        <i>of the variation this model can explain</i>, which on real data is often only a
-        few percent of the total. Read the grade under each chart before quoting any of
-        it.</p>
-      <p class="bar-legend" style="margin-bottom:22px">
-        <span><i aria-hidden="true"></i>estimator used</span>
-        <span><i class="ghost" aria-hidden="true"></i>fallback estimator</span>
-      </p>
-      <p class="note" style="margin:-10px 0 22px">
-        <b>Reading the intervals.</b> Each interval comes from a bootstrap that resamples
-        taxa, and it is printed with the percentage <i>from that same resample</i> — so an
-        interval always brackets the number beside it. The headline percentage is computed
-        differently: on every taxon, with the mixed-effects model. When the two are far
-        apart, that is worth knowing rather than hiding: it means the split between choices
-        depends on which taxa you happen to look at, which is exactly why this section is
-        graded exploratory.
-      </p>
+  <!-- ============ why results change ============ -->
+  <section class="section-tight" aria-labelledby="attribution-title">
+    {{ section_label('Which choice is driving this?', '17') }}
+    <h2 id="attribution-title" class="mt0" style="font-size:24px">Where the variation comes from.</h2>
+    <p class="muted" style="font-size:13.5px;margin:8px 0 6px">
+      An attempt to apportion the variation in your results across the seven
+      {{ dfn('fork', 'analytical choices') }}, following Young &amp; Holsteen (2017).
+      The solid bar is the main estimate; the dotted mark is a second, independent
+      estimate — if the two disagree, neither is trustworthy. Percentages are shares
+      <i>of the variation this model can explain</i>, which on real data is often only a
+      few percent of the total. Read the grade under each chart before quoting any of
+      it.</p>
+    <p class="bar-legend" style="margin-bottom:22px">
+      <span><i aria-hidden="true"></i>estimator used</span>
+      <span><i class="ghost" aria-hidden="true"></i>fallback estimator</span>
+    </p>
+    <p class="note" style="margin:-10px 0 22px">
+      <b>Reading the intervals.</b> Each interval comes from a bootstrap that resamples
+      taxa, and it is printed with the percentage <i>from that same resample</i> — so an
+      interval always brackets the number beside it. The headline percentage is computed
+      differently: on every taxon, with the mixed-effects model. When the two are far
+      apart, that is worth knowing rather than hiding: it means the split between choices
+      depends on which taxa you happen to look at, which is exactly why this section is
+      graded exploratory.
+    </p>
 
-      {% for target, title in [("significance", "Variance in whether a taxon is called significant"), ("effect", "Variance in effect size")] %}
-        {% set result = attribution.get(target) %}
-        {% if result %}
-          <h3 style="font-size:15px;font-family:var(--sans);font-weight:650;margin:{{ '0' if loop.first else '28px' }} 0 12px">{{ title }}</h3>
-          <div class="bars">
-            {% for fork, share in result.ranked %}
-              <div class="bar-row">
-                <span>{{ FORK_LABELS.get(fork, fork) }}</span>
-                <span class="bar-track">
-                  <span class="bar-fill" style="width: {{ share|round(1) }}%"></span>
-                  {% set ghost = result.fallback_shares.get(fork) %}
-                  {% if ghost is not none %}
-                    <span class="bar-ghost" style="left: {{ ghost|round(1) }}%"
-                          title="fallback estimator: {{ ghost|fixed(1) }}%"></span>
-                  {% endif %}
-                </span>
-                {% set ci = result.interval(fork) %}
-                {% set ci_point = result.interval_point(fork) %}
-                <span class="bar-value">
-                  <span class="bar-point">{{ share|fixed(1) }}%</span>
-                  {%- if ci[0] == ci[0] %}
-                    {%- if result.interval_is_for_shares %}
-                      <small class="bar-ci" title="95% interval from a cluster bootstrap over taxa">95% CI {{ ci[0]|fixed(0) }}–{{ ci[1]|fixed(0) }}</small>
-                    {%- else %}
-                      <small class="bar-ci" title="A cluster bootstrap over {{ result.interval_n_taxa }} resampled taxa, using the per-taxon adjusted comparison. Both the percentage and the interval here come from that resample, so the interval brackets the number it is shown with. The headline above uses every taxon and the mixed-effects model.">resample {{ ci_point|fixed(0) }}% (CI {{ ci[0]|fixed(0) }}–{{ ci[1]|fixed(0) }})</small>
-                    {%- endif %}
+    {% for target, title in [("significance", "Variance in whether a taxon is called significant"), ("effect", "Variance in effect size")] %}
+      {% set result = attribution.get(target) %}
+      {% if result %}
+        <h3 style="font-size:15px;font-family:var(--sans);font-weight:650;margin:{{ '0' if loop.first else '28px' }} 0 12px">{{ title }}</h3>
+        <div class="bars">
+          {% for fork, share in result.ranked %}
+            <div class="bar-row">
+              <span>{{ FORK_LABELS.get(fork, fork) }}</span>
+              <span class="bar-track">
+                <span class="bar-fill" style="width: {{ share|round(1) }}%"></span>
+                {% set ghost = result.fallback_shares.get(fork) %}
+                {% if ghost is not none %}
+                  <span class="bar-ghost" style="left: {{ ghost|round(1) }}%"
+                        title="fallback estimator: {{ ghost|fixed(1) }}%"></span>
+                {% endif %}
+              </span>
+              {% set ci = result.interval(fork) %}
+              {% set ci_point = result.interval_point(fork) %}
+              <span class="bar-value">
+                <span class="bar-point">{{ share|fixed(1) }}%</span>
+                {%- if ci[0] == ci[0] %}
+                  {%- if result.interval_is_for_shares %}
+                    <small class="bar-ci" title="95% interval from a cluster bootstrap over taxa">95% CI {{ ci[0]|fixed(0) }}–{{ ci[1]|fixed(0) }}</small>
+                  {%- else %}
+                    <small class="bar-ci" title="A cluster bootstrap over {{ result.interval_n_taxa }} resampled taxa, using the per-taxon adjusted comparison. Both the percentage and the interval here come from that resample, so the interval brackets the number it is shown with. The headline above uses every taxon and the mixed-effects model.">resample {{ ci_point|fixed(0) }}% (CI {{ ci[0]|fixed(0) }}–{{ ci[1]|fixed(0) }})</small>
                   {%- endif %}
-                </span>
-              </div>
-            {% endfor %}
-          </div>
-          <p class="attribution-grade">
-            <span class="grade-chip grade-{{ result.evidence }}">{{ GRADE_LABEL[result.evidence] }}</span>
-            {% if result.explained_variance == result.explained_variance %}
-              the forks explain <b>{{ result.explained_variance|percent(0) }}</b> of the
-              within-taxon variance;
-            {% endif %}
-            estimators agree at
-            {{ result.estimator_agreement()|fixed(2) }} (Spearman, 1.00 = identical ranking).
-            {% set gap = result.resample_gap() %}
-            {% if gap == gap and gap >= 10 %}
-              <br><b>The largest choice shifts by {{ gap|fixed(0) }} percentage points</b>
-              when the estimate is recomputed on a resample of
-              {{ result.interval_n_taxa }} taxa — treat the ordering below as indicative
-              only.
-            {% endif %}
-          </p>
-          {% if result.warnings %}
-            <ul class="attribution-warnings">
-              {% for warning in result.warnings %}<li>{{ warning }}</li>{% endfor %}
-            </ul>
-          {% endif %}
-          <p class="footnote">{{ result.estimator }}{% if result.note %} — {{ result.note }}{% endif %}</p>
-        {% endif %}
-      {% endfor %}
-
-      {% set draw = attribution.get("rarefaction_draw") %}
-      {% if draw %}
-        <p class="note" style="margin-top:22px">
-          <b>{{ draw.seed_share|fixed(0) }}% of rarefaction's variance is the random draw
-          itself</b>, not the choice of depth — measurable only because each subsampling seed is
-          treated as its own specification rather than averaged away. The remaining
-          {{ draw.depth_share|fixed(0) }}% is the depth.
-        </p>
-      {% endif %}
-    </section>
-
-    <!-- ============ grid accounting ============ -->
-    <section class="stack">
-      <div class="card card-paper">
-        {{ section_label('What was actually run', '11-12') }}
-        <h2 class="mt0" style="font-size:22px">Nothing hidden from the count.</h2>
-        <p class="muted" style="font-size:13.5px;margin:8px 0 18px">
-          Not every combination of choices makes sense — some contradict themselves. Those
-          are {{ dfn('pruned', 'ruled out') }} with the reason shown, so you can see how much
-          of the space was ever real.</p>
-
-        <div class="metrics" id="grid-metrics">
-          <div><b>{{ grid.n_enumerated|commafy }}</b><span>{{ dfn('enumerated', 'considered') }}</span></div>
-          <div><b>{{ grid.n_valid|commafy }}</b><span>{{ dfn('valid', 'run') }}</span></div>
-          <div><b>{{ grid.n_fits|commafy }}</b><span>{{ dfn('model_fit', 'models fitted') }}</span></div>
+                {%- endif %}
+              </span>
+            </div>
+          {% endfor %}
         </div>
-
-        {% if grid.pruned_reasons %}
-          <details style="margin-top:16px">
-          <summary>Why {{ (grid.n_enumerated - grid.n_valid)|commafy }} combinations were ruled out</summary>
-          <div class="table-wrap" tabindex="0" role="region" aria-label="Reasons specifications were pruned, scrollable" style="margin-top:12px">
-            <table class="data">
-              <thead><tr><th scope="col">Ruled out because</th><th scope="col" class="num">How many</th></tr></thead>
-              <tbody>
-                {% for reason, count in grid.pruned_reasons.items() %}
-                  <tr><td>{{ reason }}</td><td class="num">{{ count|commafy }}</td></tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-          </details>
-        {% endif %}
-
-        {% if summary.n_specs_skipped %}
-          <p class="warn" style="margin-top:12px">
-            {{ summary.n_specs_skipped|commafy }} analyses produced no result at all, because
-            subsampling to that depth left one group with too few samples to compare. They are
-            excluded from every percentage on this page rather than counted as failures.</p>
-        {% endif %}
-        {% for note in grid.notes %}<p class="note" style="margin-top:10px">{{ note }}</p>{% endfor %}
-      </div>
-
-      <div class="card">
-        <h3 class="mt0" style="font-size:17px;font-family:var(--sans);font-weight:650">
-          How many taxa each specification called</h3>
-        <p class="muted" style="font-size:13px;margin:7px 0 12px">
-          From <b class="num">{{ spec_stats.min }}</b> to <b class="num">{{ spec_stats.max }}</b>
-          significant taxa across the grid, median <b class="num">{{ spec_stats.median|fixed(0) }}</b>.
-          {% if spec_stats.declared >= 0 %}Your declared pipeline called
-            <b class="num">{{ spec_stats.declared }}</b>.{% endif %}
-        </p>
-        <div id="spec-histogram" class="plot" style="height:180px"></div>
-      </div>
-
-      {% if declared_spec %}
-        <div class="card card-paper">
-          {{ section_label('Where your own pipeline sits', '16.4') }}
-          <h3 class="mt0" style="font-size:17px;font-family:var(--sans);font-weight:650">
-            The analysis you would have run</h3>
-          <p class="mono" style="font-size:12.5px;color:var(--ink-soft);margin:8px 0 14px;line-height:1.6">
-            {{ declared_spec.describe() }}</p>
-          {% if summary.declared_percentile == summary.declared_percentile %}
-            <p class="{% if summary.declared_percentile > 75 %}warn{% else %}note{% endif %}" style="margin:0">
-              It finds more significant taxa than
-              <b>{{ summary.declared_percentile|fixed(0) }}%</b> of the other defensible
-              analyses.
-              {% if summary.declared_percentile > 75 %}
-                More specifications give a less significant answer than a more significant one.
-                That is worth stating in your paper.
-              {% endif %}
-            </p>
+        <p class="attribution-grade">
+          <span class="grade-chip grade-{{ result.evidence }}">{{ GRADE_LABEL[result.evidence] }}</span>
+          {% if result.explained_variance == result.explained_variance %}
+            the forks explain <b>{{ result.explained_variance|percent(0) }}</b> of the
+            within-taxon variance;
           {% endif %}
-        </div>
+          estimators agree at
+          {{ result.estimator_agreement()|fixed(2) }} (Spearman, 1.00 = identical ranking).
+          {% set gap = result.resample_gap() %}
+          {% if gap == gap and gap >= 10 %}
+            <br><b>The largest choice shifts by {{ gap|fixed(0) }} percentage points</b>
+            when the estimate is recomputed on a resample of
+            {{ result.interval_n_taxa }} taxa — treat the ordering below as indicative
+            only.
+          {% endif %}
+        </p>
+        {% if result.warnings %}
+          <ul class="attribution-warnings">
+            {% for warning in result.warnings %}<li>{{ warning }}</li>{% endfor %}
+          </ul>
+        {% endif %}
+        <p class="footnote">{{ result.estimator }}{% if result.note %} — {{ result.note }}{% endif %}</p>
       {% endif %}
-    </section>
-  </div>
+    {% endfor %}
+
+    {% set draw = attribution.get("rarefaction_draw") %}
+    {% if draw %}
+      <p class="note" style="margin-top:22px">
+        <b>{{ draw.seed_share|fixed(0) }}% of rarefaction's variance is the random draw
+        itself</b>, not the choice of depth — measurable only because each subsampling seed is
+        treated as its own specification rather than averaged away. The remaining
+        {{ draw.depth_share|fixed(0) }}% is the depth.
+      </p>
+    {% endif %}
+  </section>
+
 
   <!-- ============ §16.3 specification curve ============ -->
   <section class="section-tight" aria-labelledby="curve-title">
@@ -477,6 +425,81 @@
     </p>
   </section>
 
+  <!-- ============ how the grid was built (technical) ============ -->
+  <section class="stack">
+    <div class="card card-paper">
+      {{ section_label('What was actually run', '11-12') }}
+      <h2 class="mt0" style="font-size:22px">Nothing hidden from the count.</h2>
+      <p class="muted" style="font-size:13.5px;margin:8px 0 18px">
+        Not every combination of choices makes sense — some contradict themselves. Those
+        are {{ dfn('pruned', 'ruled out') }} with the reason shown, so you can see how much
+        of the space was ever real.</p>
+
+      <div class="metrics" id="grid-metrics">
+        <div><b>{{ grid.n_enumerated|commafy }}</b><span>{{ dfn('enumerated', 'considered') }}</span></div>
+        <div><b>{{ grid.n_valid|commafy }}</b><span>{{ dfn('valid', 'run') }}</span></div>
+        <div><b>{{ grid.n_fits|commafy }}</b><span>{{ dfn('model_fit', 'models fitted') }}</span></div>
+      </div>
+
+      {% if grid.pruned_reasons %}
+        <details style="margin-top:16px">
+        <summary>Why {{ (grid.n_enumerated - grid.n_valid)|commafy }} combinations were ruled out</summary>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Reasons specifications were pruned, scrollable" style="margin-top:12px">
+          <table class="data">
+            <thead><tr><th scope="col">Ruled out because</th><th scope="col" class="num">How many</th></tr></thead>
+            <tbody>
+              {% for reason, count in grid.pruned_reasons.items() %}
+                <tr><td>{{ reason }}</td><td class="num">{{ count|commafy }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        </details>
+      {% endif %}
+
+      {% if summary.n_specs_skipped %}
+        <p class="warn" style="margin-top:12px">
+          {{ summary.n_specs_skipped|commafy }} analyses produced no result at all, because
+          subsampling to that depth left one group with too few samples to compare. They are
+          excluded from every percentage on this page rather than counted as failures.</p>
+      {% endif %}
+      {% for note in grid.notes %}<p class="note" style="margin-top:10px">{{ note }}</p>{% endfor %}
+    </div>
+
+    <div class="card">
+      <h3 class="mt0" style="font-size:17px;font-family:var(--sans);font-weight:650">
+        How many taxa each specification called</h3>
+      <p class="muted" style="font-size:13px;margin:7px 0 12px">
+        From <b class="num">{{ spec_stats.min }}</b> to <b class="num">{{ spec_stats.max }}</b>
+        significant taxa across the grid, median <b class="num">{{ spec_stats.median|fixed(0) }}</b>.
+        {% if spec_stats.declared >= 0 %}Your declared pipeline called
+          <b class="num">{{ spec_stats.declared }}</b>.{% endif %}
+      </p>
+      <div id="spec-histogram" class="plot" style="height:180px"></div>
+    </div>
+
+    {% if declared_spec %}
+      <div class="card card-paper">
+        {{ section_label('Where your own pipeline sits', '16.4') }}
+        <h3 class="mt0" style="font-size:17px;font-family:var(--sans);font-weight:650">
+          The analysis you would have run</h3>
+        <p class="mono" style="font-size:12.5px;color:var(--ink-soft);margin:8px 0 14px;line-height:1.6">
+          {{ declared_spec.describe() }}</p>
+        {% if summary.declared_percentile == summary.declared_percentile %}
+          <p class="{% if summary.declared_percentile > 75 %}warn{% else %}note{% endif %}" style="margin:0">
+            It finds more significant taxa than
+            <b>{{ summary.declared_percentile|fixed(0) }}%</b> of the other defensible
+            analyses.
+            {% if summary.declared_percentile > 75 %}
+              More specifications give a less significant answer than a more significant one.
+              That is worth stating in your paper.
+            {% endif %}
+          </p>
+        {% endif %}
+      </div>
+    {% endif %}
+  </section>
+
   <!-- ============ methods ============ -->
   <section class="section-tight" aria-labelledby="methods-title">
     <div class="card card-dark">
@@ -488,7 +511,7 @@
         <p style="white-space:pre-wrap;margin:0;font-size:13.5px;line-height:1.75;color:#e2e7ef">{{ methods_text }}</p>
       </div>
       <div class="row" style="margin-top:18px">
-        <a class="button button-primary" style="background:var(--signal);border-color:var(--signal);color:var(--ink)"
+        <a class="button button-on-dark"
            href="/download/{{ token }}/methods">Download with citations <span aria-hidden="true">→</span></a>
       </div>
     </div>

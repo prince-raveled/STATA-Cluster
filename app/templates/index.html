@@ -78,6 +78,20 @@
   </div>
 </section>
 
+<!-- ================= what happens ================= -->
+{#  The brief asks for the workflow in one glance, before the argument for it. Five
+    words, no illustration: anything more decorative would be making the point about
+    itself rather than about the product. #}
+<section class="shell flow" aria-label="How MicroVerse works">
+  <ol class="flow-steps">
+    <li><span>Your data</span><small>One abundance table, two groups</small></li>
+    <li><span>Many analyses</span><small>Every defensible combination of choices</small></li>
+    <li><span>Compare</span><small>The same taxa, seen every way</small></li>
+    <li><span>Stability</span><small>What survives the choices, and what does not</small></li>
+    <li><span>Evidence</span><small>Per taxon, with the reason it moved</small></li>
+  </ol>
+</section>
+
 <section class="band">
   <span class="band-number">01</span>
   <p><b>Not a p-value generator.</b> MicroVerse has no “export best specification” button and
@@ -190,8 +204,8 @@
 
       <label class="field">
         <span class="label">Taxonomy map <span class="muted">optional</span></span>
-        <span class="hint">Feature ID → lineage. Enables fork 4 (genus vs input rank) when your
-          table is finer than genus.</span>
+        <span class="hint">Feature ID → lineage. Lets the analysis be repeated at genus
+          level as well, when your table is finer than genus.</span>
         <input type="file" name="taxonomy" accept=".csv,.tsv,.txt">
       </label>
 

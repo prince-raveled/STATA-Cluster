@@ -1,43 +1,89 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap');
 
 /* ==========================================================================
-   MicroVerse — editorial research interface.
-   Paper ground, ink type, one accent. Sharp geometry: rules and rectangles,
-   never rounded cards. Numbers are always monospaced and tabular so columns
-   of results align down the page.
+   MicroVerse — a research interface, not a dashboard.
+
+   Three brand colours and nothing else invented for variety: a tinted paper
+   canvas, a deep forest for authority, and a sage used sparingly. Roughly
+   80% neutral, 15% forest, 5% sage. Sharp geometry — rules and rectangles,
+   never rounded cards. Numbers are monospaced and tabular so columns of
+   results align down the page.
+
+   Every value below was chosen against measured WCAG contrast, not by eye.
+   Two rules fall out of that and are not negotiable:
+
+     * --accent-soft (the literal brand sage) reaches only 2.90:1 on the
+       canvas. It is decorative — washes, markers, chart fills. It may never
+       carry text, and it may never be the only thing distinguishing one
+       state from another.
+     * --accent-mid clears 3:1 on the canvas. It is for non-text UI — rules,
+       fills, focus rings, active markers.
+     * --accent is darker again and is the only sage allowed to carry text. It
+       clears 4.5:1 at any size on the canvas and on surfaces. axe caught three
+       disclosure summaries set in --accent-mid at 4.43:1, which is why the two
+       are separate tokens rather than one.
+
+   --grey-soft clears 4.5:1 on the canvas and on surfaces but not on
+   --paper-deep. Do not put it in a well.
    ========================================================================== */
 
 :root {
-  --ink: #16233a;
-  --ink-soft: #33415c;
-  --paper: #f6f3ec;
-  --paper-deep: #ebe6da;
-  --white: #fffdf9;
+  --ink: #2c3a2e;             /* brand forest — headings, primary actions */
+  --ink-soft: #425043;
+  --paper: #edf1ec;           /* the canvas */
+  --paper-deep: #e2e8e1;      /* wells, table headers, tracks */
+  --white: #fcfdfb;           /* cards and other raised surfaces */
+  --surface: #f7f9f6;         /* quieter raised surface */
 
-  --accent: #4a4bb0;          /* indigo — brand, never a data colour */
-  --accent-deep: #35357f;
-  --accent-wash: #e7e6f6;
-  --signal: #e8c65c;          /* statement bands */
-  --line: #d8d3c7;
-  --line-soft: #e6e1d6;
-  --grey: #5c616e;          /* >= 4.5:1 on paper, paper-deep and accent-wash */
-  --grey-soft: #9299a5;
+  --accent: #46593e;          /* sage that carries TEXT — 6.67:1 on the canvas */
+  --accent-deep: #36452f;     /* hover and pressed */
+  --accent-mid: #5e7553;      /* non-text UI only: rules, fills, focus — 4.44:1 */
+  --accent-soft: #7d9471;     /* the literal brand sage — decoration only */
+  --accent-wash: #e3eadf;
+  --accent-on-dark: #a9bc9f;  /* sage legible on the forest — 5.93:1 */
+  --on-dark: #c6d0c4;         /* body text on the forest — 7.4:1 */
+  --on-dark-soft: #9aa89a;    /* labels on the forest — 4.6:1 */
+  --signal: #7d9471;          /* kept for markers; never behind text */
+  --line: #cbd5c9;
+  --line-soft: #dce3da;
+  /* Aliases for names the stylesheet already uses. `--rule` was referenced in twenty
+     places without ever being defined, so each of those borders was dropped as
+     invalid and never drew — the sectioning they were meant to provide simply was
+     not there. The other two carried fallbacks and merely did nothing. */
+  --rule: #cbd5c9;
+  --paper-2: #f2f5f1;
+  --fragile-ink: #a35a33;
+  --grey: #5a6559;            /* supporting text, >= 4.5:1 on every surface */
+  --grey-soft: #646d63;       /* muted labels — not on --paper-deep */
 
-  /* Tier semantics. Deliberately separate from the brand accent so a coloured
-     row never reads as branding. */
-  --robust: #1f6b45;
-  --conditional: #8a6212;
-  --fragile: #a04d18;
-  --unstable: #a8372a;
-  --insufficient: #5f646c;
-  --undetected: #464c57;
+  /* Tier semantics. Muted and deliberately separate from the brand, so a
+     coloured row reads as a finding rather than as decoration. Each clears
+     4.5:1 as text on a surface and as white-on-colour in a chip. Colour is
+     never the only signal: every tier is also named in words. */
+  --robust: #2f6b4f;
+  --conditional: #7f6129;
+  --fragile: #a35a33;
+  --unstable: #9e4438;
+  --insufficient: #636b64;
+  --undetected: #4d544e;
 
   --sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  --serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
   --mono: 'DM Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  --shadow: 0 14px 40px rgba(22, 35, 58, .10);
+  --shadow: 0 14px 40px rgba(44, 58, 46, .10);
+  --shadow-soft: 0 1px 2px rgba(44, 58, 46, .05);
   --gutter: clamp(22px, 4.5vw, 68px);
   --measure: 1320px;
+
+  /* One spacing scale, so rhythm is chosen rather than improvised. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
 }
 
 * { box-sizing: border-box; }
@@ -64,16 +110,16 @@ img, svg { max-width: 100%; }
 
 .skip-link {
   position: fixed; top: 8px; left: 8px; z-index: 100; padding: 10px 14px;
-  color: var(--ink); background: var(--signal); font-weight: 600; font-size: 13px;
+  color: var(--paper); background: var(--ink); font-weight: 600; font-size: 13px;
   transform: translateY(-160%); transition: transform .18s;
 }
 .skip-link:focus { transform: translateY(0); }
 
 /* ---- typography ---------------------------------------------------------- */
-h1, h2, h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -.01em; margin: 0; }
-h1 { font-size: clamp(38px, 5.2vw, 68px); line-height: 1.02; }
-h2 { font-size: clamp(26px, 2.6vw, 36px); line-height: 1.1; }
-h3 { font-size: 21px; line-height: 1.2; }
+h1, h2, h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -.008em; margin: 0; }
+h1 { font-size: clamp(34px, 4.4vw, 56px); line-height: 1.08; }
+h2 { font-size: clamp(24px, 2.2vw, 32px); line-height: 1.15; }
+h3 { font-size: 20px; line-height: 1.25; }
 em.accent { font-style: italic; color: var(--accent); }
 
 .eyebrow {
@@ -137,7 +183,18 @@ em.accent { font-style: italic; color: var(--accent); }
 .button:hover { transform: translateY(-2px); text-decoration: none; }
 .button-primary { color: var(--white); background: var(--ink); }
 .button-primary:hover { background: var(--accent); border-color: var(--accent); }
-.button-outline { border-color: #b6b2a7; }
+
+/* A primary action sitting on a dark card. The dark button disappears there, and the
+   brand sage behind dark text is only 3.62:1 — so the light sage carries it, with the
+   forest as the label. Verified at 5.9:1. */
+.button-on-dark {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 13px 22px; font-size: 14px; font-weight: 600;
+  color: var(--ink); background: var(--accent-on-dark);
+  border: 1px solid var(--accent-on-dark); transition: .18s;
+}
+.button-on-dark:hover { background: var(--paper); border-color: var(--paper); }
+.button-outline { border-color: var(--line); }
 .button-outline:hover { color: var(--white); background: var(--ink); border-color: var(--ink); }
 .button-small { min-height: 38px; padding: 8px 13px; font-size: 12.5px; gap: 9px; }
 .button[disabled], .button[aria-disabled='true'] { opacity: .45; pointer-events: none; }
@@ -152,7 +209,7 @@ em.accent { font-style: italic; color: var(--accent); }
 .card-paper { background: var(--paper); }
 .card-dark { color: var(--white); background: var(--ink); border-color: var(--ink); }
 .card-dark .micro { color: var(--paper-deep); }
-.card-dark .muted { color: #b9c1cf; }
+.card-dark .muted { color: var(--on-dark); }
 .card + .card { margin-top: 18px; }
 
 .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
@@ -226,9 +283,13 @@ em.accent { font-style: italic; color: var(--accent); }
 /* ---- statement band ------------------------------------------------------ */
 .band {
   display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 30px; align-items: center;
-  padding: 26px var(--gutter); background: var(--signal); color: var(--ink);
+  padding: 26px var(--gutter); background: var(--accent-wash); color: var(--ink);
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  box-shadow: inset 4px 0 0 var(--accent-soft);
 }
-.band-number { font: 400 12px var(--mono); letter-spacing: .12em; opacity: .7; }
+/* A real colour rather than opacity: a 70% ink over the wash computes to 4.29:1,
+   and transparency makes contrast depend on whatever happens to sit behind. */
+.band-number { font: 400 12px var(--mono); letter-spacing: .12em; color: var(--grey); }
 .band p { margin: 0; font-size: 15px; max-width: 88ch; }
 .band a { border-bottom: 1px solid currentColor; padding-bottom: 2px; font-weight: 600; font-size: 14px; white-space: nowrap; }
 
@@ -244,9 +305,9 @@ em.accent { font-style: italic; color: var(--accent); }
 .pillar-deep { background: var(--paper-deep); }
 /* The dark variant must come after the base rules: same specificity, later wins. */
 .pillar-ink { color: var(--white); background: var(--ink); border-color: var(--ink); }
-.pillar-ink p { color: #c9d1de; }
-.pillar-ink .pillar-number { color: #9aa5b8; }
-.pillar-ink .text-action { color: var(--signal); border-color: var(--signal); }
+.pillar-ink p { color: var(--on-dark); }
+.pillar-ink .pillar-number { color: var(--on-dark-soft); }
+.pillar-ink .text-action { color: var(--accent-on-dark); border-color: var(--accent-on-dark); }
 
 /* ---- numbered steps ------------------------------------------------------ */
 .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-top: 1px solid var(--line); }
@@ -262,8 +323,8 @@ em.accent { font-style: italic; color: var(--accent); }
 .metrics span { display: block; margin-top: 5px; font-size: 11.5px; color: var(--grey); line-height: 1.35; }
 .metrics.on-dark { border-color: rgba(255,255,255,.2); background: transparent; }
 .metrics.on-dark > div { box-shadow: 1px 0 0 rgba(255,255,255,.16), 0 1px 0 rgba(255,255,255,.16); }
-.metrics.on-dark b { color: var(--signal); }
-.metrics.on-dark span { color: #b9c1cf; }
+.metrics.on-dark b { color: var(--accent-on-dark); }
+.metrics.on-dark span { color: var(--on-dark); }
 
 .stat-band { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); border: 1px solid var(--line); background: var(--white); }
 .stat-band > div { padding: 22px 24px; box-shadow: 1px 0 0 var(--line), 0 1px 0 var(--line); }
@@ -287,7 +348,7 @@ table.data th {
 }
 table.data td { padding: 13px 16px; border-bottom: 1px solid var(--line-soft); font-size: 13.5px; vertical-align: middle; }
 table.data tbody tr:last-child td { border-bottom: 0; }
-table.data tbody tr:hover { background: #fbf9f3; }
+table.data tbody tr:hover { background: var(--accent-wash); }
 table.data td.num, table.data th.num { text-align: right; font-family: var(--mono); font-size: 12.5px; font-variant-numeric: tabular-nums; }
 
 /* ---- form controls ------------------------------------------------------- */
@@ -306,7 +367,7 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
 .choice { display: grid; gap: 0; border: 1px solid var(--line); }
 .choice label { display: block; padding: 16px 18px; cursor: pointer; border-bottom: 1px solid var(--line); background: var(--white); transition: background .15s; position: relative; }
 .choice label:last-child { border-bottom: 0; }
-.choice label:hover { background: #fbf9f3; }
+.choice label:hover { background: var(--accent-wash); }
 /* `:has()` is unsupported before Firefox 121 / Safari 15.4, and a selection that is
    invisible is worse than plain. `.is-checked` is maintained by a few lines of script
    so the state shows everywhere; the `:has()` rule keeps it working without JS. */
@@ -330,17 +391,24 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
 .chip input { width: 14px; height: 14px; accent-color: var(--accent); }
 
 /* ---- tiers --------------------------------------------------------------- */
+/* A tier is a finding, not a label to shout. A small marker in the tier's colour
+   carries the state, the word carries the meaning, and the row stays readable at a
+   glance down the column. Colour is never the only signal. */
 .tier {
-  display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px;
-  font: 500 10px var(--mono); letter-spacing: .06em; text-transform: uppercase;
-  color: var(--white); white-space: nowrap;
+  display: inline-flex; align-items: baseline; gap: 7px;
+  font: 500 11.5px var(--sans); letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ink); background: none; padding: 0;
 }
-.tier.robust { background: var(--robust); }
-.tier.conditional { background: var(--conditional); }
-.tier.fragile { background: var(--fragile); }
-.tier.unstable { background: var(--unstable); }
-.tier.insufficient { background: var(--insufficient); }
-.tier.undetected { background: var(--undetected); }
+.tier::before {
+  content: ""; width: 7px; height: 7px; flex: none;
+  transform: translateY(-1px); background: currentColor;
+}
+.tier.robust::before { background: var(--robust); }
+.tier.conditional::before { background: var(--conditional); }
+.tier.fragile::before { background: var(--fragile); }
+.tier.unstable::before { background: var(--unstable); }
+.tier.insufficient::before { background: var(--insufficient); }
+.tier.undetected::before { background: var(--undetected); }
 
 .tier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); border: 1px solid var(--line); }
 .tier-cell { padding: 18px 20px; background: var(--white); box-shadow: 1px 0 0 var(--line), 0 1px 0 var(--line); border-top: 3px solid currentColor; }
@@ -360,8 +428,8 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
   background: var(--paper-deep); color: var(--ink-soft);
 }
 .note { border-left-color: var(--accent); background: var(--accent-wash); color: var(--ink); }
-.warn { border-left-color: var(--conditional); background: #faf0d8; color: #6f5312; }
-.alert { border-left-color: var(--unstable); background: #f8e3df; color: #7d2c22; }
+.warn { border-left-color: var(--conditional); background: #f4ecdb; color: #6b5323; }
+.alert { border-left-color: var(--unstable); background: #f4e2de; color: #7a3329; }
 .note + .note, .warn + .warn, .note + .warn, .warn + .note { margin-top: 9px; }
 
 /* ---- attribution bars ---------------------------------------------------- */
@@ -378,11 +446,33 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
 /* ---- verdict ------------------------------------------------------------- */
 .verdict { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 34px; align-items: end; padding: clamp(26px, 3vw, 38px); color: var(--white); background: var(--ink); }
 .verdict h2 { font-size: clamp(22px, 2.2vw, 30px); line-height: 1.22; max-width: 34ch; }
-.verdict p { margin: 12px 0 0; color: #c2cad8; font-size: 14px; max-width: 72ch; }
+.verdict p { margin: 12px 0 0; color: var(--on-dark); font-size: 14px; max-width: 72ch; }
+/* The engine's own sentence, kept verbatim but demoted below the headline: precise,
+   and not the first thing anyone should have to parse. */
+.verdict-detail { font-size: 13.5px !important; line-height: 1.65; }
+.verdict-guide {
+  display: flex; flex-wrap: wrap; gap: var(--space-5);
+  margin-top: var(--space-5) !important; padding-top: var(--space-4);
+  border-top: 1px solid rgba(255, 255, 255, .16);
+}
+.verdict-guide a {
+  font-size: 13px; font-weight: 500; color: var(--accent-on-dark);
+  border-bottom: 1px solid transparent; padding-bottom: 2px;
+}
+.verdict-guide a:hover, .verdict-guide a:focus-visible { border-bottom-color: currentColor; }
+
+/* Orientation follows the finding rather than preceding it, so it is a disclosure. */
+.orient-wrap { margin: var(--space-6) 0 0; border-bottom: 1px solid var(--line); }
+.orient-wrap > summary {
+  padding: var(--space-3) 0; font-size: 13.5px; font-weight: 500;
+  color: var(--accent); cursor: pointer;
+}
+.orient-wrap > summary:hover { color: var(--accent-deep); }
+.orient-wrap .orient { margin-bottom: var(--space-5); }
 .verdict-side { min-width: 190px; padding-left: 22px; border-left: 1px solid rgba(255,255,255,.28); }
 .verdict-side span { display: block; font: 400 9.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--paper-deep); }
-.verdict-side b { display: block; margin: 5px 0 4px; font: 700 34px/1 var(--serif); color: var(--signal); }
-.verdict-side small { display: block; font-size: 11.5px; color: #b9c1cf; line-height: 1.4; }
+.verdict-side b { display: block; margin: 5px 0 4px; font: 600 34px/1 var(--serif); color: var(--accent-on-dark); }
+.verdict-side small { display: block; font-size: 11.5px; color: var(--on-dark); line-height: 1.4; }
 
 /* ---- tabs ---------------------------------------------------------------- */
 .tabs { display: flex; gap: 24px; padding: 0 clamp(18px, 2vw, 26px); background: var(--paper-deep); border: 1px solid var(--line); border-bottom: 0; overflow-x: auto; }
@@ -392,8 +482,8 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
 
 /* ---- progress ------------------------------------------------------------ */
 .progress-track { height: 6px; background: rgba(255,255,255,.18); overflow: hidden; }
-.progress-fill { height: 100%; background: var(--signal); transition: width .4s ease; }
-.spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.3); border-top-color: var(--signal); border-radius: 50%; animation: spin .8s linear infinite; }
+.progress-fill { height: 100%; background: var(--accent-on-dark); transition: width .4s ease; }
+.spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.28); border-top-color: var(--accent-on-dark); border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ---- plots --------------------------------------------------------------- */
@@ -427,15 +517,22 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
 
 /* ---- Tabulator, restyled to match ---------------------------------------- */
 .tabulator { background: var(--white); border: 1px solid var(--line); font-family: var(--sans); font-size: 13px; }
-.tabulator .tabulator-header { background: var(--paper); border-bottom: 1px solid var(--line); }
-.tabulator .tabulator-header .tabulator-col { background: transparent; border-right: 1px solid var(--line-soft); }
+.tabulator .tabulator-header { background: var(--white); border-bottom: 2px solid var(--ink); }
+/* No vertical rules between columns: alignment and space separate them, the way a
+   table in a journal does. Vertical lines are what makes a data table read as a
+   spreadsheet. */
+.tabulator .tabulator-header .tabulator-col { background: transparent; border-right: 0; }
 .tabulator .tabulator-header .tabulator-col-title {
   font: 400 10px var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--grey);
 }
 .tabulator .tabulator-row { background: var(--white); border-bottom: 1px solid var(--line-soft); color: var(--ink); }
-.tabulator .tabulator-row:hover { background: #fbf9f3 !important; }
+/* The taxon column is the row's label, so it stays in the reading face and carries
+   slightly more weight than the figures beside it. */
+.tabulator .tabulator-cell[tabulator-field='label'] { font-weight: 500; }
+.tabulator .tabulator-row:last-child { border-bottom: 0; }
+.tabulator .tabulator-row:hover { background: var(--accent-wash) !important; }
 .tabulator .tabulator-row.tabulator-selected { background: var(--accent-wash) !important; }
-.tabulator .tabulator-cell { border-right: 1px solid var(--line-soft); padding: 10px 12px; }
+.tabulator .tabulator-cell { border-right: 0; padding: 13px 14px; }
 .tabulator .tabulator-cell[tabulator-field='n_specs_tested'],
 .tabulator .tabulator-cell[tabulator-field='frac_tested'],
 .tabulator .tabulator-cell[tabulator-field='frac_significant'],
@@ -443,6 +540,13 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
 .tabulator .tabulator-cell[tabulator-field='sign_consistency'],
 .tabulator .tabulator-cell[tabulator-field='median_effect'],
 .tabulator .tabulator-cell[tabulator-field='iqr_low'] { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 12px; }
+.tabulator .tabulator-header .tabulator-col[tabulator-field='n_specs_tested'] .tabulator-col-title,
+.tabulator .tabulator-header .tabulator-col[tabulator-field='frac_tested'] .tabulator-col-title,
+.tabulator .tabulator-header .tabulator-col[tabulator-field='frac_significant'] .tabulator-col-title,
+.tabulator .tabulator-header .tabulator-col[tabulator-field='frac_nominal'] .tabulator-col-title,
+.tabulator .tabulator-header .tabulator-col[tabulator-field='sign_consistency'] .tabulator-col-title,
+.tabulator .tabulator-header .tabulator-col[tabulator-field='median_effect'] .tabulator-col-title,
+.tabulator .tabulator-header .tabulator-col[tabulator-field='iqr_low'] .tabulator-col-title { text-align: right; }
 .tabulator .tabulator-footer { background: var(--paper); border-top: 1px solid var(--line); color: var(--grey); font-size: 12px; }
 .tabulator .tabulator-footer .tabulator-page { border: 1px solid var(--line); background: var(--white); border-radius: 0; }
 .tabulator .tabulator-footer .tabulator-page.active { color: var(--white); background: var(--accent); border-color: var(--accent); }
@@ -1002,4 +1106,37 @@ main, .shell { overflow-x: clip; }
   .taxon-picker-field input[type="search"],
   .taxon-picker-select select { width: 100%; min-width: 0; max-width: none; }
   .taxon-picker #curve-status { margin-left: 0; padding-bottom: 0; }
+}
+
+/* --- the workflow, stated once -------------------------------------------
+   Five steps on one rule. Numbered by position rather than by a printed digit,
+   because the order is the whole point and a column of numerals would compete
+   with the words. */
+.flow { padding: var(--space-6) var(--gutter) var(--space-2); }
+.flow-steps {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0; margin: 0; padding: 0; list-style: none;
+  border-top: 1px solid var(--line);
+}
+.flow-steps li {
+  position: relative;
+  padding: var(--space-4) var(--space-5) var(--space-5) 0;
+  border-top: 2px solid transparent;
+}
+.flow-steps li::before {
+  content: ""; position: absolute; top: -1px; left: 0; width: 22px; height: 2px;
+  background: var(--accent-soft);
+}
+.flow-steps li:first-child::before { background: var(--ink); }
+.flow-steps span {
+  display: block; font-family: var(--serif); font-size: 17px; font-weight: 600;
+  color: var(--ink); margin-bottom: var(--space-1);
+}
+.flow-steps small { display: block; font-size: 12.5px; line-height: 1.5; color: var(--grey); }
+@media (max-width: 900px) {
+  .flow-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .flow-steps { grid-template-columns: 1fr; }
+  .flow-steps li { padding-right: 0; }
 }
