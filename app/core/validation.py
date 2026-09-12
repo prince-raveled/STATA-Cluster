@@ -197,8 +197,8 @@ def validate_dataset(
         raise DatasetError(
             "The abundance table contains negative values, so it has already been "
             "transformed (CLR, log-ratio or z-scored).",
-            "MicroVerse must apply the transformations itself — that is fork 3 of the "
-            "multiverse. Upload raw counts or relative abundances.",
+            "MicroVerse must apply the transformations itself — varying them is one "
+            "of the choices it explores. Upload raw counts or relative abundances.",
         )
 
     # --- metadata alignment -----------------------------------------------
@@ -349,13 +349,13 @@ def validate_dataset(
     if not aligned.can_collapse_to_genus:
         if aligned.has_taxonomy:
             warnings.append(
-                "The table is already at genus level or coarser, so fork 4 (taxonomic rank) "
-                "has a single level and the grid shrinks accordingly."
+                "The table is already at genus level or coarser, so the taxonomic-rank "
+                "choice has a single level and the grid shrinks accordingly."
             )
         else:
             warnings.append(
-                "No taxonomy was detected, so fork 4 (taxonomic rank) has a single level. "
-                "Supply lineages to vary it."
+                "No taxonomy was detected, so the taxonomic-rank choice has a single "
+                "level. Supply lineages to vary it."
             )
 
     covariate_columns = _candidate_covariates(metadata, group_column)

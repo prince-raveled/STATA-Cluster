@@ -117,8 +117,8 @@ def enumerate_grid(
     notes = list(dropped_notes)
     if len(ranks) == 1:
         notes.append(
-            "Input is already at genus level (or carries no taxonomy), so fork 4 has one "
-            "level and the grid shrinks accordingly."
+            "Input is already at genus level (or carries no taxonomy), so the "
+            "taxonomic-rank choice has one level and the grid shrinks accordingly."
         )
 
     enumerated: list = []
