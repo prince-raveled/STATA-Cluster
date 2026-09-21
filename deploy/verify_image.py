@@ -27,25 +27,34 @@ covered by CI.
 from __future__ import annotations
 
 import contextlib
-import json
 import os
-import re
 import subprocess
 import sys
-import tempfile
+
+# Same directory, and this file is only ever run as a script, so deploy/ is sys.path[0].
+# Importing rather than restating the platforms keeps one definition of what the image
+# is built for; getting the two out of step is how an arm64 build breaks unnoticed.
+import lock_requirements
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCKERFILE = os.path.join(ROOT, "Dockerfile")
-PYTHON_VERSION = "3.12"
-PLATFORM = "manylinux2014_x86_64"
+PYTHON_VERSION = lock_requirements.PYTHON_VERSION
 
 FAILURES: list = []
+
+#: Actions logs need repository admin rights to read through the API, but annotations
+#: do not. Emitting each failure as one means a red build can be diagnosed from outside
+#: the web UI, which is the difference between reading why it failed and guessing.
+ON_GITHUB = os.environ.get("GITHUB_ACTIONS") == "true"
 
 
 def check(name: str, ok: bool, detail: str = "") -> None:
     print(f"  [{'PASS' if ok else 'FAIL'}] {name}" + (f" — {detail}" if detail else ""))
     if not ok:
         FAILURES.append(name)
+        if ON_GITHUB:
+            summary = f"{name} — {detail}" if detail else name
+            print("::error title=verify_image::" + " ".join(summary.split())[:900])
 
 
 def report(name: str, detail: str) -> None:
@@ -68,34 +77,31 @@ def check_runtime_available() -> str | None:
 
 
 def check_dependencies() -> None:
+    """Resolve the lock for every architecture the image can be built on.
+
+    Both, not just this machine's: the image definition is architecture-neutral, and a
+    lock that is quietly x86-64 only fails in the pip layer after the whole build
+    context has been sent. uv rather than pip because only uv evaluates environment
+    markers for the target platform -- see deploy/lock_requirements.py.
+    """
     print()
-    print("Dependency resolution for the image's platform")
-    with tempfile.TemporaryDirectory() as workdir:
-        report_path = os.path.join(workdir, "report.json")
-        completed = subprocess.run(
-            [sys.executable, "-m", "pip", "install", "--dry-run", "--quiet",
-             "--report", report_path, "--target", os.path.join(workdir, "t"),
-             "--python-version", PYTHON_VERSION, "--platform", PLATFORM,
-             "--only-binary=:all:", "-r",
-             os.path.join(ROOT, "requirements.lock.txt")],
-            capture_output=True, text=True, check=False)
-        if completed.returncode != 0:
-            check("the lock resolves for the image's platform", False,
-                  completed.stderr.strip().splitlines()[-1] if completed.stderr else "")
-            return
-        with open(report_path, encoding="utf-8") as handle:
-            resolved = json.load(handle)["install"]
+    print("Dependency resolution, per architecture")
+    lockfile = os.path.join(ROOT, "requirements.lock.txt")
+    for label, target in lock_requirements.TARGETS:
+        try:
+            # --only-binary :all: is inside compile_for, so a pin with no wheel for
+            # this architecture fails here rather than becoming a source build.
+            resolved = lock_requirements.compile_for(target, lockfile)
+        except RuntimeError as error:
+            check(f"every locked version has a wheel for {label}", False,
+                  lock_requirements._error_tail(error, 1))
+            continue
+        check(f"every locked version has a wheel for {label}", True,
+              f"{len(resolved)} packages for Python {PYTHON_VERSION}")
 
-    check("the lock resolves for the image's platform", True,
-          f"{len(resolved)} packages for Python {PYTHON_VERSION} on {PLATFORM}")
-    sources = [i["metadata"]["name"] for i in resolved
-               if not i["download_info"]["url"].endswith(".whl")]
-    check("every dependency is a wheel, so the image needs no compiler",
-          not sources, ", ".join(sources) if sources else "no source builds")
-
-    prereleases = [f"{i['metadata']['name']} {i['metadata']['version']}"
-                   for i in resolved
-                   if re.search(r"(a|b|rc|dev)\d+$", i["metadata"]["version"])]
+    prereleases = [f"{name} {version}" for name, version
+                   in sorted(lock_requirements.read_lock().items())
+                   if lock_requirements._is_prerelease(version)]
     check("no pre-release is pinned", not prereleases, ", ".join(prereleases) or "none")
 
 
@@ -103,7 +109,7 @@ def check_lock_is_current() -> None:
     completed = subprocess.run(
         [sys.executable, os.path.join(ROOT, "deploy", "lock_requirements.py"), "--check"],
         capture_output=True, text=True, check=False, cwd=ROOT)
-    check("requirements.lock.txt matches requirements.txt",
+    check("requirements.lock.txt satisfies requirements.txt on both architectures",
           completed.returncode == 0, completed.stdout.strip().splitlines()[-1]
           if completed.stdout.strip() else "")
 
@@ -242,6 +248,8 @@ def main() -> int:
     print()
     if FAILURES:
         print("FAILED: " + ", ".join(FAILURES))
+        if ON_GITHUB:
+            print("::error title=verify_image::failed checks: " + ", ".join(FAILURES))
         return 1
     print("Every check that does not require a container daemon passed.")
     print("The build itself, and a full analysis driven through the running container,")
