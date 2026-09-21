@@ -29,6 +29,13 @@ COPY examples ./examples
 COPY tests ./tests
 COPY MICROVERSE_SPEC_v2_idea2.md CONTRIBUTING.md README.md pyproject.toml ./
 
+# docs/ holds the experiment records the tests check the application's hard-coded
+# constants against. Without it the suite this build gates on cannot run as
+# written: one test reads docs/benchmark.json outright, and test_evidence.py's
+# drift checks skip themselves -- which is the gate quietly losing a test rather
+# than failing. 1.1 MB, and the builder stage only; the runtime does not need it.
+COPY docs ./docs
+
 # Generate the demo datasets at build time so the landing page works offline.
 ENV PYTHONPATH=/install/lib/python3.12/site-packages
 RUN python examples/make_examples.py
