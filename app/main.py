@@ -64,7 +64,10 @@ app.include_router(worker.router)
 #: page fetches these with `fetch`, so an HTML error page would be unreadable to the
 #: caller. Kept as a predicate rather than a list so a new curve-like route is covered.
 def _wants_json(path: str) -> bool:
-    return path.startswith("/api/") or "/curve/" in path
+    # "/upload/" with the slash, so the plain form post to "/upload" still gets the
+    # error page a browser navigation should get. The direct-upload steps behind it
+    # are all called with `fetch`.
+    return path.startswith(("/api/", "/upload/")) or "/curve/" in path
 
 
 @app.exception_handler(DatasetError)
@@ -112,7 +115,7 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
 
 @app.exception_handler(ParseError)
 async def parse_error_handler(request: Request, exc: ParseError):
-    if request.url.path.startswith("/api/"):
+    if _wants_json(request.url.path):
         return JSONResponse(status_code=422, content={"error": str(exc), "hint": ""})
     return templates.TemplateResponse(
         request, "error.html",

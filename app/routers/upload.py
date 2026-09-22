@@ -1,10 +1,10 @@
 """Landing page, upload, demo datasets, run configuration."""
 from __future__ import annotations
 
-from fastapi import APIRouter, BackgroundTasks, File, Form, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, Form, Header, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from .. import config, db, jobs, services
+from .. import config, db, jobs, services, storage, uploads
 from ..core.parsers import SUPPORTED_FORMATS
 from ..core.validation import DatasetError, NotFoundError
 from ..limits import enforce_rate_limit, run_queue
@@ -64,6 +64,116 @@ async def upload(
     )
     token = services.create_job(dataset, abundance.filename)
     return RedirectResponse(f"/configure/{token}", status_code=303)
+
+
+# --- direct upload ---------------------------------------------------------
+# Three steps instead of one, for hosts whose request-body cap is smaller than
+# MicroVerse's upload limit. The form above still works and is still what a browser
+# without JavaScript posts; this path exists so the bytes can go to storage directly
+# instead of through the application. Validation is unchanged: `complete` hands the
+# staged bytes to the same `build_dataset` the form post uses.
+@router.post("/upload/authorize", include_in_schema=False)
+async def authorize(request: Request):
+    """Say where these files may be written. Grants nothing beyond those objects."""
+    enforce_rate_limit(request)
+    try:
+        body = await request.json()
+    except Exception:                                        # noqa: BLE001
+        raise DatasetError("The upload request was malformed.",
+                           "Reload the page and choose your files again.") from None
+
+    files = uploads.validate_request(body.get("files") or {})
+    ticket = uploads.issue(files)
+    staging = uploads.staging_token(uploads.verify(ticket)["id"])
+    return {
+        "ticket": ticket,
+        "uploads": {
+            field: storage.authorize_upload(staging, field, entry["size"])
+            for field, entry in files.items()
+        },
+    }
+
+
+@router.put("/upload/staged/{token}/{field}", include_in_schema=False)
+async def staged(request: Request, token: str, field: str,
+                 x_microverse_ticket: str = Header(default="")):
+    """Accept one staged file. Only reachable when storage is a local directory.
+
+    A host with real object storage never routes here — the browser writes straight to
+    the store — so this is the development and test path, and it is held to the same
+    rules: a valid ticket, a field that ticket names, a key the server derived, and a
+    body no larger than the limit that was checked before the ticket was issued.
+    """
+    payload = uploads.verify(x_microverse_ticket)
+    if payload is None or uploads.staging_token(payload["id"]) != token:
+        raise NotFoundError("That upload has expired.",
+                            "Reload the page and choose your files again.")
+    if field not in payload["files"]:
+        raise NotFoundError("That upload has expired.",
+                            "Reload the page and choose your files again.")
+
+    data = await request.body()
+    uploads.check_size(payload["files"][field]["filename"], len(data))
+    storage.put_bytes(token, field, data)
+    return {"field": field, "bytes": len(data)}
+
+
+@router.post("/upload/complete", include_in_schema=False)
+async def complete(request: Request):
+    """Turn staged bytes into a job, using exactly the form post's validation."""
+    enforce_rate_limit(request)
+    try:
+        body = await request.json()
+    except Exception:                                        # noqa: BLE001
+        raise DatasetError("The upload request was malformed.",
+                           "Reload the page and choose your files again.") from None
+
+    payload = uploads.verify(body.get("ticket"))
+    if payload is None:
+        raise DatasetError(
+            "That upload has expired.",
+            "Uploads must be completed within "
+            f"{uploads.TICKET_TTL_SECONDS // 60} minutes. Choose your files again.")
+
+    staging = uploads.staging_token(payload["id"])
+    names = payload["files"]
+    try:
+        staged_bytes = {field: storage.get_bytes(staging, field) for field in names}
+        if not staged_bytes.get("abundance"):
+            raise DatasetError("No abundance table was uploaded.",
+                               "Supported: " + ", ".join(SUPPORTED_FORMATS))
+        if not staged_bytes.get("metadata"):
+            raise DatasetError("No sample metadata was uploaded.",
+                               "MicroVerse needs a table of sample IDs and a binary "
+                               "grouping column to compare two groups.")
+
+        dataset = services.build_dataset(
+            staged_bytes["abundance"], names["abundance"]["filename"],
+            staged_bytes["metadata"], names["metadata"]["filename"],
+            staged_bytes.get("taxonomy"),
+            names.get("taxonomy", {}).get("filename", ""),
+            group_column=str(body.get("group_column") or "").strip(),
+        )
+        token = services.create_job(dataset, names["abundance"]["filename"])
+    finally:
+        # The staged copies have either become a dataset or failed validation. Either
+        # way nothing reads them again, and leaving them costs storage quota.
+        storage.purge(staging)
+
+    return {"token": token, "next": f"/configure/{token}"}
+
+
+@router.post("/upload/abandon", include_in_schema=False)
+async def abandon(request: Request):
+    """Drop whatever a cancelled upload already staged. Best effort, always 200."""
+    try:
+        body = await request.json()
+        payload = uploads.verify(body.get("ticket"))
+    except Exception:                                        # noqa: BLE001
+        payload = None
+    if payload is not None:
+        storage.purge(uploads.staging_token(payload["id"]))
+    return {"ok": True}
 
 
 @router.get("/demo/{name}", include_in_schema=False)

@@ -19,6 +19,9 @@ JOB_BACKEND = os.environ.get("MICROVERSE_JOBS", "inline").strip().lower()
 #: Lifetime of a signed download link. Long enough to click, short enough that a
 #: copied URL is not a permanent public handle on someone's data.
 DOWNLOAD_URL_TTL_SECONDS = int(os.environ.get("MICROVERSE_DOWNLOAD_TTL", "900"))
+#: Lifetime of a browser's permission to write one uploaded object. Long enough for
+#: 64 MB on a slow connection, short enough that a leaked one stops working quickly.
+UPLOAD_URL_TTL_SECONDS = int(os.environ.get("MICROVERSE_UPLOAD_TTL", "1800"))
 #: Shared secret the worker route requires, so only the queue can start an analysis.
 WORKER_SECRET = os.environ.get("MICROVERSE_WORKER_SECRET", "")
 #: How long an undelivered run request stays claimable. A run that could not start
