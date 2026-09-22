@@ -89,7 +89,12 @@ PYTHON_VERSION = "3.12"
 #: The architectures the image is built for, as uv target triples. The lock is written
 #: from the first and must agree on the second.
 TARGETS = (
-    ("x86-64", "x86_64-manylinux2014"),
+    # Both at manylinux_2_28. The x86-64 target used to be manylinux2014, which is
+    # glibc 2.17 -- far older than the base image, which is Debian and well past 2.28.
+    # Asking for wheels that old started excluding real dependencies: `cbor2`, which
+    # the Vercel SDK needs, publishes manylinux_2_28 and nothing older, so the
+    # resolution failed for a wheel the image could have installed perfectly well.
+    ("x86-64", "x86_64-manylinux_2_28"),
     ("arm64", "aarch64-manylinux_2_28"),
 )
 

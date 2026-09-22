@@ -1,6 +1,12 @@
 # MicroVerse — SPEC section 20.
 fastapi>=0.115
-uvicorn[standard]>=0.30
+# Not uvicorn[standard]: that extra pins websockets==17.1, and the Vercel SDK needs
+# websockets<17. Nothing here serves a WebSocket, and the extra's other additions --
+# watchfiles, python-dotenv, PyYAML -- are unused too. uvloop is the one worth keeping
+# and is named directly, because the container ran on the plain asyncio loop once
+# before and nothing said so (see deploy/lock_requirements.py).
+uvicorn>=0.30
+uvloop>=0.15.1; sys_platform != "win32" and platform_python_implementation != "PyPy"
 jinja2>=3.1
 python-multipart>=0.0.9
 sqlalchemy>=2.0
