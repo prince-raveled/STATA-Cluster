@@ -5,10 +5,12 @@
       "root": ".",
       "framework": "fastapi",
       "entrypoint": "app.main:app",
+      "buildCommand": "python examples/make_examples.py",
       "functions": {
         "app/main.py": {
           "maxDuration": 300,
-          "excludeFiles": "{tests/**,docs/**,data/**,deploy/**,.venv/**,.github/**,blob/**,scratchpad/**,**/*.pyc,**/__pycache__/**}"
+          "excludeFiles": "{tests/**,docs/**,data/**,deploy/**,.venv/**,.github/**,blob/**,scratchpad/**,**/*.pyc,**/__pycache__/**}",
+          "includeFiles": "examples/**"
         }
       }
     },

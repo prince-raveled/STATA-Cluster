@@ -239,6 +239,63 @@ def test_the_declared_dependencies_are_the_runtime_ones():
         assert required in names, f"{required} is not declared; the host will not install it"
 
 
+# --- the demo data has to reach the host ------------------------------------
+def test_the_demo_datasets_are_generated_at_build_time():
+    """examples/*.tsv is gitignored, so a host clones a repository without them.
+
+    Nothing can include a file that is not there, which is why this is a build step
+    rather than an inclusion rule. Docker and CI already run the same script; the
+    deployment now does too.
+    """
+    import json as _json
+    import tomllib  # noqa: F401  (kept for symmetry with the other manifest tests)
+
+    manifest = _json.loads((config.BASE_DIR / "vercel.json").read_text(encoding="utf-8"))
+    service = manifest["services"]["microverse"]
+    assert "make_examples" in service.get("buildCommand", ""), (
+        "nothing regenerates the demo datasets, which are not in the repository"
+    )
+
+    gitignore = (config.BASE_DIR / ".gitignore").read_text(encoding="utf-8")
+    assert "examples/*_abundance.tsv" in gitignore, (
+        "if the datasets became tracked files, the build step is no longer the "
+        "mechanism and this test is asserting the wrong thing"
+    )
+
+
+def test_the_generated_datasets_are_bundled_with_the_function():
+    """Generated during the build is not the same as present in the bundle."""
+    import json as _json
+
+    manifest = _json.loads((config.BASE_DIR / "vercel.json").read_text(encoding="utf-8"))
+    entry = manifest["services"]["microverse"]["functions"]["app/main.py"]
+    assert "examples" in entry.get("includeFiles", "")
+    assert "examples" not in entry.get("excludeFiles", "")
+
+
+def test_every_file_load_demo_opens_exists():
+    """The three datasets, three files each. A missing one is a 500 on /demo/<name>."""
+    from app.services import DEMO_DATASETS
+
+    missing = [
+        f"{name}_{kind}.tsv"
+        for name in DEMO_DATASETS
+        for kind in ("abundance", "metadata", "taxonomy")
+        if not (config.EXAMPLES_DIR / f"{name}_{kind}.tsv").exists()
+    ]
+    assert not missing, f"load_demo would raise FileNotFoundError for: {missing}"
+
+
+def test_the_demo_routes_answer(client):
+    """What the runtime log showed failing, asserted end to end."""
+    from app.services import DEMO_DATASETS
+
+    for name in DEMO_DATASETS:
+        response = client.get(f"/demo/{name}", follow_redirects=False)
+        assert response.status_code == 303, f"/demo/{name} -> {response.status_code}"
+        assert response.headers["location"].startswith("/configure/")
+
+
 # --- configuration ----------------------------------------------------------
 def test_the_defaults_are_the_original_behaviour():
     assert config.STORAGE_BACKEND == "local"
