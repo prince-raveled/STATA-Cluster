@@ -27,7 +27,3 @@ pydeseq2>=0.4
 # Vercel Blob + Queues. Only imported when MICROVERSE_STORAGE=blob or
 # MICROVERSE_JOBS=queue, so a server with a disk never loads it.
 vercel>=0.11.3
-
-pytest>=8.0
-ruff>=0.6            # lint config lives in pyproject.toml
-httpx>=0.27          # fastapi.testclient

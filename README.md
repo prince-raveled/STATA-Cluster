@@ -25,7 +25,7 @@ Implements `MICROVERSE_SPEC_v2_idea2.md` (frozen). Deviations are logged in the 
 ## Quick start
 
 ```bash
-python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
+python -m venv .venv && .venv/Scripts/pip install -r requirements-dev.txt
 .venv/Scripts/python examples/make_examples.py
 .venv/Scripts/python -m uvicorn app.main:app --reload
 ```

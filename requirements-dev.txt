@@ -1,0 +1,15 @@
+# Everything the application needs, plus what only a developer or CI needs.
+#
+# These three are deliberately not in requirements.txt. That file is what the host
+# installs to build the function, and a bundle close to its size limit should not be
+# carrying a test runner. Nothing under app/ imports any of them: verified by
+# importing the application and driving a full analysis, then checking what was
+# loaded. `httpx` in particular is only reachable through fastapi.testclient -- the
+# Vercel SDK uses httpx2, which is a different package and stays.
+#
+#     pip install -r requirements-dev.txt
+-r requirements.txt
+
+pytest>=8.0
+ruff>=0.6            # lint config lives in pyproject.toml
+httpx>=0.27          # fastapi.testclient
