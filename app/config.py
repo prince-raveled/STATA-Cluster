@@ -8,7 +8,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = Path(os.environ.get("MICROVERSE_DATA", BASE_DIR / "data"))
 JOBS_DIR = DATA_DIR / "jobs"
 EXAMPLES_DIR = BASE_DIR / "examples"
-DATABASE_URL = os.environ.get("MICROVERSE_DB", f"sqlite:///{(DATA_DIR / 'jobs.sqlite').as_posix()}")
+def _with_postgres_driver(url: str) -> str:
+    """Name psycopg 3 explicitly on a PostgreSQL URL that did not name a driver.
+
+    A hosted database hands out `postgresql://...`, and SQLAlchemy reads a bare
+    `postgresql://` as psycopg *2* — a different package, which this project does not
+    install and does not want. The failure is a ModuleNotFoundError for psycopg2 on a
+    deployment that has psycopg 3 sitting right there.
+
+    `postgres://` is normalised too. Some providers still issue it and SQLAlchemy
+    dropped it, so it does not fail over to a wrong driver; it fails to load any.
+
+    A URL that already names a driver is left exactly as it is: asking for something
+    specific is an instruction, not an oversight.
+    """
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix):]
+    return url
+
+
+DATABASE_URL = _with_postgres_driver(
+    os.environ.get("MICROVERSE_DB", f"sqlite:///{(DATA_DIR / 'jobs.sqlite').as_posix()}"))
 
 #: Where a job's bytes live: "local" (a directory, the default and what the tests
 #: exercise) or "blob" (Vercel Blob, for hosts without a disk that outlives a request).

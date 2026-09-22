@@ -19,6 +19,7 @@ import datetime as dt
 import pytest
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.dialects import postgresql, sqlite
+from sqlalchemy.engine.url import make_url
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.schema import CreateTable
 
@@ -52,6 +53,67 @@ def test_a_neon_url_builds_a_working_engine():
     engine = create_engine(NEON_URL)
     assert engine.dialect.name == "postgresql"
     assert engine.dialect.driver == "psycopg"
+
+
+# --- which driver the URL resolves to ---------------------------------------
+@pytest.mark.parametrize("raw", [
+    "postgresql://user:pw@ep-x.aws.neon.tech/microverse?sslmode=require",
+    "postgres://user:pw@ep-x.aws.neon.tech/microverse?sslmode=require",
+])
+def test_a_hosted_postgres_url_resolves_to_psycopg_3(raw):
+    """A provider hands out `postgresql://`, and SQLAlchemy reads that as psycopg *2*.
+
+    That is a different package, not installed here and not wanted, so the deployment
+    failed with ModuleNotFoundError for psycopg2 while psycopg 3 sat beside it.
+    `postgres://` is worse: SQLAlchemy dropped the scheme, so it loads no driver at
+    all. Both are named explicitly before the engine ever sees them.
+    """
+    resolved = config._with_postgres_driver(raw)
+    assert resolved.startswith("postgresql+psycopg://")
+    assert create_engine(resolved).dialect.driver == "psycopg"
+    assert "psycopg2" not in resolved
+
+
+def test_the_rest_of_the_url_survives_normalising():
+    """Credentials, host, database and query string are not ours to rewrite."""
+    raw = "postgresql://user:p%40ss@ep-x.aws.neon.tech/microverse?sslmode=require"
+    resolved = config._with_postgres_driver(raw)
+    assert resolved == (
+        "postgresql+psycopg://user:p%40ss@ep-x.aws.neon.tech/microverse?sslmode=require")
+
+    url = make_url(resolved)
+    assert url.username == "user"
+    assert url.host == "ep-x.aws.neon.tech"
+    assert url.database == "microverse"
+    assert url.query["sslmode"] == "require"
+
+
+@pytest.mark.parametrize("raw", [
+    "postgresql+psycopg://user:pw@host/db",
+    "postgresql+asyncpg://user:pw@host/db",
+    "postgresql+psycopg2://user:pw@host/db",
+])
+def test_a_url_that_names_its_driver_is_left_alone(raw):
+    """Asking for something specific is an instruction, not an oversight."""
+    assert config._with_postgres_driver(raw) == raw
+
+
+@pytest.mark.parametrize("raw", [
+    "sqlite:///jobs.sqlite",
+    "sqlite:////var/data/jobs.sqlite",
+    "sqlite+pysqlite:///jobs.sqlite",
+])
+def test_sqlite_urls_are_untouched(raw):
+    assert config._with_postgres_driver(raw) == raw
+    assert create_engine(raw).dialect.name == "sqlite"
+
+
+def test_the_default_configuration_is_still_sqlite_and_still_works(tmp_path):
+    """The local path must not have been disturbed by any of this."""
+    assert config.DATABASE_URL.startswith("sqlite:///")
+    engine = create_engine(f"sqlite:///{tmp_path / 'jobs.sqlite'}")
+    db.create_schema(engine)
+    assert inspect(engine).has_table("jobs")
 
 
 # --- the schema is the same schema -----------------------------------------
