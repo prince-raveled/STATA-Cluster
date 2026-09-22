@@ -480,10 +480,23 @@ def test_the_minter_holds_no_rules_of_its_own():
 
 
 def test_the_python_bundle_excludes_the_javascript_service():
+    """Function settings belong under the service's `functions`, not the service.
+
+    The older `experimentalServices` model took `maxDuration` and `excludeFiles`
+    directly on a service; the current `services` model does not, and a config that
+    puts them there is rejected by the published schema. The location is asserted
+    here as well as the content, so the two cannot drift apart again.
+    """
     import json as _json
 
     manifest = _json.loads((config.BASE_DIR / "vercel.json").read_text(encoding="utf-8"))
-    assert "api/**" in manifest["services"]["microverse"]["excludeFiles"]
+    service = manifest["services"]["microverse"]
+    assert "excludeFiles" not in service and "maxDuration" not in service
+
+    entry = service["functions"]["app/main.py"]
+    assert "api/**" in entry["excludeFiles"]
+    assert entry["maxDuration"] == 300
+    assert service["framework"] == "fastapi"
 
 
 def test_the_blob_backend_scopes_a_key_to_one_object(monkeypatch):

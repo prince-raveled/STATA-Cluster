@@ -15,3 +15,6 @@ examples/*_truth.json
 *.log
 .DS_Store
 Thumbs.db
+
+# Vercel CLI scratch state (dev.lock, local link). Never committed.
+.vercel/
