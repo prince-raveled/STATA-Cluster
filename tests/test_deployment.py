@@ -12,6 +12,7 @@ from __future__ import annotations
 import gzip
 import io
 import pickle
+import re
 
 import pytest
 from fastapi.testclient import TestClient
@@ -195,6 +196,47 @@ def test_the_worker_route_is_not_advertised(client):
     """It is infrastructure, not API surface."""
     schema = client.get("/api/openapi.json").json()
     assert not [p for p in schema["paths"] if p.startswith("/internal")]
+
+
+# --- what the host installs -------------------------------------------------
+def test_the_project_declares_its_runtime_dependencies():
+    """A host that installs this project reads `dependencies`, not requirements.txt.
+
+    With that list empty the build succeeds, installs the package and nothing else,
+    and the first request fails on `import fastapi`. The build log says it installed
+    dependencies, because it did — there were none. Declaring them dynamically from
+    requirements.txt keeps one list; this asserts the wiring actually resolves.
+    """
+    import tomllib
+
+    manifest = tomllib.loads(
+        (config.BASE_DIR / "pyproject.toml").read_text(encoding="utf-8"))
+    project = manifest["project"]
+
+    static = project.get("dependencies")
+    dynamic = "dependencies" in project.get("dynamic", [])
+    assert static or dynamic, (
+        "pyproject.toml declares no dependencies, so installing this project "
+        "installs none of them"
+    )
+    if dynamic:
+        source = manifest["tool"]["setuptools"]["dynamic"]["dependencies"]["file"]
+        assert "requirements.txt" in source, source
+
+
+def test_the_declared_dependencies_are_the_runtime_ones():
+    """Whatever the mechanism, fastapi and the engine's stack must come out of it."""
+    import importlib.metadata as md
+
+    try:
+        declared = md.distribution("microverse").requires or []
+    except md.PackageNotFoundError:
+        pytest.skip("microverse is not installed as a package in this environment")
+
+    names = {re.split(r"[<>=!;\[ ]", entry.strip())[0].lower() for entry in declared}
+    for required in ("fastapi", "sqlalchemy", "numpy", "scipy", "pandas",
+                     "statsmodels", "pydeseq2", "psycopg", "vercel"):
+        assert required in names, f"{required} is not declared; the host will not install it"
 
 
 # --- configuration ----------------------------------------------------------

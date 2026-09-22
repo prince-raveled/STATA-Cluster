@@ -8,6 +8,14 @@ version = "1.0.0"
 description = "Multiverse analysis of microbiome differential abundance, behind a URL."
 requires-python = ">=3.11"
 license = { text = "MIT" }
+# Read from requirements.txt rather than repeated here. The host installs this
+# project to build the function and takes the dependency list from this table, so an
+# empty one is a deployment that builds cleanly and then cannot import FastAPI. Two
+# copies of the list would drift; one of them would be the one the host reads.
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
 
 # The host installs this project to build the function, which makes setuptools go
 # looking for packages. Left to guess, its flat-layout discovery finds seven
