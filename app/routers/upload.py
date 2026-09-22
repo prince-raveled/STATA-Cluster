@@ -4,7 +4,7 @@ from __future__ import annotations
 from fastapi import APIRouter, BackgroundTasks, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from .. import config, db, services
+from .. import config, db, jobs, services
 from ..core.parsers import SUPPORTED_FORMATS
 from ..core.validation import DatasetError, NotFoundError
 from ..limits import enforce_rate_limit, run_queue
@@ -138,5 +138,5 @@ async def start_run(request: Request, token: str, background: BackgroundTasks):
 
     db.update_job(token, status="running", mode=mode, progress=0.0,
                   message="Queued", error="", error_hint="")
-    background.add_task(services.execute, token, mode, declared, tuple(covariates))
+    jobs.dispatch(background, token, mode, declared, tuple(covariates))
     return RedirectResponse(f"/job/{token}", status_code=303)

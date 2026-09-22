@@ -6,17 +6,14 @@ nothing biological; every result lives on disk beside it, keyed by the same toke
 from __future__ import annotations
 
 import datetime as dt
-import gzip
 import json
-import pickle
 import re
 import secrets
-import shutil
 
 from sqlalchemy import Column, DateTime, Float, Integer, String, Text, create_engine, select
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-from . import config
+from . import config, storage
 
 Base = declarative_base()
 
@@ -75,10 +72,28 @@ class Job(Base):
         return self.created_at + dt.timedelta(days=config.RETENTION_DAYS)
 
 
+def _engine_options(url: str) -> dict:
+    """Connection settings, which differ by driver rather than by deployment.
+
+    SQLite needs `check_same_thread=False` because the analysis runs on a different
+    thread from the request that started it. A networked database needs the opposite
+    kind of care: a serverless host opens a new connection per invocation and a
+    scale-to-zero database drops idle ones, so connections are verified before use
+    and not pooled across invocations that will never reuse them.
+    """
+    if url.startswith("sqlite"):
+        return {"connect_args": {"check_same_thread": False}}
+    options = {"pool_pre_ping": True}
+    if config.is_serverless():
+        from sqlalchemy.pool import NullPool
+        options["poolclass"] = NullPool
+    return options
+
+
 def init() -> None:
     global _engine, _Session
     config.ensure_directories()
-    _engine = create_engine(config.DATABASE_URL, connect_args={"check_same_thread": False})
+    _engine = create_engine(config.DATABASE_URL, **_engine_options(config.DATABASE_URL))
     Base.metadata.create_all(_engine)
     _Session = sessionmaker(bind=_engine, expire_on_commit=False)
 
@@ -118,19 +133,16 @@ def update_job(token: str, **fields) -> None:
         db.commit()
 
 
-# --- result payloads on disk ---------------------------------------------
+# --- result payloads ------------------------------------------------------
+# Kept as thin wrappers rather than removed: every caller in the application and in
+# the suite already speaks this pair, and where the bytes actually go is `storage`'s
+# decision, not this module's.
 def save_payload(token: str, name: str, obj) -> None:
-    path = config.job_dir(token) / f"{name}.pkl.gz"
-    with gzip.open(path, "wb", compresslevel=4) as handle:
-        pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    storage.put_object(token, name, obj)
 
 
 def load_payload(token: str, name: str):
-    path = config.job_dir(token) / f"{name}.pkl.gz"
-    if not path.exists():
-        return None
-    with gzip.open(path, "rb") as handle:
-        return pickle.load(handle)
+    return storage.get_object(token, name)
 
 
 def purge_expired() -> int:
@@ -140,7 +152,7 @@ def purge_expired() -> int:
     with session() as db:
         stale = db.scalars(select(Job).where(Job.created_at < cutoff)).all()
         for job in stale:
-            shutil.rmtree(config.JOBS_DIR / job.token, ignore_errors=True)
+            storage.purge(job.token)
             db.delete(job)
             removed += 1
         db.commit()

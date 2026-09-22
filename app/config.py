@@ -10,6 +10,32 @@ JOBS_DIR = DATA_DIR / "jobs"
 EXAMPLES_DIR = BASE_DIR / "examples"
 DATABASE_URL = os.environ.get("MICROVERSE_DB", f"sqlite:///{(DATA_DIR / 'jobs.sqlite').as_posix()}")
 
+#: Where a job's bytes live: "local" (a directory, the default and what the tests
+#: exercise) or "blob" (Vercel Blob, for hosts without a disk that outlives a request).
+STORAGE_BACKEND = os.environ.get("MICROVERSE_STORAGE", "local").strip().lower()
+#: How the analysis is started: "inline" (Starlette's background threadpool, the
+#: default) or "queue" (a message whose delivery invokes the worker route).
+JOB_BACKEND = os.environ.get("MICROVERSE_JOBS", "inline").strip().lower()
+#: Lifetime of a signed download link. Long enough to click, short enough that a
+#: copied URL is not a permanent public handle on someone's data.
+DOWNLOAD_URL_TTL_SECONDS = int(os.environ.get("MICROVERSE_DOWNLOAD_TTL", "900"))
+#: Shared secret the worker route requires, so only the queue can start an analysis.
+WORKER_SECRET = os.environ.get("MICROVERSE_WORKER_SECRET", "")
+#: How long an undelivered run request stays claimable. A run that could not start
+#: because every slot was busy must still be there when one frees up, so this is set
+#: well beyond QUEUE_WAIT_SECONDS rather than at the queue's 24-hour default.
+QUEUE_RETENTION_SECONDS = int(os.environ.get("MICROVERSE_QUEUE_TTL", str(6 * 3600)))
+#: Absolute base URL of this deployment, used to address the worker route. Vercel
+#: sets VERCEL_URL to the deployment host without a scheme.
+_vercel_host = os.environ.get("VERCEL_PROJECT_PRODUCTION_URL") or os.environ.get("VERCEL_URL", "")
+PUBLIC_BASE_URL = os.environ.get(
+    "MICROVERSE_BASE_URL", f"https://{_vercel_host}" if _vercel_host else "").rstrip("/")
+
+
+def is_serverless() -> bool:
+    """True when the disk and the process both end with the request."""
+    return STORAGE_BACKEND != "local" or JOB_BACKEND != "inline"
+
 #: SPEC §16.5 — permanent token URL, 90-day retention.
 RETENTION_DAYS = int(os.environ.get("MICROVERSE_RETENTION_DAYS", "90"))
 #: Uploads are bounded so a single request cannot exhaust a small free-tier dyno.
@@ -40,8 +66,19 @@ MODE_BLURBS = {
 
 
 def ensure_directories() -> None:
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    JOBS_DIR.mkdir(parents=True, exist_ok=True)
+    """Create the data directories, tolerating a host that has no writable project dir.
+
+    A serverless filesystem is read-only apart from a scratch directory, and on that
+    kind of host nothing durable lives here anyway — the database holds the job rows
+    and object storage holds the bytes. Failing to create a directory nothing will be
+    written to must not stop the application from importing.
+    """
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        JOBS_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        if not is_serverless():
+            raise
 
 
 def job_dir(token: str) -> Path:

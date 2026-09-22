@@ -7,7 +7,7 @@ from functools import lru_cache
 
 import pandas as pd
 
-from . import config, db
+from . import config, db, storage
 from .core.attribution import attribute
 from .core.models import Specification
 from .core.parsers import parse_abundance, parse_metadata, parse_taxonomy_map
@@ -200,18 +200,15 @@ def execute(token: str, mode: str, declared=None, covariates=()) -> None:
         db.save_payload(token, "attribution", attribution)
 
         manifest = run_manifest(run, summary, attribution)
-        (config.job_dir(token) / "manifest.json").write_text(
-            json.dumps(manifest, indent=2, default=str), encoding="utf-8"
-        )
-        (config.job_dir(token) / "methods.txt").write_text(
-            methods_paragraph(run, summary, attribution), encoding="utf-8"
-        )
+        storage.put_text(token, "manifest.json",
+                         json.dumps(manifest, indent=2, default=str))
+        storage.put_text(token, "methods.txt",
+                         methods_paragraph(run, summary, attribution))
         # Compressed once and reused: this is the most expensive export by far.
         long_csv_gz = long_results_csv_gz(run)
-        (config.job_dir(token) / "results_long.csv.gz").write_bytes(long_csv_gz)
-        (config.job_dir(token) / "bundle.zip").write_bytes(
-            build_zip(run, summary, attribution, long_csv_gz=long_csv_gz)
-        )
+        storage.put_bytes(token, "results_long.csv.gz", long_csv_gz)
+        storage.put_bytes(token, "bundle.zip",
+                          build_zip(run, summary, attribution, long_csv_gz=long_csv_gz))
 
         db.update_job(
             token, status="done", progress=1.0, message="Complete",

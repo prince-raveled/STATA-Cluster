@@ -13,7 +13,7 @@ from fastapi.responses import (
     Response,
 )
 
-from .. import config, db, services
+from .. import config, db, services, storage
 from ..core.instability import (
     FINGERPRINT_LABELS,
     analyse_taxon,
@@ -217,10 +217,16 @@ def download(token: str, kind: str):
     filename, media_type = DOWNLOADS[kind]
     disposition = f'attachment; filename="{_safe_stem(job.dataset_name)}_{filename}"'
 
-    # The two large artefacts are written once when the run finishes; streaming them
-    # from disk keeps a download off the heap for a table with thousands of taxa.
+    # The two large artefacts are written once when the run finishes. Serving them
+    # from where they were stored keeps a download off the heap for a table with
+    # thousands of taxa — and where the host caps a response smaller than a result
+    # bundle, the browser is sent to the object store instead of through the cap.
     if kind in ON_DISK:
-        path = config.job_dir(token) / ON_DISK[kind]
+        stored = ON_DISK[kind]
+        direct = storage.download_url(token, stored)
+        if direct:
+            return RedirectResponse(direct, status_code=307)
+        path = config.job_dir(token) / stored
         if path.exists():
             return FileResponse(path, media_type=media_type,
                                 headers={"Content-Disposition": disposition})

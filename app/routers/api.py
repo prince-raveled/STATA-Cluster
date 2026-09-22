@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, BackgroundTasks, File, Form, Query, Request, UploadFile
 from fastapi.responses import JSONResponse
 
-from .. import config, db, services
+from .. import config, db, jobs, services
 from ..core.methods import available_methods
 from ..core.parsers import SUPPORTED_FORMATS
 from ..core.report import run_manifest, specification_curve
@@ -108,8 +108,8 @@ async def create_job(
     )
     token = services.create_job(dataset, abundance.filename)
     db.update_job(token, status="running", mode=mode, message="Queued")
-    background.add_task(services.execute, token, mode, None,
-                        tuple(columns or dataset.covariate_columns))
+    jobs.dispatch(background, token, mode, None,
+                  tuple(columns or dataset.covariate_columns))
     return {
         "token": token,
         "status_url": f"/api/jobs/{token}",

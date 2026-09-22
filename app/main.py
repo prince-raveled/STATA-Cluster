@@ -16,7 +16,7 @@ from .core.parsers.base import ParseError
 from .core.validation import DatasetError
 from .db import utcnow
 from .limits import queue_state
-from .routers import api, job, results, upload
+from .routers import api, job, results, upload, worker
 from .templating import templates
 
 DESCRIPTION = """
@@ -57,6 +57,7 @@ app.include_router(upload.router)
 app.include_router(job.router)
 app.include_router(results.router)
 app.include_router(api.router)
+app.include_router(worker.router)
 
 
 #: Routes that answer in JSON even though they are not mounted under /api. The results
