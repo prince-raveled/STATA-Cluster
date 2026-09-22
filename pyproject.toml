@@ -66,3 +66,6 @@ filterwarnings = [
 # published successfully and never delivered, so tests/test_queue_mode.py asserts it.
 [[tool.vercel.subscribers]]
 entrypoint = "app.queue_worker"
+
+[tool.vercel]
+entrypoint = "app.main:app"

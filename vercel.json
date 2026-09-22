@@ -4,7 +4,7 @@
     "microverse": {
       "root": ".",
       "framework": "fastapi",
-      "entrypoint": "app.main:app",
+      "entrypoint": "pyproject.toml",
       "buildCommand": "python examples/make_examples.py",
       "functions": {
         "app/main.py": {
