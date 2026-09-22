@@ -150,5 +150,20 @@ def validation(request: Request):
 
 @app.get("/healthz", include_in_schema=False)
 def healthz():
+    """Liveness, plus which backends this process actually chose.
+
+    A deployment configured for one thing and running as another looks healthy until
+    the first write, then fails deep inside a request with an error about a read-only
+    filesystem — which says nothing about why the wrong backend was picked. These are
+    names and a scheme: no token, no credential, no connection string.
+    """
+    from . import storage
+
     return {"status": "ok", "version": config.VERSION,
-            "time": utcnow().isoformat(), "queue": queue_state()}
+            "time": utcnow().isoformat(), "queue": queue_state(),
+            "config": {
+                "storage": storage.backend().name,
+                "jobs": config.JOB_BACKEND,
+                "database": config.DATABASE_URL.split("://", 1)[0],
+                "on_vercel": config.ON_VERCEL,
+            }}

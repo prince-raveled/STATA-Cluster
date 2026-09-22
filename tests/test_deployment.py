@@ -296,6 +296,101 @@ def test_the_demo_routes_answer(client):
         assert response.headers["location"].startswith("/configure/")
 
 
+# --- which backend a deployment actually gets -------------------------------
+def _reload(monkeypatch, env):
+    """Re-read configuration as a fresh process would, with exactly this environment."""
+    import importlib
+
+    for name in ("VERCEL", "VERCEL_ENV", "MICROVERSE_STORAGE", "MICROVERSE_JOBS",
+                 "MICROVERSE_BLOB_ACCESS", "MICROVERSE_BLOB_HANDLER"):
+        monkeypatch.delenv(name, raising=False)
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+    importlib.reload(config)
+    importlib.reload(storage)
+    storage.reset()
+    return storage.backend().name
+
+
+@pytest.fixture(autouse=True)
+def _restore_config():
+    """Whatever a test does to the environment, put the module back afterwards."""
+    import importlib
+
+    yield
+    importlib.reload(config)
+    importlib.reload(storage)
+    storage.reset()
+
+
+BLANK = {  # exactly what a dashboard sets when the Value fields are left empty
+    "MICROVERSE_STORAGE": "",
+    "MICROVERSE_JOBS": "",
+    "MICROVERSE_BLOB_ACCESS": "",
+    "MICROVERSE_BLOB_HANDLER": "",
+}
+
+
+def test_a_blank_value_is_not_a_choice(monkeypatch):
+    """`os.environ.get(name, default)` answers "" for a variable set to nothing.
+
+    That is not the default and not a valid setting; it fell past every branch into
+    whichever was written last, which was the local filesystem. On Vercel that means
+    writing to /var/task and failing with EROFS on the first result.
+    """
+    backend = _reload(monkeypatch, BLANK)
+    assert config.STORAGE_BACKEND == "local", "blank must fall back, not become ''"
+    assert backend == "local"
+    assert config.BLOB_UPLOAD_HANDLER == "/api/blob-upload", (
+        "a blank handler disabled direct upload entirely"
+    )
+
+
+def test_vercel_selects_blob_even_when_nothing_is_configured(monkeypatch):
+    """The local backend cannot work there, so it is not the default there."""
+    backend = _reload(monkeypatch, {**BLANK, "VERCEL": "1", "VERCEL_ENV": "preview"})
+    assert config.ON_VERCEL
+    assert config.STORAGE_BACKEND == "blob"
+    assert backend == "blob"
+    assert config.JOB_BACKEND == "queue", "inline needs a process that outlives the response"
+
+
+def test_local_development_still_selects_the_filesystem(monkeypatch):
+    """Nothing about the default off Vercel changes."""
+    backend = _reload(monkeypatch, {})
+    assert not config.ON_VERCEL
+    assert config.STORAGE_BACKEND == "local"
+    assert config.JOB_BACKEND == "inline"
+    assert backend == "local"
+
+
+def test_an_explicit_setting_wins_everywhere(monkeypatch):
+    """Asking for something specific is an instruction, on any host."""
+    backend = _reload(monkeypatch, {"VERCEL": "1", "MICROVERSE_STORAGE": "local"})
+    assert config.STORAGE_BACKEND == "local" and backend == "local"
+
+    backend = _reload(monkeypatch, {"MICROVERSE_STORAGE": "blob"})
+    assert not config.ON_VERCEL
+    assert config.STORAGE_BACKEND == "blob" and backend == "blob"
+
+
+@pytest.mark.parametrize("value", ["  blob  ", "BLOB", "Blob	"])
+def test_a_setting_is_read_past_case_and_padding(monkeypatch, value):
+    assert _reload(monkeypatch, {"MICROVERSE_STORAGE": value}) == "blob"
+
+
+def test_healthz_reports_the_backends_without_reporting_secrets(client):
+    """A deployment running as something other than its configuration must say so."""
+    body = client.get("/healthz").json()
+    assert body["config"]["storage"] in ("local", "blob")
+    assert body["config"]["jobs"] in ("inline", "queue")
+    assert body["config"]["database"] in ("sqlite", "postgresql")
+
+    rendered = str(body).lower()
+    for leak in ("token", "password", "secret", "sslmode", "@"):
+        assert leak not in rendered, f"/healthz exposed {leak!r}"
+
+
 # --- configuration ----------------------------------------------------------
 def test_the_defaults_are_the_original_behaviour():
     assert config.STORAGE_BACKEND == "local"
