@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "microverse"
 version = "1.0.0"
 description = "Multiverse analysis of microbiome differential abundance, behind a URL."
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = { text = "MIT" }
 # Read from requirements.txt rather than repeated here. The host installs this
 # project to build the function and takes the dependency list from this table, so an
