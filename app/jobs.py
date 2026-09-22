@@ -22,13 +22,21 @@ Nothing here decides *what* runs. It decides *where the call comes from*.
 """
 from __future__ import annotations
 
-import json
-
 from . import config
 
-#: Topic that carries analysis requests. One topic, one consumer group.
+#: Topic that carries analysis requests. One topic, one consumer group, so instances
+#: compete for work instead of each running every job.
 TOPIC = "microverse-runs"
 CONSUMER = "worker"
+
+# One operational hazard worth stating plainly, because it is the failure this module
+# is supposed to make impossible. Messages are partitioned by deployment: a run
+# published by one deployment is delivered to that deployment's consumer. A run
+# published in the seconds before a redeploy can therefore be left with no consumer
+# and will sit until its retention expires. The window is small — a run is dispatched
+# and picked up within seconds — and the alternative, sending across all deployments,
+# means an old build can pick up a job intended for a new one, which for an analysis
+# engine is the worse trade. Redeploy when nothing is queued if it matters.
 
 
 def _payload(token: str, mode: str, declared, covariates) -> dict:
@@ -60,20 +68,19 @@ def dispatch(background, token: str, mode: str, declared=None, covariates=()) ->
 def _publish(payload: dict) -> None:
     """Send one message, keyed by token so a double submit cannot run twice.
 
-    Imported lazily: a local run never needs the SDK, and neither does the suite.
+    The synchronous client is used on purpose: the routes that dispatch are ordinary
+    request handlers and there is nothing to overlap this call with. Imported lazily,
+    so a deployment with a disk and a background thread never loads the SDK.
     """
-    from vercel import queues
+    from vercel.queue.sync import send
 
-    queues.send(
+    send(
         TOPIC,
-        json.dumps(payload).encode("utf-8"),
-        options={
-            "contentType": "application/json",
-            # The run must still be claimable if the first delivery is lost.
-            "retentionSeconds": config.QUEUE_RETENTION_SECONDS,
-            # Re-submitting the same token is a no-op rather than a second run.
-            "idempotencyKey": payload["token"],
-        },
+        payload,
+        # The run must still be claimable if the first delivery is lost.
+        retention=config.QUEUE_RETENTION_SECONDS,
+        # Re-submitting the same token is a no-op rather than a second run.
+        idempotency_key=payload["token"],
     )
 
 

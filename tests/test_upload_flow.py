@@ -270,6 +270,41 @@ def test_the_local_backend_hands_out_no_credential_at_all(client):
         assert target["headers"] == {}
 
 
+def test_a_backend_that_cannot_delegate_says_so_instead_of_improvising(client, monkeypatch):
+    """The Python SDK cannot mint a browser upload token, so Blob must refuse.
+
+    The wrong answers here are both dangerous: handing over BLOB_READ_WRITE_TOKEN,
+    which writes anything in the store, or pretending the upload was authorised and
+    failing later. A 501 tells the script to post the form instead.
+    """
+    class Refusing:
+        name = "refusing"
+
+        def authorize(self, token, name, size):  # noqa: ARG002
+            raise storage.DirectUploadUnavailable("no")
+
+    monkeypatch.setattr(storage, "_backend", Refusing())
+    response = client.post("/upload/authorize", json=declare())
+
+    assert response.status_code == 501
+    assert response.json()["fallback"] == "form"
+    body = response.text.lower()
+    assert "blob_read_write_token" not in body and "bearer" not in body
+
+
+def test_the_real_blob_backend_refuses_to_authorise(monkeypatch):
+    """Pinned against the SDK actually installed, not against documentation."""
+    import vercel.blob
+
+    assert not hasattr(vercel.blob, "generate_client_token"), (
+        "the SDK grew a client-token minter; direct upload can now be implemented"
+    )
+    monkeypatch.setattr(config, "STORAGE_BACKEND", "blob")
+    storage.reset()
+    with pytest.raises(storage.DirectUploadUnavailable):
+        storage.backend().authorize("0" * 24, "abundance", 10)
+
+
 def test_the_blob_backend_scopes_a_key_to_one_object(monkeypatch):
     """The store credential never leaves the server; the key names one pathname."""
     monkeypatch.setattr(config, "STORAGE_BACKEND", "blob")

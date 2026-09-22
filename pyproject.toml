@@ -40,3 +40,9 @@ filterwarnings = [
   "ignore::DeprecationWarning:starlette.*",
   "ignore::DeprecationWarning:fastapi.*",
 ]
+
+# Vercel imports this module at build time, reads the subscription it registers, and
+# compiles it into a queue-triggered function. Without this entry a queued run is
+# published successfully and never delivered, so tests/test_queue_mode.py asserts it.
+[[tool.vercel.subscribers]]
+entrypoint = "app.queue_worker"

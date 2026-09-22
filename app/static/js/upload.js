@@ -124,6 +124,11 @@
     })
       .then(function (response) {
         return asJson(response).then(function (payload) {
+          // 501 means this deployment cannot delegate the upload. That is not a
+          // problem with the file, so the form posts it the ordinary way.
+          if (response.status === 501 || payload.fallback === "form") {
+            throw { fallback: true };
+          }
           if (!response.ok) throw { handled: true, payload: payload };
           return payload;
         });

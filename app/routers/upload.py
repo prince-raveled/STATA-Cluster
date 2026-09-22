@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, BackgroundTasks, File, Form, Header, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from .. import config, db, jobs, services, storage, uploads
 from ..core.parsers import SUPPORTED_FORMATS
@@ -85,13 +85,22 @@ async def authorize(request: Request):
     files = uploads.validate_request(body.get("files") or {})
     ticket = uploads.issue(files)
     staging = uploads.staging_token(uploads.verify(ticket)["id"])
-    return {
-        "ticket": ticket,
-        "uploads": {
+    try:
+        targets = {
             field: storage.authorize_upload(staging, field, entry["size"])
             for field, entry in files.items()
-        },
-    }
+        }
+    except storage.DirectUploadUnavailable:
+        # This backend cannot grant the browser permission to write. Say so plainly
+        # rather than improvising a credential: the script falls back to posting the
+        # form, which works up to whatever the host caps a request body at.
+        return JSONResponse(
+            status_code=501,
+            content={"error": "Direct upload is not available on this deployment.",
+                     "hint": "The file will be sent through the application instead.",
+                     "fallback": "form"},
+        )
+    return {"ticket": ticket, "uploads": targets}
 
 
 @router.put("/upload/staged/{token}/{field}", include_in_schema=False)

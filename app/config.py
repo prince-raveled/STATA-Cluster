@@ -22,6 +22,12 @@ DOWNLOAD_URL_TTL_SECONDS = int(os.environ.get("MICROVERSE_DOWNLOAD_TTL", "900"))
 #: Lifetime of a browser's permission to write one uploaded object. Long enough for
 #: 64 MB on a slow connection, short enough that a leaked one stops working quickly.
 UPLOAD_URL_TTL_SECONDS = int(os.environ.get("MICROVERSE_UPLOAD_TTL", "1800"))
+#: Whether result objects are readable by URL alone. "private" is the default and
+#: keeps every read behind the store credential, which means the app streams
+#: downloads and the host's response cap applies to them. "public" lets a browser
+#: fetch a result directly from an unguessable URL, which is the only way past that
+#: cap with this SDK -- and a different promise about the data, so it is opt-in.
+BLOB_ACCESS = os.environ.get("MICROVERSE_BLOB_ACCESS", "private").strip().lower()
 #: Shared secret the worker route requires, so only the queue can start an analysis.
 WORKER_SECRET = os.environ.get("MICROVERSE_WORKER_SECRET", "")
 #: How long an undelivered run request stays claimable. A run that could not start
@@ -33,11 +39,6 @@ QUEUE_RETENTION_SECONDS = int(os.environ.get("MICROVERSE_QUEUE_TTL", str(6 * 360
 _vercel_host = os.environ.get("VERCEL_PROJECT_PRODUCTION_URL") or os.environ.get("VERCEL_URL", "")
 PUBLIC_BASE_URL = os.environ.get(
     "MICROVERSE_BASE_URL", f"https://{_vercel_host}" if _vercel_host else "").rstrip("/")
-
-
-def is_serverless() -> bool:
-    """True when the disk and the process both end with the request."""
-    return STORAGE_BACKEND != "local" or JOB_BACKEND != "inline"
 
 #: SPEC §16.5 — permanent token URL, 90-day retention.
 RETENTION_DAYS = int(os.environ.get("MICROVERSE_RETENTION_DAYS", "90"))
@@ -66,6 +67,11 @@ MODE_BLURBS = {
     "covariate": "Fork 6: every subset of the covariates you choose, over a reference "
                  "sub-grid of the other forks. This is the Tierney et al. 2022 analysis.",
 }
+
+
+def is_serverless() -> bool:
+    """True when the disk and the process both end with the request."""
+    return STORAGE_BACKEND != "local" or JOB_BACKEND != "inline"
 
 
 def ensure_directories() -> None:

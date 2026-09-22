@@ -27,7 +27,6 @@ import gzip
 import io
 import pickle
 import shutil
-import time
 from typing import Protocol
 
 from . import config
@@ -41,6 +40,10 @@ CONTENT_TYPES = {
     ".zip": "application/zip",
     ".pkl": "application/octet-stream",
 }
+
+
+class DirectUploadUnavailable(RuntimeError):
+    """Raised when a backend cannot grant a browser permission to upload."""
 
 
 def _content_type(name: str) -> str:
@@ -91,11 +94,15 @@ class LocalBackend:
 class BlobBackend:
     """Vercel Blob, one prefix per token.
 
-    Blobs are created private: a MicroVerse token is unguessable, but a result URL
-    that is public forever is a different promise from one the app can stop serving,
-    and microbiome data is not ours to make public by default. Downloads are handed
-    out as short-lived signed URLs instead, which also keeps result bundles off the
-    4.5 MB function response limit.
+    Blobs are created private by default: a MicroVerse token is unguessable, but a
+    result URL that is public forever is a different promise from one the app can
+    stop serving, and microbiome data is not ours to make public by default.
+
+    That choice has a cost this SDK cannot buy off. There is no presigning in
+    `vercel.blob`, so a private object can only be read with the store credential,
+    which means the app streams every download and the host's response cap applies
+    to it. `MICROVERSE_BLOB_ACCESS=public` trades the promise for the cap. Neither
+    option is free, so neither is chosen silently.
     """
 
     name = "blob"
@@ -115,64 +122,65 @@ class BlobBackend:
     def put(self, token: str, name: str, data: bytes) -> None:
         self._blob().put(
             self._key(token, name), data,
-            options={
-                "access": "private",
-                "addRandomSuffix": False,
-                "contentType": _content_type(name),
-                "allowOverwrite": True,
-            },
+            access=config.BLOB_ACCESS,
+            content_type=_content_type(name),
+            add_random_suffix=False,
+            overwrite=True,
         )
 
     def get(self, token: str, name: str) -> bytes | None:
         blob = self._blob()
         try:
-            return blob.get(self._key(token, name)).content
+            return blob.get(self._key(token, name), access=config.BLOB_ACCESS).content
         except Exception:                                     # noqa: BLE001
             return None          # absent or expired reads the same as absent on disk
 
     def purge(self, token: str) -> None:
         blob = self._blob()
-        prefix = f"{self.prefix}/{token}/"
         try:
-            listing = blob.list(options={"prefix": prefix})
-            keys = [item.pathname for item in getattr(listing, "blobs", [])]
+            listing = blob.list_objects(prefix=f"{self.prefix}/{token}/")
+            keys = [item.pathname for item in listing.blobs]
             if keys:
                 blob.delete(keys)
         except Exception:                                     # noqa: BLE001
             return           # purge is best-effort; the database row is authoritative
 
     def url(self, token: str, name: str) -> str | None:
+        """A link the browser can follow, when the store's access model allows one.
+
+        There is no presigning here to reach for. `get_download_url` appends
+        `?download=1` to a blob's own URL and signs nothing, so a link works in a
+        browser exactly when the blob is public. A private blob needs the store
+        credential on every read, which is the server's and stays the server's, so
+        the honest answer is None and the app streams it — within whatever response
+        cap the host imposes.
+        """
+        if config.BLOB_ACCESS != "public":
+            return None
+        blob = self._blob()
         try:
-            return self._blob().get_download_url(
-                self._key(token, name),
-                options={"expiresIn": config.DOWNLOAD_URL_TTL_SECONDS},
-            )
+            return blob.get_download_url(blob.head(self._key(token, name)).url)
         except Exception:                                     # noqa: BLE001
             return None          # fall back to streaming through the app
 
-    def authorize(self, token: str, name: str, size: int) -> dict:
-        """A client token for one object, and nothing else.
+    def authorize(self, token: str, name: str, size: int) -> dict:  # noqa: ARG002
+        """Not available: the Python SDK cannot mint a browser upload token.
 
-        `BLOB_READ_WRITE_TOKEN` writes anything in the store and never leaves the
-        server. What the browser receives is minted from it and scoped to this single
-        pathname with its own expiry, so the worst a stolen one can do is overwrite
-        the upload it was issued for.
+        Direct upload needs a credential scoped to one pathname, and minting one is
+        `generateClientTokenFromReadWriteToken` in the JavaScript SDK with no Python
+        equivalent — `vercel.blob` can *use* a client token but not issue one. The
+        only credential this process holds is `BLOB_READ_WRITE_TOKEN`, which writes
+        anything in the store, and handing that to a browser is not a fallback.
+
+        So this refuses rather than improvises. The route above it turns the refusal
+        into "direct upload unavailable", the browser posts the form instead, and
+        uploads are bounded by the host's request-body cap until a token can be
+        minted. Failing loudly here is the point: the alternative is a deployment
+        that looks configured and silently leaks or breaks.
         """
-        client_token = self._blob().generate_client_token(
-            self._key(token, name),
-            options={
-                "access": "private",
-                "addRandomSuffix": False,
-                "allowOverwrite": True,
-                "maximumSizeInBytes": size,
-                "validUntil": int(time.time() + config.UPLOAD_URL_TTL_SECONDS) * 1000,
-            },
+        raise DirectUploadUnavailable(
+            "This storage backend cannot authorise a browser to upload directly."
         )
-        return {
-            "url": f"https://blob.vercel-storage.com/{self._key(token, name)}",
-            "method": "PUT",
-            "headers": {"Authorization": f"Bearer {client_token}"},
-        }
 
 
 _backend: Backend | None = None

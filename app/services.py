@@ -159,10 +159,18 @@ def execute(token: str, mode: str, declared=None, covariates=()) -> None:
     # simultaneous runs take 63 s each against ~10 s alone, without finishing any of
     # them sooner; bounding it makes latency predictable. Measured in
     # tests/reference/load_test.py.
+    # Who bounds concurrency depends on who called. Under the inline backend this
+    # process is the only one there is, so the semaphore is the limit and a run waits
+    # for a slot. Under the queue backend the dispatcher has already decided this run
+    # may proceed — its cap is global, across every instance, which a per-process
+    # semaphore cannot be. Taking the local one there would be worse than redundant:
+    # a busy instance would fail a job the queue had every intention of running.
+    local_slot = config.JOB_BACKEND != "queue"
+
     db.update_job(token, status="running", progress=0.0, mode=mode,
                   message="Queued — waiting for a free analysis slot",
                   error="", error_hint="")
-    if not run_queue.acquire(timeout=QUEUE_WAIT_SECONDS):
+    if local_slot and not run_queue.acquire(timeout=QUEUE_WAIT_SECONDS):
         db.update_job(
             token, status="error", finished_at=utcnow(),
             error="The server is busy and this run could not start.",
@@ -235,7 +243,8 @@ def execute(token: str, mode: str, declared=None, covariates=()) -> None:
         )
         print(f"[microverse] job {token} failed\n{traceback.format_exc()}")
     finally:
-        run_queue.release()
+        if local_slot:
+            run_queue.release()
 
 
 def load_results(token: str):
