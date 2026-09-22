@@ -20,6 +20,9 @@ from app import config, limits, storage, uploads
 from app.main import app
 
 EXAMPLES = config.EXAMPLES_DIR
+#: The token minter. Its own service, laid out the way Vercel finds file-based
+#: functions: <service root>/api/<name>.js
+MINTER = config.BASE_DIR / "blob" / "api" / "blob-upload.js"
 ABUNDANCE = (EXAMPLES / "ibd_genus_abundance.tsv").read_bytes()
 METADATA = (EXAMPLES / "ibd_genus_metadata.tsv").read_bytes()
 
@@ -448,7 +451,7 @@ def test_the_two_languages_agree_on_what_upload_ticket_returns():
     """
     import re
 
-    js = (config.BASE_DIR / "api" / "blob-upload.js").read_text(encoding="utf-8")
+    js = MINTER.read_text(encoding="utf-8")
     reads = set(re.findall(r"granted\.([a-z_]+)", js))
 
     router = (config.BASE_DIR / "app" / "routers" / "upload.py").read_text(encoding="utf-8")
@@ -463,7 +466,7 @@ def test_the_minter_holds_no_rules_of_its_own():
     """Every limit belongs to app/uploads.py. A number here is a second source of truth."""
     import re
 
-    js = (config.BASE_DIR / "api" / "blob-upload.js").read_text(encoding="utf-8")
+    js = MINTER.read_text(encoding="utf-8")
     body = js.split("export async function POST")[1]
     # Comments explain the rules; only executable lines may not restate them.
     code = " ".join(line for line in body.splitlines()
@@ -477,6 +480,22 @@ def test_the_minter_holds_no_rules_of_its_own():
     assert ".tsv" not in code and ".biom" not in code, (
         "filename rules look duplicated in the minter"
     )
+
+
+def test_the_minter_sits_where_vercel_finds_a_function():
+    """A bare .js at a service root is detected as static content and never runs.
+
+    Verified against the real builder: with the file under <root>/api/ and an
+    `entrypoint`, `vercel dev` reports the service as [node]; without, it reports
+    [@vercel/static], which would serve the source instead of executing it.
+    """
+    import json as _json
+
+    manifest = _json.loads((config.BASE_DIR / "vercel.json").read_text(encoding="utf-8"))
+    service = manifest["services"]["blob_upload"]
+    assert MINTER.exists(), f"the minter is not at {MINTER}"
+    assert MINTER.relative_to(config.BASE_DIR / service["root"]).as_posix() == service["entrypoint"]
+    assert service["entrypoint"].startswith("api/")
 
 
 def test_the_python_bundle_excludes_the_javascript_service():
@@ -494,7 +513,7 @@ def test_the_python_bundle_excludes_the_javascript_service():
     assert "excludeFiles" not in service and "maxDuration" not in service
 
     entry = service["functions"]["app/main.py"]
-    assert "api/**" in entry["excludeFiles"]
+    assert "blob/**" in entry["excludeFiles"]
     assert entry["maxDuration"] == 300
     assert service["framework"] == "fastapi"
 
