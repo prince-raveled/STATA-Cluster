@@ -257,13 +257,48 @@ def load_results(token: str):
 TAXON_OPTION_LIMIT = 2000
 
 
+def json_safe(value):
+    """Recursively replace values JSON cannot carry with None.
+
+    The robustness table now has a row for every taxon, including those no
+    specification could test, and their measurements are genuinely absent. pandas
+    spells absent as NaN; JSON has no spelling for it at all, and both Starlette and
+    Jinja's tojson refuse to emit one. Anywhere the frame becomes JSON has to make
+    that conversion, so it is written once here rather than at each call site --
+    there are four, and the one that was missed answered 500.
+    """
+    if isinstance(value, dict):
+        return {k: json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [json_safe(v) for v in value]
+    if isinstance(value, float):
+        return None if (value != value or value in (float("inf"), float("-inf"))) else value
+    return value
+
+
+def _number(value, digits: int | None = None):
+    """A float the browser can be given, or None where there is no number.
+
+    These records are handed to the page as JSON, and JSON has no NaN. A taxon that
+    no specification could test has no median effect and no significance rate, and
+    float("nan") for either one makes the whole payload unserialisable -- Starlette
+    and Jinja's tojson both refuse it -- so the results table 500s over a single
+    absent value. None is also the truthful answer: 0.0 would claim an effect of
+    zero was measured, when nothing was measured at all.
+    """
+    number = float(value)
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return round(number, digits) if digits is not None else number
+
+
 def taxon_options(summary, limit: int = TAXON_OPTION_LIMIT) -> list:
     """Taxa for the curve selector, best tier first."""
     table = summary.table.head(limit)
     return [
         {"id": int(row.taxon_id), "label": row.label, "tier": row.robustness_tier,
-         "frac_significant": float(row.frac_significant),
-         "median_effect": float(row.median_effect)}
+         "frac_significant": _number(row.frac_significant),
+         "median_effect": _number(row.median_effect)}
         for row in table.itertuples()
     ]
 
@@ -279,13 +314,13 @@ def table_records(summary) -> list:
             "rank": row.rank,
             "tier": row.robustness_tier,
             "n_specs_tested": int(row.n_specs_tested),
-            "frac_tested": round(float(row.frac_tested), 4),
-            "frac_significant": round(float(row.frac_significant), 4),
-            "frac_nominal": round(float(row.frac_nominal), 4),
-            "sign_consistency": round(float(row.sign_consistency), 4),
-            "median_effect": round(float(row.median_effect), 4),
-            "iqr_low": round(float(row.iqr_low), 4),
-            "iqr_high": round(float(row.iqr_high), 4),
+            "frac_tested": _number(row.frac_tested, 4),
+            "frac_significant": _number(row.frac_significant, 4),
+            "frac_nominal": _number(row.frac_nominal, 4),
+            "sign_consistency": _number(row.sign_consistency, 4),
+            "median_effect": _number(row.median_effect, 4),
+            "iqr_low": _number(row.iqr_low, 4),
+            "iqr_high": _number(row.iqr_high, 4),
             "direction": row.direction,
         })
     return records

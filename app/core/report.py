@@ -91,7 +91,12 @@ def specification_curve(run, taxon_id: int, max_points: int = 4000) -> dict:
             "spec_id": [], "labels": [],
             "forks": {}, "fork_labels": {}, "categories": {},
             "declared_position": -1, "declared": {},
-            "median_effect": float("nan"), "frac_significant": float("nan"),
+            # None, not NaN. This branch is delivered as JSON, and JSON has no NaN:
+            # Starlette serialises with allow_nan=False, so a float("nan") here made
+            # the endpoint answer 500 instead of this carefully worded note. null is
+            # also the honest value -- 0.0 would claim an effect of zero and a
+            # significance rate of zero, when nothing was measured at all.
+            "median_effect": None, "frac_significant": None,
             "note": "This taxon was filtered out of every specification, so there is "
                     "nothing to plot.",
         }

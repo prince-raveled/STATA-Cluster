@@ -142,7 +142,8 @@ def job_results(
     table = summary.table
     if tier:
         table = table[table["robustness_tier"] == tier.upper()]
-    records = table.head(limit).to_dict(orient="records")
+    # to_dict hands NaN straight through, and this is rendered as JSON.
+    records = services.json_safe(table.head(limit).to_dict(orient="records"))
     return {
         "token": token,
         "verdict": verdict_sentence(run, summary),

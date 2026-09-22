@@ -138,6 +138,36 @@ def compute_robustness(run) -> RobustnessSummary:
             "min_p_adjusted": min_p.to_numpy(),
         }
     )
+    # Keep a row for every taxon, so exports and counts line up with the input --
+    # the same reason spec_summary keeps a row for every specification below.
+    #
+    # A taxon filtered out of *every* specification produces no rows in `long`, so the
+    # groupby above never sees it and it used to vanish: no row, no tier, and no
+    # mention anywhere. The counts then did not add up to the table the person
+    # uploaded, and nothing said why. SPEC §16.2 is explicit that "a taxon with
+    # n_specs_tested < 10 is reported as INSUFFICIENT, not tiered", and nought is
+    # less than ten; assign_tier already answers INSUFFICIENT for it. The taxon only
+    # had to reach assign_tier to be reported.
+    absent = [i for i in range(len(run.taxa_names)) if i not in set(taxa_idx.tolist())]
+    if absent:
+        frame = pd.concat([frame, pd.DataFrame({
+            "taxon_id": absent,
+            "taxon": [run.taxa_names[i] for i in absent],
+            "label": [run.taxa_display[i] for i in absent],
+            "rank": [run.taxa_rank[i] for i in absent],
+            "n_specs_tested": 0,
+            "n_specs_eligible": [eligible_by_rank.get(run.taxa_rank[i], n_specs_total)
+                                 for i in absent],
+            "frac_tested": 0.0,
+            "frac_significant": 0.0,
+            "frac_nominal": 0.0,
+            "sign_consistency": 0.0,
+            "median_effect": np.nan,
+            "iqr_low": np.nan,
+            "iqr_high": np.nan,
+            "min_p_adjusted": np.nan,
+        })], ignore_index=True)
+
     frame["robustness_tier"] = [
         assign_tier(int(n), float(f), float(s))
         for n, f, s in zip(frame["n_specs_tested"], frame["frac_significant"],
