@@ -1,7 +1,14 @@
-"""Job store — SQLite, jobs only.
+"""Job store — one table, jobs only.
 
 SPEC §20: "no curated database in this project". This table tracks run state and
-nothing biological; every result lives on disk beside it, keyed by the same token.
+nothing biological; every result lives in `storage` beside it, keyed by the same
+token. Nothing here is a scientific record, which is why it can move hosts.
+
+SQLite is the default and is what a server with a disk should keep using. A host
+without one points MICROVERSE_DB at a networked database instead; the schema is
+plain enough to be portable, and the two places the databases genuinely differ —
+connection handling and the race in creating the table — are handled below rather
+than assumed away.
 """
 from __future__ import annotations
 
@@ -10,7 +17,18 @@ import json
 import re
 import secrets
 
-from sqlalchemy import Column, DateTime, Float, Integer, String, Text, create_engine, select
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Float,
+    Integer,
+    String,
+    Text,
+    create_engine,
+    select,
+)
+from sqlalchemy import inspect as sa_inspect
+from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from . import config, storage
@@ -23,7 +41,8 @@ _Session = None
 
 
 def utcnow() -> dt.datetime:
-    """Naive UTC, the shape SQLite stores. `datetime.utcnow` is deprecated."""
+    """Naive UTC. Both SQLite and TIMESTAMP WITHOUT TIME ZONE store exactly this,
+    so the same value round-trips either way. `datetime.utcnow` is deprecated."""
     return dt.datetime.now(dt.UTC).replace(tzinfo=None)
 
 
@@ -90,11 +109,28 @@ def _engine_options(url: str) -> dict:
     return options
 
 
+def create_schema(engine) -> None:
+    """Create the table, tolerating another instance creating it at the same moment.
+
+    `create_all` looks for the table and then creates it, which is two statements with
+    a gap in between. One process owning a SQLite file never sees that gap. A
+    serverless host does: every cold start runs this, several can start at once, and
+    two of them can both find the table absent and both try to create it. The one that
+    loses gets an error about a table that now exists, which is not a failure —
+    anything else still is.
+    """
+    try:
+        Base.metadata.create_all(engine)
+    except (IntegrityError, OperationalError, ProgrammingError):
+        if not sa_inspect(engine).has_table(Job.__tablename__):
+            raise
+
+
 def init() -> None:
     global _engine, _Session
     config.ensure_directories()
     _engine = create_engine(config.DATABASE_URL, **_engine_options(config.DATABASE_URL))
-    Base.metadata.create_all(_engine)
+    create_schema(_engine)
     _Session = sessionmaker(bind=_engine, expire_on_commit=False)
 
 

@@ -4,6 +4,10 @@ uvicorn[standard]>=0.30
 jinja2>=3.1
 python-multipart>=0.0.9
 sqlalchemy>=2.0
+# PostgreSQL driver, for hosts without a disk to keep SQLite on. `[binary]` ships a
+# prebuilt libpq so the build needs no C toolchain or system Postgres. Only loaded
+# when MICROVERSE_DB names a postgresql:// URL; SQLite remains the default.
+psycopg[binary]>=3.2
 
 numpy>=1.26
 pandas>=2.1
