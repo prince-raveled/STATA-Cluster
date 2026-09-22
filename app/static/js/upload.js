@@ -80,6 +80,69 @@
     return response.json().catch(function () { return {}; });
   }
 
+  /* Two ways to put one file where the server said it may go.
+
+     `staged` is this application taking the bytes itself, which is what a host with
+     a disk does and what the test suite exercises. `vercel-blob` is the browser
+     writing straight to object storage, for hosts that cap a request body below
+     MicroVerse's upload limit — the whole reason any of this exists.
+
+     Only the second needs the Blob SDK, so it is imported at the moment it is
+     needed rather than on every page load, and a failure to load it lands in the
+     same fallback as any other pre-commit failure. */
+  function toStagingRoute(target, issued, file) {
+    var headers = Object.assign({}, target.headers || {});
+    headers["X-Microverse-Ticket"] = issued;
+    return fetch(target.url, {
+      method: target.method || "PUT",
+      headers: headers,
+      body: file,
+      signal: inFlight.signal,
+    }).then(function (response) {
+      if (response.ok) return;
+      return asJson(response).then(function (payload) {
+        throw { handled: true, payload: payload };
+      });
+    });
+  }
+
+  var blobClient = null;
+  function loadBlobClient() {
+    if (!blobClient) {
+      blobClient = import(
+        "https://cdn.jsdelivr.net/npm/@vercel/blob@2.8.0/client/+esm"
+      );
+    }
+    return blobClient;
+  }
+
+  function toBlobStore(target, issued, file) {
+    return loadBlobClient().then(function (client) {
+      // The pathname is the server's, not ours, and /upload/ticket checks it again
+      // against the signed ticket before any token is issued.
+      return client.upload(target.pathname, file, {
+        access: target.access || "private",
+        handleUploadUrl: target.handler,
+        clientPayload: issued,
+        contentType: file.type || "application/octet-stream",
+        abortSignal: inFlight.signal,
+        onUploadProgress: function (progress) {
+          if (progress && typeof progress.percentage === "number") {
+            say("Uploading… " + Math.round(progress.percentage) + "%");
+          }
+        },
+      });
+    }).catch(function (error) {
+      // A rejection from the store is about this file, so it is worth showing.
+      // Anything else -- the CDN blocked, the route missing -- is not, and falls
+      // through to the form.
+      if (error && error.name && String(error.name).indexOf("Blob") === 0) {
+        throw { handled: true, payload: { error: error.message, hint: "" } };
+      }
+      throw error;
+    });
+  }
+
   /* Tell the server to drop anything already staged. Best effort: a cancelled
      upload that leaves bytes behind is a quota problem, not a correctness one, and
      retention sweeps them regardless. */
@@ -140,22 +203,11 @@
         return names.reduce(function (chain, name) {
           return chain.then(function () {
             var target = auth.uploads[name];
-            var headers = Object.assign({}, target.headers || {});
-            headers["X-Microverse-Ticket"] = auth.ticket;
             say("Uploading " + (done + 1) + " of " + names.length + "…");
-            return fetch(target.url, {
-              method: target.method || "PUT",
-              headers: headers,
-              body: files[name],
-              signal: inFlight.signal,
-            }).then(function (response) {
-              if (!response.ok) {
-                return asJson(response).then(function (payload) {
-                  throw { handled: true, payload: payload };
-                });
-              }
-              done += 1;
-            });
+            var sent = target.strategy === "vercel-blob"
+              ? toBlobStore(target, auth.ticket, files[name])
+              : toStagingRoute(target, auth.ticket, files[name]);
+            return sent.then(function () { done += 1; });
           });
         }, Promise.resolve());
       })

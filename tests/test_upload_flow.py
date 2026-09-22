@@ -292,17 +292,198 @@ def test_a_backend_that_cannot_delegate_says_so_instead_of_improvising(client, m
     assert "blob_read_write_token" not in body and "bearer" not in body
 
 
-def test_the_real_blob_backend_refuses_to_authorise(monkeypatch):
-    """Pinned against the SDK actually installed, not against documentation."""
+def test_the_blob_backend_delegates_minting_instead_of_refusing(monkeypatch):
+    """Python cannot sign a client token, so it names the endpoint that can.
+
+    The wrong answers are handing over BLOB_READ_WRITE_TOKEN, which writes anything
+    in the store, or letting the browser choose where to write. It does neither: the
+    pathname is the server's and /upload/ticket checks it again.
+    """
     import vercel.blob
 
     assert not hasattr(vercel.blob, "generate_client_token"), (
-        "the SDK grew a client-token minter; direct upload can now be implemented"
+        "the Python SDK grew a token minter; the JS endpoint may no longer be needed"
     )
     monkeypatch.setattr(config, "STORAGE_BACKEND", "blob")
     storage.reset()
+
+    target = storage.backend().authorize("0" * 24, "abundance", 10)
+    assert target["strategy"] == "vercel-blob"
+    assert target["handler"] == config.BLOB_UPLOAD_HANDLER
+    assert target["pathname"] == "microverse/" + "0" * 24 + "/abundance"
+    assert "token" not in str(target).lower()
+
+
+def test_a_deployment_without_a_minting_endpoint_refuses(monkeypatch):
+    monkeypatch.setattr(config, "STORAGE_BACKEND", "blob")
+    monkeypatch.setattr(config, "BLOB_UPLOAD_HANDLER", "")
+    storage.reset()
     with pytest.raises(storage.DirectUploadUnavailable):
         storage.backend().authorize("0" * 24, "abundance", 10)
+
+
+def test_the_local_backend_names_its_strategy_too(client):
+    """One field for the browser to branch on, whatever the host provides."""
+    granted = client.post("/upload/authorize", json=declare()).json()
+    for target in granted["uploads"].values():
+        assert target["strategy"] == "staged"
+
+
+# --- /upload/ticket: the rules stay in Python -------------------------------
+def _blob_mode(monkeypatch):
+    monkeypatch.setattr(config, "STORAGE_BACKEND", "blob")
+    monkeypatch.setattr(config, "WORKER_SECRET", "s3cret")
+    storage.reset()
+
+
+def test_the_minter_is_told_the_limits_for_an_authorised_pathname(client, monkeypatch):
+    _blob_mode(monkeypatch)
+    granted = client.post("/upload/authorize", json=declare()).json()
+    pathname = granted["uploads"]["abundance"]["pathname"]
+
+    response = client.post("/upload/ticket",
+                           json={"ticket": granted["ticket"], "pathname": pathname},
+                           headers={"X-Microverse-Worker": "s3cret"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["maximum_size_in_bytes"] == config.MAX_UPLOAD_BYTES
+    assert "text/*" in body["allowed_content_types"]
+    assert body["valid_until"] > 0
+
+
+def test_the_minter_must_present_the_shared_secret(client, monkeypatch):
+    """Otherwise the token minter is an open door into the store."""
+    _blob_mode(monkeypatch)
+    granted = client.post("/upload/authorize", json=declare()).json()
+    pathname = granted["uploads"]["abundance"]["pathname"]
+
+    for headers in ({}, {"X-Microverse-Worker": "wrong"}):
+        response = client.post("/upload/ticket",
+                               json={"ticket": granted["ticket"], "pathname": pathname},
+                               headers=headers)
+        assert response.status_code == 403
+
+
+def test_an_unconfigured_deployment_authorises_nobody(client, monkeypatch):
+    monkeypatch.setattr(config, "STORAGE_BACKEND", "blob")
+    monkeypatch.setattr(config, "WORKER_SECRET", "")
+    storage.reset()
+    response = client.post("/upload/ticket", json={"ticket": "x", "pathname": "y"},
+                           headers={"X-Microverse-Worker": ""})
+    assert response.status_code == 403
+
+
+def test_a_ticket_cannot_authorise_a_pathname_it_does_not_own(client, monkeypatch):
+    """The browser supplies the pathname to upload(), so it is checked, not trusted."""
+    _blob_mode(monkeypatch)
+    mine = client.post("/upload/authorize", json=declare()).json()
+    theirs = client.post("/upload/authorize", json=declare()).json()
+    their_path = theirs["uploads"]["abundance"]["pathname"]
+
+    response = client.post("/upload/ticket",
+                           json={"ticket": mine["ticket"], "pathname": their_path},
+                           headers={"X-Microverse-Worker": "s3cret"})
+    assert response.status_code == 403
+
+
+@pytest.mark.parametrize("pathname", [
+    "", "microverse/../../etc/passwd", "other-prefix/x/abundance",
+    "microverse/0000/taxonomy", "/etc/passwd",
+])
+def test_an_arbitrary_pathname_is_refused(client, monkeypatch, pathname):
+    _blob_mode(monkeypatch)
+    granted = client.post("/upload/authorize", json=declare()).json()
+    response = client.post("/upload/ticket",
+                           json={"ticket": granted["ticket"], "pathname": pathname},
+                           headers={"X-Microverse-Worker": "s3cret"})
+    assert response.status_code == 403
+
+
+def test_a_field_the_ticket_never_named_has_no_pathname(client, monkeypatch):
+    """No taxonomy was declared, so no token may be minted for one."""
+    _blob_mode(monkeypatch)
+    granted = client.post("/upload/authorize", json=declare()).json()
+    staging = uploads.staging_token(uploads.verify(granted["ticket"])["id"])
+
+    response = client.post(
+        "/upload/ticket",
+        json={"ticket": granted["ticket"],
+              "pathname": f"microverse/{staging}/taxonomy"},
+        headers={"X-Microverse-Worker": "s3cret"})
+    assert response.status_code == 403
+
+
+def test_an_expired_ticket_mints_nothing(client, monkeypatch):
+    _blob_mode(monkeypatch)
+    granted = client.post("/upload/authorize", json=declare()).json()
+    pathname = granted["uploads"]["abundance"]["pathname"]
+
+    later = time.time() + uploads.TICKET_TTL_SECONDS + 5
+    monkeypatch.setattr(uploads.time, "time", lambda: later)
+    response = client.post("/upload/ticket",
+                           json={"ticket": granted["ticket"], "pathname": pathname},
+                           headers={"X-Microverse-Worker": "s3cret"})
+    assert response.status_code == 403
+
+
+def test_the_minting_endpoint_is_declared_to_the_host():
+    """Vercel must route /api/blob-upload to the JS service, not to FastAPI."""
+    import json as _json
+
+    manifest = _json.loads((config.BASE_DIR / "vercel.json").read_text(encoding="utf-8"))
+    assert "blob_upload" in manifest["services"]
+    routed = [r for r in manifest["rewrites"]
+              if r["source"] == config.BLOB_UPLOAD_HANDLER]
+    assert routed, f"nothing routes {config.BLOB_UPLOAD_HANDLER}"
+    assert routed[0]["destination"]["service"] == "blob_upload"
+    # The catch-all must come after it, or FastAPI would swallow the route.
+    sources = [r["source"] for r in manifest["rewrites"]]
+    assert sources.index(config.BLOB_UPLOAD_HANDLER) < sources.index("/(.*)")
+
+
+def test_the_two_languages_agree_on_what_upload_ticket_returns():
+    """The minter is JavaScript and the authority is Python, so the contract drifts
+    silently unless something checks it. Renaming a field on either side fails here
+    rather than at the first upload on a deployment nobody has tested yet.
+    """
+    import re
+
+    js = (config.BASE_DIR / "api" / "blob-upload.js").read_text(encoding="utf-8")
+    reads = set(re.findall(r"granted\.([a-z_]+)", js))
+
+    router = (config.BASE_DIR / "app" / "routers" / "upload.py").read_text(encoding="utf-8")
+    block = router.split("async def ticket(")[1].split("@router")[0]
+    returns = set(re.findall(r'"([a-z_]+)":', block)) - {"error"}
+
+    assert reads, "the JavaScript reads nothing from the authorisation response"
+    assert reads <= returns, f"JavaScript reads fields Python never sends: {reads - returns}"
+
+
+def test_the_minter_holds_no_rules_of_its_own():
+    """Every limit belongs to app/uploads.py. A number here is a second source of truth."""
+    import re
+
+    js = (config.BASE_DIR / "api" / "blob-upload.js").read_text(encoding="utf-8")
+    body = js.split("export async function POST")[1]
+    # Comments explain the rules; only executable lines may not restate them.
+    code = " ".join(line for line in body.splitlines()
+                    if not line.strip().startswith("//"))
+
+    numbers = set(re.findall(r"\b\d+\b", code)) - {"400"}   # HTTP status
+    assert not numbers, (
+        f"the minter contains its own numeric limits {numbers}; every limit must "
+        "come from /upload/ticket so there is one source of truth"
+    )
+    assert ".tsv" not in code and ".biom" not in code, (
+        "filename rules look duplicated in the minter"
+    )
+
+
+def test_the_python_bundle_excludes_the_javascript_service():
+    import json as _json
+
+    manifest = _json.loads((config.BASE_DIR / "vercel.json").read_text(encoding="utf-8"))
+    assert "api/**" in manifest["services"]["microverse"]["excludeFiles"]
 
 
 def test_the_blob_backend_scopes_a_key_to_one_object(monkeypatch):

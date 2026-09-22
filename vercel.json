@@ -1,9 +1,18 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "functions": {
-    "app/main.py": {
+  "services": {
+    "microverse": {
+      "root": ".",
+      "entrypoint": "app.main:app",
       "maxDuration": 300,
-      "excludeFiles": "{tests/**,docs/**,data/**,deploy/**,.venv/**,.github/**,scratchpad/**,**/*.pyc,**/__pycache__/**}"
+      "excludeFiles": "{tests/**,docs/**,data/**,deploy/**,.venv/**,.github/**,api/**,scratchpad/**,**/*.pyc,**/__pycache__/**}"
+    },
+    "blob_upload": {
+      "root": "api/"
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/api/blob-upload", "destination": { "service": "blob_upload" } },
+    { "source": "/(.*)", "destination": { "service": "microverse" } }
+  ]
 }

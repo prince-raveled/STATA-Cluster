@@ -28,6 +28,10 @@ UPLOAD_URL_TTL_SECONDS = int(os.environ.get("MICROVERSE_UPLOAD_TTL", "1800"))
 #: fetch a result directly from an unguessable URL, which is the only way past that
 #: cap with this SDK -- and a different promise about the data, so it is opt-in.
 BLOB_ACCESS = os.environ.get("MICROVERSE_BLOB_ACCESS", "private").strip().lower()
+#: Route that mints a browser upload token. Empty disables direct upload, and the
+#: browser posts the form instead. Only the JavaScript SDK can sign these, so this
+#: points at api/blob-upload.js rather than anything in this application.
+BLOB_UPLOAD_HANDLER = os.environ.get("MICROVERSE_BLOB_HANDLER", "/api/blob-upload").strip()
 #: Shared secret the worker route requires, so only the queue can start an analysis.
 WORKER_SECRET = os.environ.get("MICROVERSE_WORKER_SECRET", "")
 #: How long an undelivered run request stays claimable. A run that could not start

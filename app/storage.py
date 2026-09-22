@@ -87,7 +87,8 @@ class LocalBackend:
         route accepts the bytes itself. The browser follows the same two-step protocol
         either way, which is what lets the suite exercise the real upload flow.
         """
-        return {"url": f"/upload/staged/{token}/{name}", "method": "PUT", "headers": {}}
+        return {"strategy": "staged", "method": "PUT", "headers": {},
+                "url": f"/upload/staged/{token}/{name}"}
 
 
 # --- Vercel Blob ------------------------------------------------------------
@@ -164,23 +165,28 @@ class BlobBackend:
             return None          # fall back to streaming through the app
 
     def authorize(self, token: str, name: str, size: int) -> dict:  # noqa: ARG002
-        """Not available: the Python SDK cannot mint a browser upload token.
+        """Send the browser to the one endpoint that can mint it a token.
 
-        Direct upload needs a credential scoped to one pathname, and minting one is
-        `generateClientTokenFromReadWriteToken` in the JavaScript SDK with no Python
-        equivalent — `vercel.blob` can *use* a client token but not issue one. The
-        only credential this process holds is `BLOB_READ_WRITE_TOKEN`, which writes
-        anything in the store, and handing that to a browser is not a fallback.
+        Minting is `generateClientTokenFromReadWriteToken`, which exists only in the
+        JavaScript SDK — `vercel.blob` in Python can use a client token but not issue
+        one. Rather than hand a browser `BLOB_READ_WRITE_TOKEN`, which writes
+        anything in the store, the browser is pointed at `api/blob-upload.js`, and
+        that route asks this application whether the pathname is allowed before it
+        issues anything. The rules stay here; only the signing happens there.
 
-        So this refuses rather than improvises. The route above it turns the refusal
-        into "direct upload unavailable", the browser posts the form instead, and
-        uploads are bounded by the host's request-body cap until a token can be
-        minted. Failing loudly here is the point: the alternative is a deployment
-        that looks configured and silently leaks or breaks.
+        The pathname is returned so the browser has nothing to invent, and
+        `/upload/ticket` checks the one it presents against the signed ticket anyway.
         """
-        raise DirectUploadUnavailable(
-            "This storage backend cannot authorise a browser to upload directly."
-        )
+        if not config.BLOB_UPLOAD_HANDLER:
+            raise DirectUploadUnavailable(
+                "No client-upload endpoint is configured for this deployment."
+            )
+        return {
+            "strategy": "vercel-blob",
+            "handler": config.BLOB_UPLOAD_HANDLER,
+            "pathname": self._key(token, name),
+            "access": config.BLOB_ACCESS,
+        }
 
 
 _backend: Backend | None = None

@@ -35,6 +35,19 @@ REQUIRED_FIELDS = ("abundance", "metadata")
 #: staged, not a claim about what will parse — the parsers remain the authority.
 ALLOWED_SUFFIXES = (".csv", ".tsv", ".txt", ".biom", ".qza", ".gz")
 
+#: Media types the store will accept. Wildcards are supported by the token, and the
+#: list is deliberately broad: a browser's guess at the type of a .biom or .qza is
+#: unreliable, and the parsers -- not the content type -- decide what a file really
+#: is. It exists so the token cannot be reused to store something unrelated.
+ALLOWED_CONTENT_TYPES = (
+    "text/*",
+    "application/gzip",
+    "application/x-gzip",
+    "application/zip",
+    "application/octet-stream",
+    "application/json",
+)
+
 #: How long a browser has to finish uploading. Generous enough for 64 MB on a slow
 #: connection, short enough that a leaked ticket stops working quickly.
 TICKET_TTL_SECONDS = 1800
