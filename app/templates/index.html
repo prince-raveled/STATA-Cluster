@@ -1,320 +1,294 @@
 {% extends "base.html" %}
+{% from "_ui.html" import callout %}
+{% from "_terms.html" import dfn, help %}
 {% set page = 'home' %}
 {% block title %}MicroVerse — multiverse analysis for microbiome differential abundance{% endblock %}
+{% block header_cta %}{% endblock %}
 
 {% block content %}
 
-<section class="hero" aria-labelledby="hero-title">
-  <div class="hero-copy">
-    <p class="eyebrow">Specification-curve analysis for microbiome differential abundance</p>
-    <h1 id="hero-title">One dataset. <em class="accent">Every</em> defensible answer.</h1>
-    <p class="lede">A <b>differential abundance</b> result — which microbes differ between two
-      groups — depends on at least six analytical choices, and not one of them has field
-      consensus. Researchers make one set of choices, report one p-value, and never show what a
-      different set would have said.</p>
-    <p class="lede">MicroVerse runs the whole space and reports the distribution: which taxa
-      survive every defensible pipeline, which appear only under particular choices, and which
-      choice is actually driving your result.{% if grid_sizes._range %} On the demo datasets
-      that comes to between <b>{{ grid_sizes._range.low|commafy }}</b> and
-      <b>{{ grid_sizes._range.high|commafy }}</b> complete analyses, depending on the table you
-      bring.{% endif %}</p>
-    <div class="hero-actions">
-      <a class="button button-primary" href="#start">Run your data <span aria-hidden="true">→</span></a>
-      <a class="text-action" href="#demos">Start from a demo <span aria-hidden="true">↗</span></a>
+<!-- ================= 1. what MicroVerse is ================= -->
+<section class="hero shell" aria-labelledby="hero-title">
+  <div class="hero-grid">
+    <div>
+      <p class="eyebrow eyebrow-purple">Multiverse analysis for microbiome differential abundance</p>
+      <h1 id="hero-title">Is your finding robust to <em>the analysis you chose?</em></h1>
+      <p class="lede">A <b>differential abundance</b> result (which microbes differ between two
+        groups) depends on at least six analytical choices that the field has not agreed on.
+        MicroVerse runs every defensible combination of those choices on your data and shows
+        which findings survive all of them, which depend on a particular choice, and which
+        choice is responsible.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg" href="#start">Start analysis <span class="arrow" aria-hidden="true">→</span></a>
+        <a class="btn btn-secondary btn-lg" href="#demos">Try a demo dataset</a>
+      </div>
+      <ul class="hero-facts">
+        <li>Free, no account</li>
+        <li>Nothing shared</li>
+        <li>Never exports a “best” specification</li>
+      </ul>
     </div>
-    <p class="hero-note"><span class="status-dot" aria-hidden="true"></span>
-      Free · no account · nothing shared · never exports a “best” specification</p>
-  </div>
 
-  <div class="hero-visual" aria-label="A specification curve: effect size across every analytical pipeline, over a matrix of which choice was active">
-    <div class="orb orb-a" aria-hidden="true"></div>
-    <div class="orb orb-b" aria-hidden="true"></div>
-    <p class="visual-topline"><span>SPECIFICATION CURVE / ONE TAXON</span><span>{{ grid_sizes._default|commafy if grid_sizes._default else '1,596' }} PIPELINES</span></p>
-
-    <div class="mini-curve" aria-hidden="true">
-      <svg viewBox="0 0 460 250" role="img" preserveAspectRatio="none">
-        <line x1="0" y1="96" x2="460" y2="96" stroke="rgba(255,253,249,.35)" stroke-width="1" stroke-dasharray="3 4"/>
-        <g fill="#8f96a8">
-          <circle cx="10" cy="150" r="2"/><circle cx="24" cy="147" r="2"/><circle cx="38" cy="145" r="2"/>
-          <circle cx="52" cy="142" r="2"/><circle cx="66" cy="139" r="2"/><circle cx="80" cy="136" r="2"/>
-          <circle cx="94" cy="133" r="2"/><circle cx="108" cy="129" r="2"/><circle cx="122" cy="126" r="2"/>
-          <circle cx="136" cy="122" r="2"/><circle cx="150" cy="118" r="2"/><circle cx="164" cy="114" r="2"/>
-          <circle cx="178" cy="110" r="2"/><circle cx="192" cy="105" r="2"/><circle cx="206" cy="101" r="2"/>
-        </g>
-        <g fill="#4ec08a">
-          <circle cx="220" cy="94" r="2.4"/><circle cx="234" cy="89" r="2.4"/><circle cx="248" cy="85" r="2.4"/>
-          <circle cx="262" cy="80" r="2.4"/><circle cx="276" cy="75" r="2.4"/><circle cx="290" cy="70" r="2.4"/>
-          <circle cx="304" cy="65" r="2.4"/><circle cx="318" cy="59" r="2.4"/><circle cx="332" cy="54" r="2.4"/>
-          <circle cx="346" cy="48" r="2.4"/><circle cx="360" cy="43" r="2.4"/><circle cx="374" cy="37" r="2.4"/>
-          <circle cx="388" cy="31" r="2.4"/><circle cx="402" cy="26" r="2.4"/><circle cx="416" cy="20" r="2.4"/>
-          <circle cx="430" cy="15" r="2.4"/><circle cx="444" cy="10" r="2.4"/>
-        </g>
-        <g fill="rgba(255,253,249,.42)">
-          <rect x="10" y="176" width="126" height="3"/><rect x="150" y="184" width="150" height="3"/>
-          <rect x="310" y="176" width="140" height="3"/>
-          <rect x="10" y="196" width="60" height="3"/><rect x="80" y="204" width="86" height="3"/>
-          <rect x="178" y="196" width="120" height="3"/><rect x="310" y="204" width="140" height="3"/>
-          <rect x="10" y="216" width="200" height="3"/><rect x="222" y="224" width="228" height="3"/>
-          <rect x="10" y="236" width="440" height="3"/>
-        </g>
+    {#  An illustration, and labelled as one. The only number on it is the count the
+        default demo actually produces, derived from the same enumeration a run uses. #}
+    <figure class="hero-figure">
+      <figcaption>
+        <span class="example-tag">Illustration</span>
+        <span>One taxon, every analysis{% if grid_sizes._default %} · the default demo runs {{ grid_sizes._default|commafy }}{% endif %}</span>
+      </figcaption>
+      <svg viewBox="0 0 440 262" role="img" aria-labelledby="figure-svg-title figure-svg-desc">
+        <title id="figure-svg-title">An illustrative specification curve</title>
+        <desc id="figure-svg-desc">Forty analyses of one taxon sorted by effect size. The
+          analyses on the left are not significant, and every one of them used the same
+          statistical test, shown by the row of marks beneath them.</desc>
+        <text x="0" y="12" font-size="10.5" fill="#585d66" font-family="DM Sans, sans-serif">effect size</text>
+        <line x1="0" y1="96" x2="440" y2="96" stroke="#c5c5bc" stroke-width="1" stroke-dasharray="3 4"/>
+        <text x="440" y="90" font-size="10" fill="#585d66" text-anchor="end" font-family="DM Sans, sans-serif">no difference</text>
+        {% for i in range(40) %}
+          {% set t = (i - 19.5) / 19.5 %}
+          {% set y = 88 - 60 * t * (0.55 + 0.45 * t * t) %}
+          {% if i < 16 %}
+            <circle cx="{{ 14 + i * 10.6 }}" cy="{{ y|round(1) }}" r="3.4" fill="#80858d"/>
+          {% else %}
+            <circle cx="{{ 14 + i * 10.6 }}" cy="{{ y|round(1) }}" r="3.8" fill="#5936c2"/>
+          {% endif %}
+        {% endfor %}
+        {% set rows = [("rarefaction", 3), ("transformation", 5), ("statistical test", 0), ("correction", 7)] %}
+        {% for name, step in rows %}
+          {% set ry = 168 + loop.index0 * 23 %}
+          <text x="0" y="{{ ry - 6 }}" font-size="9.5" fill="#585d66" font-family="DM Sans, sans-serif">{{ name }}</text>
+          {% for i in range(40) %}
+            {% if (step == 0 and i < 16) or (step and (i * step) % 11 < 4) %}
+              <rect x="{{ 11 + i * 10.6 }}" y="{{ ry }}" width="6" height="6" rx="1.5"
+                    fill="{{ '#1b5ea6' if step == 0 else '#c5c5bc' }}"/>
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
       </svg>
-    </div>
-
-    <div class="float-card float-robust">
-      <span class="badge">R</span>
-      <div><b>Robust</b><small>significant in 93% of pipelines</small></div>
-      <strong>7</strong>
-    </div>
-    <div class="float-card float-unstable">
-      <span class="badge">U</span>
-      <div><b>Unstable</b><small>direction not determined</small></div>
-      <strong>72</strong>
-    </div>
-    <div class="score-orb">
-      <span>RECOVERABLE</span><strong>84%</strong><small>OF PUBLISHED FINDINGS</small>
-    </div>
-
-    <p class="visual-footer"><span>7 analytical forks</span><span>Every choice shown</span></p>
+      <p class="figure-note"><b>How to read it:</b> each dot is one complete analysis of the
+        same taxon. Purple ones found a significant difference; grey ones did not. The grey
+        ones all share one statistical test (the blue marks), so in this made-up example
+        that single choice decides the answer.</p>
+    </figure>
   </div>
 </section>
 
-<!-- ================= what happens ================= -->
-{#  The brief asks for the workflow in one glance, before the argument for it. Five
-    words, no illustration: anything more decorative would be making the point about
-    itself rather than about the product. #}
-<section class="shell flow" aria-label="How MicroVerse works">
-  <ol class="flow-steps">
-    <li><span>Your data</span><small>One abundance table, two groups</small></li>
-    <li><span>Many analyses</span><small>Every defensible combination of choices</small></li>
-    <li><span>Compare</span><small>The same taxa, seen every way</small></li>
-    <li><span>Stability</span><small>What survives the choices, and what does not</small></li>
-    <li><span>Evidence</span><small>Per taxon, with the reason it moved</small></li>
+<!-- ================= the workflow ================= -->
+<section class="shell section-sm" aria-labelledby="flow-title">
+  <h2 id="flow-title" class="visually-hidden">How an analysis runs</h2>
+  <ol class="workflow-strip">
+    <li><span class="ws-n" aria-hidden="true">1</span><b>Dataset</b><span>Upload an abundance table and sample metadata, or pick a demo.</span></li>
+    <li><span class="ws-n" aria-hidden="true">2</span><b>Validate</b><span>See how your files were read and whether the design can answer the question.</span></li>
+    <li><span class="ws-n" aria-hidden="true">3</span><b>Configure</b><span>See the specification space and choose how much of it to run.</span></li>
+    <li><span class="ws-n" aria-hidden="true">4</span><b>Run</b><span>Every valid specification is fitted. Usually one to two minutes.</span></li>
+    <li><span class="ws-n" aria-hidden="true">5</span><b>Results</b><span>Which findings are robust to analytical choice, and why the rest are not.</span></li>
   </ol>
 </section>
 
-<section class="band">
-  <span class="band-number">01</span>
-  <p><b>Not a p-value generator.</b> MicroVerse has no “export best specification” button and
-    never will. Every export carries the whole distribution, and if the pipeline you declare
-    sits high in it, the interface says so plainly.</p>
-  <a href="/about">How the grid works <span aria-hidden="true">→</span></a>
-</section>
-
-<!-- ================= evidence ================= -->
-<section class="section shell" aria-labelledby="evidence-title">
-  <div class="section-heading">
-    <div>
-      <p class="eyebrow">The damage, measured</p>
-      <h2 id="evidence-title">This is not a hypothetical problem.</h2>
-    </div>
-    <p>Tierney et al. fitted six million models across fifteen cohorts to ask how much of a
-      published microbiome association is the data and how much is the analyst. The answer was
-      not reassuring.</p>
+<!-- ================= 2-3. the problem and the approach ================= -->
+<section class="shell section" aria-labelledby="story-title">
+  <div class="section-head">
+    <p class="eyebrow">Why this exists</p>
+    <h2 id="story-title">One analysis is a sample of size one.</h2>
   </div>
-
-  <div class="stat-band">
-    <div><div class="n">6,035,110</div><div class="k">models fitted across 15 cohorts, on an HPC cluster</div></div>
-    <div><div class="n">1 in 3</div><div class="k">taxa flipped the <em>sign</em> of their association</div></div>
-    <div><div class="n">&gt;90%</div><div class="k">of published T1D / T2D findings were nonrobust</div></div>
-    <div><div class="n">84%</div><div class="k">of published associations recoverable as significant by picking the right model</div></div>
-  </div>
-  <p class="footnote" style="margin-top:14px">
-    Tierney BT et al., <i>PLOS Biology</i> 2022;20(3):e3001556 — the study MicroVerse is built to
-    generalise, and the one it is designed to be validated against.
-  </p>
-</section>
-
-<hr class="rule">
-
-<!-- ================= pillars ================= -->
-<section class="section shell" aria-labelledby="pillars-title">
-  <div class="section-heading">
-    <div>
-      <p class="eyebrow">Four outputs, none of them a verdict</p>
-      <h2 id="pillars-title">From one table to a defensible account.</h2>
-    </div>
-    <p>Every run returns the same four things. None of them is a recommended pipeline, because
-      the recommendation is the thing that has to stop.</p>
-  </div>
-
-  <div class="pillars">
-    <article class="pillar pillar-ink">
-      <div class="pillar-number">01</div>
-      <h3>The grid</h3>
-      <p>Seven contested forks enumerated and pruned by a published validity matrix. Both counts
-        are always reported: how many specifications exist, and how many are coherent.</p>
-      <a class="text-action" href="/about">See the forks <span aria-hidden="true">→</span></a>
+  <div class="grid-2">
+    <article class="story-step is-problem">
+      <span class="story-n" aria-hidden="true">01</span>
+      <div>
+        <h3>The problem</h3>
+        <p>Rarefy or not, which transformation, which test, which threshold: each choice is
+          defensible and each can change the answer. A paper reports one set of choices and one
+          p-value, and never shows what the other defensible sets would have said.</p>
+        <p class="micro" style="margin-top:12px">Tierney et al. fitted six million models across
+          15 cohorts: one taxon in three flipped the <i>sign</i> of its association, and 84% of
+          published associations could be recovered as significant by picking the right model.
+          <i>PLOS Biology</i> 2022;20(3):e3001556.</p>
+      </div>
     </article>
-    <article class="pillar pillar-wash">
-      <div class="pillar-number">02</div>
-      <h3>Robustness tiers</h3>
-      <p>Every taxon scored by how often it is significant and how consistently its direction
-        holds, then tiered ROBUST through UNSTABLE — with the denominators stated.</p>
-      <a class="text-action" href="/about">Read the criteria <span aria-hidden="true">→</span></a>
-    </article>
-    <article class="pillar pillar-deep">
-      <div class="pillar-number">03</div>
-      <h3>Specification curve</h3>
-      <p>Simonsohn's two-panel plot per taxon: effect size across every pipeline, over a matrix
-        of which choice was active. You see the fork that moves the answer.</p>
-      <a class="text-action" href="#demos">Open an example <span aria-hidden="true">→</span></a>
-    </article>
-    <article class="pillar">
-      <div class="pillar-number">04</div>
-      <h3>Choice attribution</h3>
-      <p>Variance decomposed across the forks, with a mandatory fallback estimator shown beside
-        it — so you can see whether the two agree before you trust either.</p>
-      <a class="text-action" href="/about">How it is estimated <span aria-hidden="true">→</span></a>
+    <article class="story-step is-approach">
+      <span class="story-n" aria-hidden="true">02</span>
+      <div>
+        <h3>The approach</h3>
+        <p>Run the whole space instead of one point in it. MicroVerse enumerates every
+          combination of the contested choices, removes the combinations that are
+          statistically incoherent, fits the rest, and reports the <b>distribution</b> of
+          answers for every taxon, together with the choice that moves it.</p>
+        <p class="micro" style="margin-top:12px">Not a new statistical method: it orchestrates
+          published methods inside published frameworks (multiverse analysis, specification
+          curves, vibration of effects).</p>
+      </div>
     </article>
   </div>
 </section>
 
-<hr class="rule">
-
-<!-- ================= start ================= -->
-<section class="section shell" id="start" aria-labelledby="start-title">
-  <div class="section-heading">
-    <div>
-      <p class="eyebrow">Start where your data is</p>
-      <h2 id="start-title">Upload a table. Nothing else is required.</h2>
+<!-- ================= 4. what a specification is ================= -->
+<section class="shell section" aria-labelledby="spec-title">
+  <div class="split">
+    <div class="section-head" style="margin-bottom:0">
+      <p class="eyebrow eyebrow-purple">The unit of analysis</p>
+      <h2 id="spec-title">What is a specification?</h2>
+      <p>One complete analysis: one value for every contested choice, applied in a fixed
+        order, producing one p-value and one effect size per taxon. Change any single choice
+        and you have a different {{ dfn('specification') }}.</p>
+      <p>MicroVerse counts every combination, rules out the incoherent ones (for example,
+        rarefying and then applying TMM corrects library size twice), and runs all the
+        rest. <a href="/about#forks">The seven choices, and why each is contested</a>.</p>
     </div>
-    <p>Orientation, value type and taxonomic rank are detected rather than assumed. If a file
-      cannot be run, MicroVerse says which constraint it failed and what to change.</p>
+    <div class="panel">
+      <p class="micro" style="margin:0 0 4px"><span class="example-tag">Example</span> one specification</p>
+      <ul class="spec-anatomy" aria-label="An example specification">
+        <li><small>rarefaction</small><b>10,000 reads</b></li>
+        <li class="plus" aria-hidden="true">+</li>
+        <li><small>rank</small><b>genus</b></li>
+        <li class="plus" aria-hidden="true">+</li>
+        <li><small>prevalence</small><b>≥ 10%</b></li>
+        <li class="plus" aria-hidden="true">+</li>
+        <li><small>transform</small><b>CLR</b></li>
+        <li class="plus" aria-hidden="true">+</li>
+        <li><small>test</small><b>Wilcoxon</b></li>
+        <li class="plus" aria-hidden="true">+</li>
+        <li><small>correction</small><b>BH at 0.05</b></li>
+      </ul>
+      <p class="small muted" style="margin-top:16px">A typical run holds
+        {% if grid_sizes._range %}between {{ grid_sizes._range.low|commafy }} and
+        {{ grid_sizes._range.high|commafy }}{% else %}thousands{% endif %} of these, depending
+        on the table you bring.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 5. what the results mean ================= -->
+<section class="shell section" aria-labelledby="meaning-title">
+  <div class="section-head">
+    <p class="eyebrow eyebrow-purple">Reading the answer</p>
+    <h2 id="meaning-title">Every taxon gets one of six labels.</h2>
+    <p>Two numbers decide it: how often the taxon is significant across the analyses that
+      tested it, and how often they agree on which group it is higher in. The three most
+      telling:</p>
+  </div>
+  <div class="meaning-grid">
+    <div class="meaning">
+      <span class="tier robust">ROBUST</span>
+      <b>Robust to analytical choice</b>
+      <p>Significant in at least 80% of the analyses, in a consistent direction. The
+        conclusion does not depend on which defensible pipeline you picked.</p>
+    </div>
+    <div class="meaning">
+      <span class="tier conditional">CONDITIONAL</span>
+      <b>Depends on the analytical choice</b>
+      <p>Significant in some analyses and not others. Whether you would report it depends on
+        a choice, and the results page shows which one.</p>
+    </div>
+    <div class="meaning">
+      <span class="tier unstable">UNSTABLE</span>
+      <b>Direction not determined</b>
+      <p>The analyses do not agree on which group the taxon is higher in. There is no stable
+        finding to report.</p>
+    </div>
+  </div>
+  <p class="small" style="margin-top:16px"><a href="/about#tiers">All six labels and their exact thresholds</a></p>
+</section>
+
+<!-- ================= limitations ================= -->
+<section class="shell section-sm" aria-labelledby="limits-title">
+  <h2 id="limits-title" class="visually-hidden">Limitations</h2>
+  {% call callout('red', 'What MicroVerse does not claim') %}
+    <ul>
+      <li><b>Robust is not true.</b> A taxon robust to analytical choice is not thereby
+        biologically real. Confounding, contamination and batch effects survive a multiverse
+        intact.</li>
+      <li><b>Nothing here is causal.</b> A difference that survives every analysis is still
+        an association between two groups.</li>
+      <li><b>The analyses are not independent.</b> They are re-analyses of the same samples, so
+        “significant in 86%” is not 86 replications and not a probability.</li>
+      <li><b>The space is bounded.</b> It covers what is defensible and computable, and every
+        run reports what was enumerated, what was ruled out and why.</li>
+    </ul>
+  {% endcall %}
+</section>
+
+<!-- ================= 6. start ================= -->
+<section class="shell section" id="start" aria-labelledby="start-title">
+  <div class="section-head">
+    <p class="eyebrow">Step 1 · Dataset</p>
+    <h2 id="start-title">Start with your data.</h2>
+    <p>Orientation, value type and taxonomic rank are detected rather than assumed. Next you
+      will see exactly how the files were read, before anything runs.</p>
   </div>
 
-  <div class="split split-wide">
-    <form class="card" method="post" action="/upload" enctype="multipart/form-data"
+  <div class="start-grid">
+    <form class="upload-card" method="post" action="/upload" enctype="multipart/form-data"
           aria-labelledby="upload-title">
-      <h3 id="upload-title" class="mt0">Your data</h3>
-      <p class="muted" style="font-size:13.5px;margin:6px 0 24px">
-        No account, no login. Nothing is shared. Results live at a private token URL for
+      <h3 id="upload-title">Upload your files</h3>
+      <p class="small muted" style="margin:6px 0 24px">
+        No account, no login, nothing shared. Results live at a private link for
         {{ RETENTION_DAYS }} days, then are deleted.</p>
 
       <label class="field">
-        <span class="label">Abundance table <span class="required">required</span></span>
-        <span class="hint">{{ formats|join(" · ") }}</span>
+        <span class="label">Abundance table <span class="tag-required">required</span></span>
+        <span class="hint">Taxa × samples, counts or relative abundances. {{ formats|join(" · ") }}</span>
         <input type="file" name="abundance" required accept=".csv,.tsv,.txt,.biom,.qza,.gz">
       </label>
 
       <label class="field">
-        <span class="label">Sample metadata <span class="required">required</span></span>
+        <span class="label">Sample metadata <span class="tag-required">required</span></span>
         <span class="hint">Sample IDs in the first column, plus a column holding exactly two groups.</span>
         <input type="file" name="metadata" required accept=".csv,.tsv,.txt">
       </label>
 
       <label class="field">
-        <span class="label">Taxonomy map <span class="muted">optional</span></span>
+        <span class="label">Taxonomy map <span class="tag-optional">optional</span></span>
         <span class="hint">Feature ID → lineage. Lets the analysis be repeated at genus
           level as well, when your table is finer than genus.</span>
         <input type="file" name="taxonomy" accept=".csv,.tsv,.txt">
       </label>
 
       <label class="field">
-        <span class="label">Grouping column <span class="muted">optional</span></span>
+        <span class="label">Grouping column <span class="tag-optional">optional</span></span>
         <span class="hint">Left blank, MicroVerse looks for <code>group</code>, then the first
           binary column it finds.</span>
-        <input type="text" name="group_column" placeholder="group">
+        <input type="text" name="group_column" placeholder="group" autocomplete="off">
       </label>
 
-      <button class="button button-primary" type="submit">
-        Validate and configure <span aria-hidden="true">→</span></button>
+      <button class="btn btn-primary btn-lg" type="submit" style="width:100%">
+        Upload and validate <span class="arrow" aria-hidden="true">→</span></button>
     </form>
 
     <div class="stack">
-      <div class="card card-paper">
-        <h3 class="mt0">What has to be true</h3>
-        <p class="muted" style="font-size:13.5px;margin:6px 0 16px">
-          Four hard constraints, each with a reason rather than a rule.</p>
-        <ol class="steps" style="border-top:0">
-          <li><span>01</span><div><b>At least 10 samples, 5 per group</b>
-            <small>Below this the multiverse is noise: nearly every specification is
-              underpowered, so the spread of answers measures sampling variability rather than
-              analytical choice.</small></div></li>
-          <li><span>02</span><div><b>At least 10 taxa, at most 1,500</b>
-            <small>Multiple-testing behaviour is half of what the multiverse measures, and it is
-              meaningless below ten. Above 1,500, MicroVerse collapses to genus if a taxonomy
-              allows it.</small></div></li>
-          <li><span>03</span><div><b>Exactly two group levels</b>
-            <small>v1 compares two groups. No multi-group, continuous or ordinal outcomes; no
-              paired or longitudinal designs.</small></div></li>
-          <li><span>04</span><div><b>Counts or relative abundances, never negatives</b>
-            <small>A negative value means the table has already been transformed — and the
-              transformation is fork 3, which MicroVerse has to apply itself.</small></div></li>
-        </ol>
-      </div>
-
-      <div class="card card-dark">
-        <p class="eyebrow on-dark">Three modes, never one crossed grid</p>
-        <p style="margin:0 0 16px;font-size:14px;color:#c2cad8">Fully crossing all seven forks is
-          over 500,000 specifications, which no web request can run. So the modes are separated,
-          and you choose after your data is validated.</p>
-        <div class="metrics on-dark">
-          <div><b>~1 s</b><span>Quick — forks 1–4, four elementary methods, FDR</span></div>
-          <div><b>~19 s</b><span>Full — plus ANCOM-BC, ALDEx2, PyDESeq2</span></div>
-          <div><b>~5 s</b><span>Covariate — every subset of your covariates</span></div>
+      <div id="demos">
+        <h3>Or start from a demo</h3>
+        <p class="small muted" style="margin:6px 0 14px">Simulated cohorts with taxa planted at
+          known effect sizes, so you can check that what MicroVerse calls robust is what was
+          actually planted. Nothing is uploaded.</p>
+        <div class="demo-list">
+          {% for name, demo in demos.items() %}
+            <div class="demo">
+              <div><b>{{ demo.title }}</b><div class="demo-shape">{{ demo.shape }}</div></div>
+              <a class="btn btn-secondary btn-sm" href="/demo/{{ name }}"
+                 aria-label="Load the demo: {{ demo.title }}">Load <span class="arrow" aria-hidden="true">→</span></a>
+              <p>{{ demo.blurb }}</p>
+            </div>
+          {% endfor %}
         </div>
-        <p class="muted" style="margin:14px 0 0;font-size:12px">Model fitting on the demo
-          cohorts, measured on four cores. A complete run also apportions the variation
-          between the choices and saves the results, which on this site takes one to two
-          minutes. The specification budget is 90 s for Quick and 10 minutes for Full.</p>
       </div>
-    </div>
-  </div>
-</section>
 
-<hr class="rule">
-
-<!-- ================= demos ================= -->
-<section class="section shell" id="demos" aria-labelledby="demos-title">
-  <div class="section-heading">
-    <div>
-      <p class="eyebrow">See it before you upload</p>
-      <h2 id="demos-title">Three simulated cohorts, with known answers.</h2>
-    </div>
-    <p>Each carries taxa spiked at declared effect sizes, so you can check that what MicroVerse
-      calls ROBUST is what was actually planted.</p>
-  </div>
-
-  <div class="table-wrap" tabindex="0" role="region" aria-label="Demo datasets, scrollable">
-    <table class="data">
-      <caption class="micro" style="text-align:left;padding:12px 16px;border-bottom:1px solid var(--line)">
-        Demo datasets — loaded directly, nothing uploaded</caption>
-      <thead>
-        <tr><th scope="col">Dataset</th><th scope="col">Shape</th><th scope="col">What it shows</th><th scope="col"><span class="visually-hidden">Action</span></th></tr>
-      </thead>
-      <tbody>
-        {% for name, demo in demos.items() %}
-        <tr>
-          <th scope="row" style="font-family:var(--serif);font-size:16px;font-weight:600">{{ demo.title }}</th>
-          <td class="mono" style="white-space:nowrap">{{ demo.shape }}</td>
-          <td style="color:var(--grey);max-width:52ch">{{ demo.blurb }}</td>
-          <td style="text-align:right"><a class="button button-outline button-small" href="/demo/{{ name }}">Load <span aria-hidden="true">→</span></a></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</section>
-
-<!-- ================= limits ================= -->
-<section class="section-tight shell" aria-labelledby="limits-title">
-  <div class="card card-paper">
-    <p class="eyebrow">Stated plainly</p>
-    <h2 id="limits-title" style="margin-bottom:22px">What MicroVerse does not claim.</h2>
-    <div class="split">
-      <div class="prose">
-        <p><b>Not a new statistical method.</b> It orchestrates published methods inside a
-          published framework — multiverse analysis, specification curves, vibration of effects.</p>
-        <p><b>Not truth.</b> A taxon robust to analytical choice is not thereby biologically
-          real. Confounding, contamination and batch effects survive a multiverse intact.</p>
-      </div>
-      <div class="prose">
-        <p><b>Not a licence to cherry-pick.</b> There is no “best specification” export on the
-          page, in the API, or in the download bundle. Exports always contain the full
-          distribution.</p>
-        <p><b>Not exhaustive.</b> The grid is bounded by what is defensible and computable, and
-          every run reports how many specifications it enumerated, how many it pruned, and why.</p>
-      </div>
+      <details class="disclosure">
+        <summary>What your data must satisfy <span class="summary-meta">4 rules</span></summary>
+        <div class="disclosure-body">
+          <ul class="constraints">
+            <li><span><b>At least 10 samples, 5 per group.</b> Below this nearly every
+              specification is underpowered, so the spread of answers measures sampling noise
+              rather than analytical choice.</span></li>
+            <li><span><b>At least 10 taxa, at most 1,500.</b> Above 1,500, MicroVerse collapses
+              to genus if a taxonomy allows it.</span></li>
+            <li><span><b>Exactly two groups.</b> No multi-group, continuous or ordinal
+              outcomes; no paired or longitudinal designs.</span></li>
+            <li><span><b>Counts or relative abundances, never negatives.</b> A negative value
+              means the table was already transformed, and transformation is one of the
+              choices MicroVerse must apply itself.</span></li>
+          </ul>
+        </div>
+      </details>
     </div>
   </div>
 </section>
@@ -322,5 +296,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/upload.js?v={{ VERSION }}" defer></script>
+<script src="/static/js/upload.js?v={{ ASSETS }}" defer></script>
 {% endblock %}

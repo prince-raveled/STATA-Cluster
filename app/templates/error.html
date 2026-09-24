@@ -1,14 +1,19 @@
 {% extends "base.html" %}
+{% from "_ui.html" import callout, status %}
 {% block title %}{{ title }} — MicroVerse{% endblock %}
 {% block content %}
-<section class="section shell shell-narrow">
-  <p class="eyebrow">MicroVerse cannot continue</p>
-  <h1 style="font-size:clamp(28px,3.4vw,42px);max-width:18ch">{{ title }}</h1>
-  <p class="lede" style="margin-top:20px;font-size:17px">{{ message }}</p>
-  {% if hint %}<p class="note" style="margin-top:22px">{{ hint }}</p>{% endif %}
-  <div class="row" style="margin-top:30px">
-    <a class="button button-primary" href="/">Back to the start <span aria-hidden="true">&rarr;</span></a>
-    <a class="text-action" href="/about">Read the input rules</a>
+<div class="shell shell-narrow section">
+  <div class="error-panel">
+    <div>{{ status('red', 'MicroVerse cannot continue', '!') }}</div>
+    <h1 style="font-size:clamp(28px,3.4vw,40px)">{{ title }}</h1>
+    {% call callout('red', 'What went wrong') %}<p>{{ message }}</p>{% endcall %}
+    {% if hint %}
+      {% call callout('blue', 'What to do') %}<p>{{ hint }}</p>{% endcall %}
+    {% endif %}
+    <div class="row" style="margin-top:8px">
+      <a class="btn btn-primary" href="/#start">Back to the start <span class="arrow" aria-hidden="true">→</span></a>
+      <a class="btn btn-ghost" href="/about#scope">Read the input rules</a>
+    </div>
   </div>
-</section>
+</div>
 {% endblock %}

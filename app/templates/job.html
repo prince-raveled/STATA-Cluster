@@ -1,27 +1,47 @@
 {% extends "base.html" %}
-{% block title %}Running — MicroVerse{% endblock %}
+{% from "_ui.html" import stepper, page_head %}
+{% block title %}Running — {{ job.dataset_name }} — MicroVerse{% endblock %}
+{% block header_cta %}{% endblock %}
 {% block head %}<script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.12/htmx.min.js"></script>{% endblock %}
+{% block workflow %}{{ stepper(WORKFLOW_STEPS('run', token, job.status)) }}{% endblock %}
 
 {% block content %}
-<section class="section shell shell-narrow">
-  <div class="card card-dark">
-    <p class="eyebrow on-dark">Step 03 &mdash; execution</p>
-    <h1 style="font-size:clamp(28px,3.2vw,38px);color:var(--white)">Running the multiverse.</h1>
-    <p class="muted" style="margin:12px 0 30px;font-size:14px">
-      {{ MODE_LABELS.get(job.mode, job.mode) }} mode &middot; {{ job.dataset_name }}
-    </p>
+<div class="shell shell-narrow">
+  {% call page_head("Step 4 · Run", "Running your analysis.",
+                    "Every valid specification is being fitted. This page updates itself, and you can close it and come back: the link stays valid.") %}
+    <span class="chip">{{ job.dataset_name }}</span>
+    <span class="chip">{{ MODE_LABELS.get(job.mode, job.mode) }} mode</span>
+  {% endcall %}
 
+  <section class="run-panel" aria-labelledby="progress-title">
+    <h2 id="progress-title" class="visually-hidden">Progress</h2>
     <div id="progress" role="status" aria-live="polite"
          hx-get="/job/{{ token }}/progress" hx-trigger="load, every 1s" hx-swap="innerHTML">
-      <div class="progress-track"><div class="progress-fill" style="width:2%"></div></div>
-      <p class="muted" style="margin-top:12px;font-size:13.5px">
-        <span class="spinner" aria-hidden="true"></span> Starting&hellip;</p>
+      {% include "_progress.html" %}
     </div>
-  </div>
+  </section>
 
-  <p class="footnote" style="margin-top:20px">
-    This page is a permanent link. You can close it and come back &mdash; results are kept for
-    {{ RETENTION_DAYS }} days.
-  </p>
-</section>
+  <section class="section-sm" aria-labelledby="wait-title">
+    <h2 id="wait-title" style="font-size:20px;margin-bottom:var(--space-4)">While you wait</h2>
+    <div class="grid-2">
+      <div class="panel panel-quiet">
+        <h3>What is happening</h3>
+        <p class="small" style="margin-top:8px;color:var(--ink-2)">Each preprocessed matrix is
+          built once and then shared by every test that uses it, so progress is counted in
+          matrices. Multiple-testing correction is applied afterwards to the stored p-values,
+          which is why the last stages are quick.</p>
+      </div>
+      <div class="panel panel-quiet">
+        <h3>Your link</h3>
+        <p class="small" style="margin-top:8px;color:var(--ink-2)">Results are kept for
+          {{ RETENTION_DAYS }} days at this address. Anyone with the link can see them; nobody
+          without it can.</p>
+        <div class="row" style="margin-top:10px">
+          <code id="job-link" style="overflow-wrap:anywhere">{{ request.base_url }}job/{{ token }}</code>
+          <button type="button" class="btn btn-secondary btn-sm" data-copy="#job-link">Copy link</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
 {% endblock %}

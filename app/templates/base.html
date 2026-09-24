@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#16233a">
+  <meta name="theme-color" content="#ffffff">
   <title>{% block title %}MicroVerse{% endblock %}</title>
   <meta name="description" content="{% block description %}MicroVerse runs every defensible analytical pipeline on your microbiome differential abundance data and reports the distribution of answers.{% endblock %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,44 +11,59 @@
   {# The version query is what makes a deploy actually reach a returning visitor:
      without it the browser keeps the cached stylesheet and the page renders with
      old CSS against new markup. #}
-  <link rel="stylesheet" href="/static/css/microverse.css?v={{ VERSION }}">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2316233a'/><rect x='6' y='18' width='3' height='8' fill='%234a4bb0'/><rect x='12' y='11' width='3' height='15' fill='%234a4bb0'/><rect x='18' y='15' width='3' height='11' fill='%234a4bb0'/><rect x='24' y='6' width='3' height='20' fill='%23e8c65c'/></svg>">
+  <link rel="stylesheet" href="/static/css/microverse.css?v={{ ASSETS }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2315171a'/><rect x='6' y='18' width='3.5' height='8' rx='1' fill='%238f79e6'/><rect x='12' y='11' width='3.5' height='15' rx='1' fill='%238f79e6'/><rect x='18' y='15' width='3.5' height='11' rx='1' fill='%238f79e6'/><rect x='24' y='6' width='3.5' height='20' rx='1' fill='%23ffffff'/></svg>">
   {% block head %}{% endblock %}
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
 
 <header class="site-header">
-  <a class="brand" href="/" aria-label="MicroVerse home">
-    <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-    <span class="brand-name"><b>MICROVERSE</b><small>MULTIVERSE ANALYSIS FOR MICROBIOME DA</small></span>
-  </a>
-  <nav class="site-nav" aria-label="Main">
-    <a href="/"{% if page == 'home' %} aria-current="page"{% endif %}>Run</a>
-    <a href="/about"{% if page == 'about' %} aria-current="page"{% endif %}>Method</a>
-    <a href="/validation"{% if page == 'validation' %} aria-current="page"{% endif %}>Validation</a>
-    <a href="/api/docs">API</a>
-    <a href="{{ REPOSITORY }}">Source</a>
-  </nav>
-  <a class="header-action" href="/#start">Start a run <span aria-hidden="true">→</span></a>
+  <div class="shell">
+    <a class="brand" href="/" aria-label="MicroVerse home">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <span class="brand-name"><b>MicroVerse</b><small>Multiverse analysis for microbiome differential abundance</small></span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="/"{% if page == 'home' %} aria-current="page"{% endif %}>Home</a>
+      <a href="/about"{% if page == 'about' %} aria-current="page"{% endif %}>Method</a>
+      <a href="/validation"{% if page == 'validation' %} aria-current="page"{% endif %}>Evidence</a>
+      <a href="/api/docs">API</a>
+      <a href="{{ REPOSITORY }}">Source</a>
+    </nav>
+    {% block header_cta %}
+    <div class="header-cta"><a class="btn btn-primary btn-sm" href="/#start"><span class="cta-long">Start analysis</span><span class="cta-short" aria-hidden="true">Start</span> <span class="arrow" aria-hidden="true">→</span></a></div>
+    {% endblock %}
+  </div>
 </header>
+
+{% block workflow %}{% endblock %}
 
 <main id="main">{% block content %}{% endblock %}</main>
 
 <footer class="site-footer">
-  <div class="inner">
+  <div class="shell footer-grid">
     <div>
       <h2 class="footer-heading">MicroVerse</h2>
       <p>A web server for multiverse analysis of microbiome differential abundance. It runs
         every defensible analytical pipeline and reports the distribution of answers, so a
         result can be read against the choices that produced it.</p>
-      <p class="muted" style="font-size:12px">Version {{ VERSION }} · specification {{ SPEC_VERSION }} · MIT licence</p>
+      <p class="micro">Version {{ VERSION }} · specification {{ SPEC_VERSION }} · MIT licence</p>
     </div>
     <div>
-      <h2 class="footer-heading">Pages</h2>
+      <h2 class="footer-heading">Workflow</h2>
       <ul>
-        <li><a href="/">Run an analysis</a></li>
-        <li><a href="/about">Method and forks</a></li>
+        <li><a href="/#start">Start an analysis</a></li>
+        <li><a href="/#demos">Try a demo dataset</a></li>
+        <li><a href="/about#forks">The seven choices</a></li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="footer-heading">Reference</h2>
+      <ul>
+        <li><a href="/about">Method</a></li>
+        <li><a href="/about#glossary">Glossary</a></li>
+        <li><a href="/validation">What has been validated</a></li>
         <li><a href="/api/docs">API documentation</a></li>
         <li><a href="{{ REPOSITORY }}">Source code</a></li>
       </ul>
@@ -68,6 +83,7 @@
     </p>
   </div>
 </footer>
+<script src="/static/js/ui.js?v={{ ASSETS }}" defer></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

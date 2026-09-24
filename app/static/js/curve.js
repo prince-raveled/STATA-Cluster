@@ -14,19 +14,27 @@
     const style = getComputedStyle(document.body);
     const pick = (name, fallback) => (style.getPropertyValue(name) || fallback).trim();
     return {
-      ink: pick("--ink", "#16233a"),
-      inkSoft: pick("--ink-soft", "#33415c"),
-      grey: pick("--grey", "#6d7280"),
-      greySoft: pick("--grey-soft", "#9299a5"),
-      line: pick("--line", "#d8d3c7"),
-      lineSoft: pick("--line-soft", "#e6e1d6"),
-      accent: pick("--accent", "#4a4bb0"),
-      robust: pick("--robust", "#2f7d55"),
-      unstable: pick("--unstable", "#bf4436"),
+      ink: pick("--ink", "#15171a"),
+      inkSoft: pick("--ink-2", "#3c4047"),
+      grey: pick("--ink-3", "#585d66"),
+      line: pick("--line", "#deded7"),
+      lineSoft: pick("--line-soft", "#ebebe5"),
+      /* Semantic roles, not hues: significance is analytical output (purple), the
+         declared pipeline is information about the reader's own choice (blue). */
+      significant: pick("--purple", "#5936c2"),
+      nonsignificant: "#80858d",
+      matrix: pick("--ink-3", "#585d66"),
+      declared: pick("--blue", "#1b5ea6"),
       sans: pick("--sans", "sans-serif"),
       mono: pick("--mono", "monospace")
     };
   }
+
+  /* Row prefixes on a narrow screen, where the fork names have no margin to sit in. */
+  const SHORT_FORK = {
+    rarefaction: "depth", rank: "rank", prev_filter: "prev", transform: "scale",
+    method: "test", fdr_method: "FDR", fdr_threshold: "q ≤"
+  };
 
   /* Flatten the fork -> categories map into stacked dot-matrix rows, with a
      spacer row between forks. */
@@ -49,10 +57,13 @@
     if (!element) return;
 
     if (!data.n_specs) {
-      element.innerHTML = '<p class="muted" style="padding:24px">'
-        + 'This taxon was not tested in any specification.</p>';
+      element.innerHTML = '<p class="plot-empty">'
+        + 'This taxon was not tested in any specification, so there is nothing to plot.</p>';
       return;
     }
+    /* Narrow screens get a narrower label column rather than a squashed plot: the
+       fork names move off the margin and each level carries its own label. */
+    const narrow = element.clientWidth < 640;
 
     const n = data.effect.length;
 
@@ -74,12 +85,12 @@
       {
         x: nullX, y: nullY, text: nullText, type: "scattergl", mode: "markers",
         name: "not significant", hovertemplate: "%{text}<extra></extra>",
-        marker: { size: 4, color: colors.greySoft, opacity: 0.75 }, xaxis: "x", yaxis: "y"
+        marker: { size: 4, color: colors.nonsignificant, opacity: 0.8 }, xaxis: "x", yaxis: "y"
       },
       {
         x: sigX, y: sigY, text: sigText, type: "scattergl", mode: "markers",
         name: "FDR significant", hovertemplate: "%{text}<extra></extra>",
-        marker: { size: 5, color: colors.robust, opacity: 0.92 }, xaxis: "x", yaxis: "y"
+        marker: { size: 5, color: colors.significant, opacity: 0.92 }, xaxis: "x", yaxis: "y"
       }
     ];
 
@@ -107,7 +118,7 @@
       x: dotX, y: dotY, text: dotText, type: "scattergl", mode: "markers",
       name: "fork level", showlegend: false,
       hovertemplate: "%{text}<extra></extra>",
-      marker: { size: 3, color: colors.accent, opacity: 0.62 },
+      marker: { size: 3, color: colors.matrix, opacity: 0.7 },
       xaxis: "x", yaxis: "y2"
     });
 
@@ -132,7 +143,7 @@
         }
         return;
       }
-      if (seen.has(row.fork)) return;
+      if (narrow || seen.has(row.fork)) return;
       seen.add(row.fork);
       const size = (data.categories[row.fork] || []).length;
       annotations.push({
@@ -149,13 +160,13 @@
         shapes.push({
           type: "line", xref: "x", yref: axis + " domain",
           x0: data.declared_position, x1: data.declared_position, y0: 0, y1: 1,
-          line: { color: colors.unstable, width: 1.5 }
+          line: { color: colors.declared, width: 1.5 }
         });
       });
       annotations.push({
         xref: "x", yref: "y domain", x: data.declared_position, y: 1.02,
         text: "your pipeline", showarrow: false, xanchor: "center",
-        font: { size: 10, color: colors.unstable, family: colors.mono }
+        font: { size: 10, color: colors.declared, family: colors.mono }
       });
     }
 
@@ -164,12 +175,13 @@
     rows.forEach(function (row, i) {
       if (row.level === null) return;
       tickvals.push(i);
-      ticktext.push(row.label);
+      ticktext.push(narrow ? (SHORT_FORK[row.fork] || row.fork) + ": " + row.label : row.label);
     });
 
     const layout = {
       height: Math.max(460, 320 + rows.length * 19),
-      margin: { l: 272, r: 18, t: 38, b: 46 },
+      margin: { l: narrow ? Math.round(Math.min(150, Math.max(92, element.clientWidth * 0.34))) : 272,
+                r: narrow ? 8 : 18, t: 38, b: 46 },
       paper_bgcolor: "rgba(0,0,0,0)",
       plot_bgcolor: "rgba(0,0,0,0)",
       font: { family: colors.sans, color: colors.grey, size: 11.5 },
@@ -179,7 +191,7 @@
       hoverlabel: { font: { family: colors.sans, size: 11 } },
       grid: { rows: 2, columns: 1, pattern: "independent" },
       xaxis: {
-        domain: [0, 1], anchor: "y2", matches: "x",
+        domain: [0, 1], anchor: "y2",
         title: { text: "specifications, sorted by effect size", font: { size: 11 } },
         showgrid: false, zeroline: false, color: colors.grey, linecolor: colors.line
       },
@@ -187,6 +199,7 @@
         domain: [0.58, 1], anchor: "x",
         title: {
           text: "log2 fold change (" + data.group_b + " vs " + data.group_a + ")",
+          standoff: 6,
           font: { size: 11.5 }
         },
         gridcolor: colors.lineSoft, zerolinecolor: colors.inkSoft, color: colors.grey
@@ -194,7 +207,7 @@
       yaxis2: {
         domain: [0, 0.52], anchor: "x", autorange: "reversed",
         tickmode: "array", tickvals: tickvals, ticktext: ticktext,
-        tickfont: { size: 10, family: colors.mono },
+        tickfont: { size: element.clientWidth < 420 ? 8 : narrow ? 9 : 10, family: colors.mono },
         showgrid: false, zeroline: false, color: colors.grey
       },
       shapes: shapes,

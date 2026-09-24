@@ -1,0 +1,52 @@
+{#  Shared interface components. Each one carries its meaning in words as well as in
+    colour: a callout has a title and an icon, a status a label and a glyph. #}
+
+{% macro callout(tone, title, icon=None, id=None) -%}
+<div class="callout callout-{{ tone }}"{% if id %} id="{{ id }}"{% endif %}>
+  <span class="callout-icon" aria-hidden="true">{{ icon or {"red": "!", "amber": "!", "blue": "i", "green": "✓", "purple": "∑"}.get(tone, "i") }}</span>
+  <p class="callout-title">{{ title }}</p>
+  <div class="callout-body">{{ caller() }}</div>
+</div>
+{%- endmacro %}
+
+{% macro status(tone, label, glyph="•", size="") -%}
+<span class="status status-{{ tone }}{% if size %} status-{{ size }}{% endif %}"><span class="status-glyph" aria-hidden="true">{{ glyph }}</span>{{ label }}</span>
+{%- endmacro %}
+
+{#  The workflow indicator. Steps link backwards only where ui.workflow_steps says
+    it is safe; the rest are plain text. #}
+{% macro stepper(steps) -%}
+<nav class="workflow" aria-label="Analysis workflow">
+  <div class="shell">
+    <ol class="stepper">
+      {% for step in steps %}
+        <li{% if step.state == 'current' %} class="is-current-li" aria-current="step"{% endif %}>
+          {% if step.href %}<a class="step is-{{ step.state }}" href="{{ step.href }}">{% else %}<span class="step is-{{ step.state }}{% if step.state == 'upcoming' %} is-locked{% endif %}">{% endif %}
+            <span class="step-index" aria-hidden="true">{% if step.state == 'done' %}✓{% else %}{{ step.number }}{% endif %}</span>
+            <span class="step-text">
+              <span class="step-label">{{ step.number }}. {{ step.label }}</span>
+              <span class="step-state">{% if step.hint %}{{ step.hint }}{% else %}&nbsp;{% endif %}</span>
+            </span>
+          {% if step.href %}</a>{% else %}</span>{% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  </div>
+</nav>
+{%- endmacro %}
+
+{% macro page_head(eyebrow, title, purpose, id="page-title") -%}
+<header class="page-head">
+  {% if eyebrow %}<p class="eyebrow">{{ eyebrow }}</p>{% endif %}
+  <h1 id="{{ id }}">{{ title }}</h1>
+  {% if purpose %}<p class="purpose">{{ purpose }}</p>{% endif %}
+  {% if caller is defined %}<div class="meta row">{{ caller() }}</div>{% endif %}
+</header>
+{%- endmacro %}
+
+{% macro next_step(title, detail="", sticky=False) -%}
+<section class="next-step{% if sticky %} next-step-sticky{% endif %}" aria-label="Next step">
+  <div class="next-copy"><b>{{ title }}</b>{% if detail %}<span>{{ detail }}</span>{% endif %}</div>
+  <div class="next-actions">{{ caller() }}</div>
+</section>
+{%- endmacro %}

@@ -250,7 +250,7 @@ def test_the_demo_routes_answer(client):
     for name in DEMO_DATASETS:
         response = client.get(f"/demo/{name}", follow_redirects=False)
         assert response.status_code == 303, f"/demo/{name} -> {response.status_code}"
-        assert response.headers["location"].startswith("/configure/")
+        assert response.headers["location"].startswith("/validate/")
 
 
 # --- which backend a deployment actually gets -------------------------------

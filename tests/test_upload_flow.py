@@ -92,11 +92,13 @@ def test_a_real_dataset_arrives_as_a_job(client):
     response = walk_through(client)
     assert response.status_code == 200, response.text
     body = response.json()
-    assert body["next"] == f"/configure/{body['token']}"
+    # The first page after an upload shows how the files were read, and leads on to
+    # configuring the run.
+    assert body["next"] == f"/validate/{body['token']}"
 
     page = client.get(body["next"])
     assert page.status_code == 200
-    assert "configure" in page.text.lower()
+    assert f"/configure/{body['token']}" in page.text
 
 
 def test_the_staged_copies_are_deleted_once_they_are_a_dataset(client):
@@ -556,7 +558,7 @@ def test_the_plain_form_post_still_works(client):
         follow_redirects=False,
     )
     assert response.status_code == 303
-    assert response.headers["location"].startswith("/configure/")
+    assert response.headers["location"].startswith("/validate/")
 
 
 def test_the_form_post_still_gets_an_html_error_page(client):

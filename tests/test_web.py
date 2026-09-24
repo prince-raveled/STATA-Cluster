@@ -61,7 +61,11 @@ def test_openapi_is_served(client):
 
 
 def test_configure_page_reports_both_grid_counts(client):
-    response = client.get("/demo/ibd_genus", follow_redirects=True)
+    # A new dataset lands on the validate step first; configuration is the step after.
+    landed = client.get("/demo/ibd_genus", follow_redirects=True)
+    assert landed.status_code == 200
+    token = str(landed.url).rstrip("/").rsplit("/", 1)[-1]
+    response = client.get(f"/configure/{token}")
     assert response.status_code == 200
     assert "enumerated" in response.text
     assert "statistically valid" in response.text
@@ -470,3 +474,46 @@ def test_no_page_ships_an_obvious_placeholder(client):
         body = client.get(path).text.lower()
         for marker in ("your-org", "example.com", "lorem ipsum", "tbd", "fixme"):
             assert marker not in body, f"{marker} on {path}"
+
+
+# --- the workflow pages ---------------------------------------------------------
+def test_a_new_dataset_lands_on_validation_which_leads_to_configuration(client):
+    response = client.get("/demo/ibd_genus", follow_redirects=False)
+    assert response.headers["location"].startswith("/validate/")
+    token = response.headers["location"].rsplit("/", 1)[-1]
+    page = client.get(response.headers["location"]).text
+    assert "Check how your data was read." in page
+    assert ("Dataset ready" in page) or ("Review required" in page)
+    assert f'href="/configure/{token}"' in page
+    # Validation is read-only: nothing has been started.
+    assert db.get_job(token).status == "uploaded"
+    assert "Not started" in client.get(f"/job/{token}/progress").text
+
+
+def test_the_configure_page_shows_how_its_count_is_reached(client):
+    landed = client.get("/demo/ibd_genus", follow_redirects=False)
+    token = landed.headers["location"].rsplit("/", 1)[-1]
+    page = client.get(f"/configure/{token}").text
+    assert "How is this calculated?" in page
+    assert "✓ Matches" in page
+    assert "Inside one specification" in page
+    assert f'action="/run/{token}"' in page
+
+
+def test_the_results_page_leads_with_robustness_and_ends_with_described_downloads(client, finished):
+    page = client.get(f"/results/{finished}").text
+    assert "ROBUST TO ANALYTICAL CHOICE" in page
+    assert "Important interpretation" in page
+    for anchor in ("#overview", "#robustness", "#curve-section", "#attribution",
+                   "#specifications", "#interpretation", "#downloads"):
+        assert f'href="{anchor}"' in page, anchor
+    for kind in ("bundle", "robustness", "long", "specifications", "attribution",
+                 "methods", "manifest"):
+        assert f'href="/download/{finished}/{kind}"' in page, kind
+
+
+def test_the_homepage_illustration_is_labelled_as_one(client):
+    page = client.get("/").text
+    assert "Illustration" in page
+    # The old hero carried tier counts and a percentage from no dataset at all.
+    assert "RECOVERABLE" not in page

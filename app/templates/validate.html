@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% from "_ui.html" import callout, status, stepper, page_head, next_step %}
+{% from "_terms.html" import dfn, help %}
+{% block title %}Validate your data — {{ job.dataset_name }} — MicroVerse{% endblock %}
+{% block header_cta %}{% endblock %}
+{% block workflow %}{{ stepper(WORKFLOW_STEPS('validate', token, job.status)) }}{% endblock %}
+
+{% set LEVEL_TONE = {"serious": "red", "caution": "amber", "note": "blue", "ok": "green"} %}
+{% set LEVEL_GLYPH = {"serious": "!", "caution": "!", "note": "i", "ok": "✓"} %}
+
+{% block content %}
+<div class="shell">
+  {% call page_head("Step 2 · Validate", "Check how your data was read.",
+                    "Confirm that MicroVerse understood your files the way you intended, before anything is configured or run.") %}
+    <span class="chip">{{ job.dataset_name }}</span>
+    <span class="chip chip-mono">{{ summary.format }}</span>
+  {% endcall %}
+
+  <!-- ============ status ============ -->
+  <section class="panel" aria-labelledby="status-title" style="display:grid;gap:12px">
+    <h2 id="status-title" class="visually-hidden">Dataset status</h2>
+    <div>{{ status(dataset_status.tone, dataset_status.label, dataset_status.glyph, "lg") }}</div>
+    <p style="margin:0;font-size:17px;color:var(--ink)">{{ dataset_status.sentence }}</p>
+    <p class="small muted" style="margin:0">Passing validation means the software can process
+      your files. Whether the data can answer the question is a separate matter, checked
+      under <a href="#design-title">Study design</a> below.</p>
+  </section>
+
+  <div class="grid-2" style="margin-top:var(--space-6)">
+    <!-- ============ dataset ============ -->
+    <section class="panel" aria-labelledby="dataset-title">
+      <div class="panel-head"><h2 id="dataset-title" style="font-size:20px">Dataset</h2>
+        <span class="status status-green"><span class="status-glyph" aria-hidden="true">✓</span>Read</span></div>
+      <dl class="kv">
+        <dt>Samples</dt>
+        <dd><b class="num">{{ summary.n_samples|commafy }}</b></dd>
+        <dt>Taxa</dt>
+        <dd><b class="num">{{ summary.n_taxa|commafy }}</b>{% if summary.collapsed_from %}
+          <span class="muted">(collapsed from {{ summary.collapsed_from }})</span>{% endif %}</dd>
+        <dt>File format</dt><dd>{{ summary.format }}</dd>
+        <dt>Values</dt>
+        <dd>{{ summary.value_type }}{% if summary.integer_values %} <span class="muted">· integer counts</span>{% else %} <span class="muted">· not integers</span>{% endif %}</dd>
+        <dt>Reads per sample</dt>
+        <dd><span class="num">{{ summary.min_library|commafy }}–{{ summary.max_library|commafy }}</span>
+          <span class="muted">median {{ summary.median_library|commafy }}</span></dd>
+        <dt>Zeros in the table</dt><dd><span class="num">{{ summary.sparsity|percent(1) }}</span></dd>
+      </dl>
+    </section>
+
+    <!-- ============ structure ============ -->
+    <section class="panel" aria-labelledby="structure-title">
+      <div class="panel-head"><h2 id="structure-title" style="font-size:20px">Data structure</h2></div>
+      <dl class="kv">
+        <dt>Comparison</dt>
+        <dd><b>{{ summary.group_b }}</b> against <b>{{ summary.group_a }}</b>
+          <span class="muted">from column <code>{{ summary.group_column }}</code></span></dd>
+        <dt>Group sizes</dt>
+        <dd>
+          {% set total = summary.n_group_a + summary.n_group_b %}
+          <span class="num">{{ summary.n_group_a }}</span> {{ summary.group_a }} ·
+          <span class="num">{{ summary.n_group_b }}</span> {{ summary.group_b }}
+          <span aria-hidden="true" style="display:flex;height:8px;border-radius:99px;overflow:hidden;margin-top:8px;background:var(--surface-3)">
+            <span style="width:{{ (100 * summary.n_group_a / total)|round(1) if total else 50 }}%;background:var(--ink-3)"></span>
+            <span style="flex:1;background:var(--purple)"></span>
+          </span>
+        </dd>
+        <dt>Rank of the table</dt>
+        <dd>{{ summary.input_rank or "not stated" }}</dd>
+        <dt>Taxonomy</dt>
+        <dd>{% if summary.has_taxonomy %}supplied{% if summary.can_collapse_to_genus %} · can be collapsed to genus{% endif %}
+          {% else %}<span class="muted">none supplied</span>{% endif %}</dd>
+      </dl>
+      <p class="micro" style="margin:12px 0 0">Effects are reported as {{ summary.group_b }}
+        relative to {{ summary.group_a }}: a positive log<sub>2</sub> fold change means higher
+        in {{ summary.group_b }}.</p>
+    </section>
+  </div>
+
+  <!-- ============ detected options ============ -->
+  <section class="section-sm" aria-labelledby="options-title">
+    <div class="section-head" style="margin-bottom:var(--space-4)">
+      <h2 id="options-title">What your data allows the analysis to vary</h2>
+      <p>Detected from the files. The next step shows how these combine into the
+        specification space.</p>
+    </div>
+    <div class="grid-3">
+      <div class="panel">
+        <h3>{{ dfn('rarefaction', 'Rarefaction') }}</h3>
+        <p class="small" style="margin:8px 0 10px;color:var(--ink-2)">
+          {% set n_depths = depths|reject('equalto', 'none')|list|length %}
+          {% if summary.can_rarefy and n_depths %}Subsampling can run at {{ n_depths }}
+            depth{{ 's' if n_depths != 1 }}, or not at all. Each random draw counts as its own level.
+          {% elif summary.can_rarefy %}No depth fits under the smallest library, so only
+            “none” runs.{% else %}Not possible: the values are not integer counts, so only
+            “none” runs.{% endif %}</p>
+        <ul class="fork-levels">{% for label in depth_labels %}<li>{{ label }}</li>{% endfor %}</ul>
+      </div>
+      <div class="panel">
+        <h3>Taxonomic rank {{ help('taxonomic_rank') }}</h3>
+        <p class="small" style="margin:8px 0 10px;color:var(--ink-2)">
+          {% if ranks|length > 1 %}The analysis is repeated at each level.{% else %}One level only:
+            there is nothing to collapse with, or the table is already at genus.{% endif %}</p>
+        <ul class="fork-levels">{% for r in ranks %}<li>{{ r }}</li>{% endfor %}</ul>
+      </div>
+      <div class="panel">
+        <h3>{{ dfn('covariate', 'Covariates') }}</h3>
+        <p class="small" style="margin:8px 0 10px;color:var(--ink-2)">
+          {% if dataset.covariate_columns %}Usable in Covariate mode, which tries every
+            subset.{% else %}None usable, so Covariate mode is not available. Columns that are
+            constant, identifiers or more than 20% missing are not covariates.{% endif %}</p>
+        {% if dataset.covariate_columns %}
+          <ul class="fork-levels">{% for c in dataset.covariate_columns %}<li>{{ c }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+    </div>
+    {% if not summary.integer_values %}
+      <div style="margin-top:var(--space-4)">
+        {% call callout('amber', 'Methods that need integer counts will be left out') %}
+          <p>This table holds relative abundances, so ANCOM-BC, ALDEx2, PyDESeq2, TMM and
+            rarefaction cannot be applied. They are ruled out with the reason shown on the
+            next page, not silently dropped.</p>
+        {% endcall %}
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- ============ warnings and notes ============ -->
+  {% if summary.warnings or summary.notes or dropped_depths %}
+  <section class="section-sm" aria-labelledby="notes-title" style="padding-top:0">
+    <h2 id="notes-title" style="margin-bottom:var(--space-4)">What was adjusted while reading</h2>
+    {% for warning in summary.warnings %}
+      {% call callout('amber', 'Warning') %}<p>{{ warning }}</p>{% endcall %}
+    {% endfor %}
+    {% for note in summary.notes %}
+      {% call callout('blue', 'Note') %}<p>{{ note }}</p>{% endcall %}
+    {% endfor %}
+    {% for note in dropped_depths %}
+      {% call callout('blue', 'Rarefaction depth not used') %}<p>{{ note }}</p>{% endcall %}
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <!-- ============ study design ============ -->
+  <section class="section-sm" aria-labelledby="design-title" style="padding-top:0">
+    <div class="section-head" style="margin-bottom:var(--space-4)">
+      <h2 id="design-title">Study design</h2>
+      <p>{{ readiness.headline() }} <b>Nothing here blocks the analysis.</b></p>
+    </div>
+
+    {% for check in readiness.flagged %}
+      {% set title = check.label ~ ": " ~ check.title %}
+      {% call callout(LEVEL_TONE[check.level], title) %}
+        <p>{{ check.detail }}</p>
+        {% if check.advice %}<p><b>What to do:</b> {{ check.advice }}</p>{% endif %}
+      {% endcall %}
+    {% endfor %}
+
+    <details class="disclosure" style="margin-top:var(--space-4)">
+      <summary>All {{ readiness.checks|length }} checks
+        <span class="summary-meta">{{ readiness.counts['ok'] }} fine · {{ readiness.flagged|length }} flagged</span></summary>
+      <div class="disclosure-body">
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th scope="col">Check</th><th scope="col">Result</th><th scope="col">Detail</th></tr></thead>
+            <tbody>
+              {% for check in readiness.checks %}
+                <tr>
+                  <th scope="row">{{ check.title }}</th>
+                  <td>{{ status(LEVEL_TONE[check.level], check.label, LEVEL_GLYPH[check.level]) }}</td>
+                  <td>{{ check.detail }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  {% call next_step("Next: configure the specification space",
+                    "See every analytical choice the run will vary, and choose how much of it to run.") %}
+    <a class="btn btn-ghost" href="/#start">Upload different files</a>
+    <a class="btn btn-primary btn-lg" href="/configure/{{ token }}">Continue to configuration <span class="arrow" aria-hidden="true">→</span></a>
+  {% endcall %}
+</div>
+{% endblock %}

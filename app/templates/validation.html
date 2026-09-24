@@ -1,68 +1,62 @@
 {% extends "base.html" %}
-{% block title %}Validation — MicroVerse{% endblock %}
+{% from "_ui.html" import callout %}
+{% block title %}Evidence — what has been validated — MicroVerse{% endblock %}
 
 {% set page = 'validation' %}
 {% block content %}
+<div class="shell">
+  <header class="page-head">
+    <p class="eyebrow">Evidence</p>
+    <h1>Every claim, and the evidence behind it.</h1>
+    <p class="purpose">Software is easy to test against itself and hard to test against
+      reality. This page separates the two for every part of MicroVerse, including the parts
+      where the answer is “not validated”.</p>
+  </header>
 
-  <section class="section-tight shell">
-    <p class="eyebrow">What is actually known</p>
-    <h1 style="max-width:22ch">Every claim, and the evidence behind it.</h1>
-    <p class="lede" style="max-width:62ch">
-      Software that analyses research data is easy to test against itself and hard to
-      test against reality. These are not the same thing, and conflating them is how a
-      convention gets published as a finding. This page separates them for every part of
-      MicroVerse, including the parts where the answer is "not validated".
-    </p>
-  </section>
-
-  {#  The strongest claim and the weakest one, before the legend and the matrix. A
-      reader deciding whether to trust a tier should not have to read a key first. Both
+  {#  The strongest claim and the weakest one, before the legend and the matrix. Both
       counts are derived from the same matrix rendered below. #}
-  <section class="section-tight shell" aria-labelledby="headline-title">
-    {% set n_total = VALIDATION_MATRIX|length %}
-    {% set n_reference = VALIDATION_MATRIX|selectattr('grade', 'equalto', 'reference')|list|length %}
-    {% set n_empirical = VALIDATION_MATRIX|selectattr('grade', 'equalto', 'empirical')|list|length %}
-    {% set n_exploratory = VALIDATION_MATRIX|selectattr('grade', 'equalto', 'exploratory')|list|length %}
-    <div class="verdict">
-      <div>
-        <p class="eyebrow on-dark" style="margin-bottom:14px">The short answer</p>
-        <h2 id="headline-title">The robustness tiers predict replication on data they
-          never saw. Most other parts agree with an independent implementation.</h2>
-        <p class="verdict-detail">
-          Of {{ n_total }} components, {{ n_reference }} have been checked against a
-          separate implementation of the same method, {{ n_empirical }} against held-out
-          data, and {{ n_exploratory }} {{ 'is' if n_exploratory == 1 else 'are' }}
-          correct arithmetic that has <b>not</b> been validated against anything —
-          labelled as such wherever it appears.
-        </p>
-        <p class="verdict-guide">
-          <a href="#tier-experiment">The held-out experiment</a>
-          <a href="#limits">What it does not establish</a>
-          <a href="#reproduce">Reproduce every number</a>
-        </p>
-      </div>
-      <div class="verdict-side">
-        <span>Tier ordering, AUC</span>
-        <b>{{ TIER_VALIDATION.auc }}</b>
-        <small>against {{ TIER_VALIDATION.null_rate|percent(1) }} under permuted labels ·
-          {{ TIER_VALIDATION.n_observations|commafy }} taxon observations</small>
-      </div>
+  {% set n_total = VALIDATION_MATRIX|length %}
+  {% set n_reference = VALIDATION_MATRIX|selectattr('grade', 'equalto', 'reference')|list|length %}
+  {% set n_empirical = VALIDATION_MATRIX|selectattr('grade', 'equalto', 'empirical')|list|length %}
+  {% set n_exploratory = VALIDATION_MATRIX|selectattr('grade', 'equalto', 'exploratory')|list|length %}
+  <section class="answer" aria-labelledby="headline-title">
+    <div>
+      <p class="eyebrow eyebrow-purple">The short answer</p>
+      <h2 id="headline-title">The robustness labels predict replication on data they never
+        saw. Most other parts agree with an independent implementation.</h2>
+      <p class="answer-detail">
+        Of {{ n_total }} components, {{ n_reference }} have been checked against a separate
+        implementation of the same method, {{ n_empirical }} against held-out data, and
+        {{ n_exploratory }} {{ 'is' if n_exploratory == 1 else 'are' }} correct arithmetic
+        that has <b>not</b> been validated against anything, labelled as such wherever it
+        appears.</p>
+      <p class="small" style="margin-top:12px">
+        <a href="#tier-experiment">The held-out experiment</a> ·
+        <a href="#limits">What it does not establish</a> ·
+        <a href="#reproduce">Reproduce every number</a></p>
+    </div>
+    <div class="answer-figure">
+      <span class="stat-value">{{ TIER_VALIDATION.auc }}</span>
+      <span class="stat-label">label ordering, AUC</span>
+      <span class="stat-note">against {{ TIER_VALIDATION.null_rate|percent(1) }} under permuted
+        labels · {{ TIER_VALIDATION.n_observations|commafy }} taxon observations</span>
     </div>
   </section>
 
-  <section class="section-tight shell">
-    <h2 class="validation-h2">How to read the table below</h2>
+  <section class="section-sm" aria-labelledby="key-title">
+    <h2 id="key-title" style="font-size:20px;margin-bottom:var(--space-4)">How to read the table below</h2>
     <div class="grade-key">
       {% for grade in ["internal", "reference", "empirical", "exploratory"] %}
         <div class="grade-key-item">
-          <span class="grade-chip grade-{{ grade }}">{{ GRADE_LABEL[grade] }}</span>
+          <span class="grade-chip grade-{{ grade }}" style="justify-self:start">{{ GRADE_LABEL[grade] }}</span>
           <p>{{ GRADE_BLURB[grade] }}</p>
         </div>
       {% endfor %}
     </div>
   </section>
 
-  <section class="section-tight shell">
+  <section aria-labelledby="matrix-title">
+    <h2 id="matrix-title" class="visually-hidden">Validation matrix</h2>
     <div class="table-wrap" tabindex="0" role="region" aria-label="Validation matrix, scrollable">
       <table class="matrix-table">
         <thead>
@@ -92,82 +86,74 @@
     </div>
   </section>
 
-  <section class="section-tight shell">
-    <div class="split split-wide">
-      <div class="card" id="tier-experiment">
-        <p class="eyebrow" data-spec="16.2">The tier experiment</p>
-        <h2 class="mt0" style="font-size:22px">Do the tiers predict anything?</h2>
-        <p class="muted" style="font-size:13.5px;margin:10px 0 16px">
+  <section class="section-sm">
+    <div class="split">
+      <div class="panel" id="tier-experiment">
+        <p class="eyebrow eyebrow-purple" data-spec="16.2">The label experiment</p>
+        <h2 style="font-size:22px">Do the labels predict anything?</h2>
+        <p class="small" style="margin:10px 0 16px;color:var(--ink-2)">
           {{ TIER_VALIDATION.design }}. Data: {{ TIER_VALIDATION.data }}.
-          Replication was defined as "{{ TIER_VALIDATION.definition }}", scored on the
-          held-out half without reference to the discovery tier.</p>
+          Replication was defined as “{{ TIER_VALIDATION.definition }}”, scored on the
+          held-out half without reference to the discovery label.</p>
 
-        <div class="table-wrap" tabindex="0" role="region" aria-label="Replication by tier, scrollable">
-        <table class="matrix-table">
-          <thead>
-            <tr>
-              <th scope="col">Tier</th>
-              <th scope="col">Replicated</th>
-              <th scope="col">95% CI</th>
-              <th scope="col">Taxa</th>
-              <th scope="col">How often assigned</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for name, ev in TIER_REPLICATION.items() %}
-              <tr>
-                <th scope="row"><span class="tier {{ TIERS[name].class }}">{{ name }}</span></th>
-                <td><b>{{ ev.rate|percent(0) }}</b></td>
-                <td>{{ ev.ci[0]|percent(0) }}–{{ ev.ci[1]|percent(0) }}</td>
-                <td>{{ ev.n|commafy }}</td>
-                <td>{{ ev.share|percent(1) }} of observations</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Replication by label, scrollable">
+          <table class="data">
+            <thead>
+              <tr><th scope="col">Label</th><th scope="col" class="num">Replicated</th>
+                <th scope="col" class="num">95% CI</th><th scope="col" class="num">Taxa</th>
+                <th scope="col" class="num">How often assigned</th></tr>
+            </thead>
+            <tbody>
+              {% for name, ev in TIER_REPLICATION.items() %}
+                <tr>
+                  <th scope="row"><span class="tier {{ TIERS[name].class }}">{{ name }}</span></th>
+                  <td class="num"><b>{{ ev.rate|percent(0) }}</b></td>
+                  <td class="num">{{ ev.ci[0]|percent(0) }}–{{ ev.ci[1]|percent(0) }}</td>
+                  <td class="num">{{ ev.n|commafy }}</td>
+                  <td class="num">{{ ev.share|percent(1) }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
 
-        <p class="note" style="margin-top:18px">
-          <b>AUC {{ TIER_VALIDATION.auc }}</b> for the tier ordering against replication
-          — given one taxon that replicated and one that did not, the tier ranks them
-          correctly {{ TIER_VALIDATION.auc|percent(0) }} of the time. ROBUST taxa
-          replicated {{ TIER_VALIDATION.risk_ratio_robust }}× as often as other tiers.
-          Under permuted group labels the rate collapses to
-          {{ TIER_VALIDATION.null_rate|percent(1) }}, which is the check that the
-          definition is measuring signal rather than arithmetic.
-        </p>
+        <p class="small" style="margin-top:16px;color:var(--ink-2)">
+          <b>AUC {{ TIER_VALIDATION.auc }}</b> for the label ordering against replication:
+          given one taxon that replicated and one that did not, the label ranks them correctly
+          {{ TIER_VALIDATION.auc|percent(0) }} of the time. ROBUST taxa replicated
+          {{ TIER_VALIDATION.risk_ratio_robust }}× as often as other labels. Under permuted
+          group labels the rate collapses to {{ TIER_VALIDATION.null_rate|percent(1) }}, the
+          check that the definition measures signal rather than arithmetic.</p>
       </div>
 
-      <div class="card card-paper" id="limits">
-        <p class="eyebrow">Limits</p>
-        <h2 class="mt0" style="font-size:20px">What it does not establish.</h2>
-        <ul style="margin:14px 0 0;padding-left:20px;font-size:13px;line-height:1.65">
-          {% for caveat in TIER_CAVEATS %}<li style="margin-bottom:12px">{{ caveat }}</li>{% endfor %}
-          <li style="margin-bottom:12px">Replication within one study's own samples is
-            an easier test than replication in an independently collected cohort. These
-            halves share protocol, population and sequencing run; a true external
-            replication would not.</li>
-          <li>The experiment validates the <i>ordering</i> and the tiers' relative
-            meaning. It does not license reading a tier as a probability for any
-            particular taxon in your data.</li>
-        </ul>
+      <div id="limits">
+        {% call callout('red', 'What it does not establish') %}
+          <ul>
+            {% for caveat in TIER_CAVEATS %}<li>{{ caveat }}</li>{% endfor %}
+            <li>Replication within one study's own samples is an easier test than replication
+              in an independently collected cohort. These halves share protocol, population
+              and sequencing run; a true external replication would not.</li>
+            <li>The experiment validates the <i>ordering</i> and the labels' relative meaning.
+              It does not license reading a label as a probability for any particular taxon
+              in your data.</li>
+          </ul>
+        {% endcall %}
       </div>
     </div>
   </section>
 
-  <section class="section-tight shell" id="reproduce">
-    <div class="card">
+  <section id="reproduce" aria-labelledby="reproduce-title">
+    <div class="panel">
       <p class="eyebrow">Reproducing all of it</p>
-      <h2 class="mt0" style="font-size:20px">Every number on this page is regenerable.</h2>
-      <p class="muted" style="font-size:13.5px;margin:10px 0 14px">
-        Nothing here is asserted from memory. Each check is a script that reports
-        SKIPPED with an install hint when its dependency is missing, never a silent pass.
-      </p>
+      <h2 id="reproduce-title" style="font-size:20px">Every number on this page is regenerable.</h2>
+      <p class="small" style="margin:10px 0 14px;color:var(--ink-2)">
+        Nothing here is asserted from memory. Each check is a script that reports SKIPPED with
+        an install hint when its dependency is missing, never a silent pass.</p>
       <pre class="code"><code>.venv/Scripts/python tests/reference/run_all.py          # every reference check
-.venv/Scripts/python tests/reference/tier_validation.py # the tier experiment
+.venv/Scripts/python tests/reference/tier_validation.py # the label experiment
 .venv/Scripts/python tests/reference/compare_r.py       # edgeR, ALDEx2, ANCOM-BC
 .venv/Scripts/python -m pytest -q                       # the internal suite</code></pre>
     </div>
   </section>
-
+</div>
 {% endblock %}

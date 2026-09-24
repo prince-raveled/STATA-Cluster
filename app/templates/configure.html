@@ -1,354 +1,384 @@
 {% extends "base.html" %}
-{% from "_terms.html" import dfn, section_label %}
-{% block title %}Configure the run — MicroVerse{% endblock %}
+{% from "_ui.html" import callout, status, stepper, page_head, next_step %}
+{% from "_terms.html" import dfn, help %}
+{% block title %}Configure the run — {{ job.dataset_name }} — MicroVerse{% endblock %}
+{% block header_cta %}{% endblock %}
+{% block workflow %}{{ stepper(WORKFLOW_STEPS('configure', token, job.status)) }}{% endblock %}
 
 {% block content %}
-{#  A guided setup rather than a settings form. The six steps are the order a
-    researcher actually needs them in: what was read, whether the design can answer the
-    question, what the analysis will vary, how much of it to run, an optional
-    declaration, and a review before committing.
+{#  Only three things on this page are inputs: the mode, the covariates (Covariate
+    mode), and an optional declared pipeline. The fork levels are not settings: every
+    defensible value is run. The page shows them before the run, with the arithmetic
+    that turns them into the count, rather than after it. #}
+{% set cov = space.covariate %}
+{% set state = {
+  "mode": "quick", "declare": False,
+  "counts": {"quick": (previews.quick.n_valid if previews.quick else 0),
+             "full": (previews.full.n_valid if previews.full else 0),
+             "covariate": (previews.covariate.n_valid if previews.covariate else 0)},
+  "labels": MODE_LABELS,
+  "perSubset": ((previews.covariate.n_valid // cov.n_subsets) if (previews.covariate and cov.n_subsets) else 0),
+  "covs": dataset.covariate_columns|list,
+} %}
+<div class="shell">
+  {% call page_head("Step 3 · Configure", "Configure your specification space.",
+                    "Every defensible value of every analytical choice is run. Here you choose how much of that space to explore, then start the run.") %}
+    <span class="chip">{{ job.dataset_name }}</span>
+    <span class="chip">{{ summary.n_samples }} samples · {{ summary.n_taxa|commafy }} taxa</span>
+    {{ status(dataset_status.tone, dataset_status.label, dataset_status.glyph) }}
+    <a class="small" href="/validate/{{ token }}">Review validation</a>
+  {% endcall %}
 
-    Only two of the six ask for input. The rest are things MicroVerse determined from
-    the files, shown before the run rather than after it — which is the point of the
-    page, and why they are steps rather than a sidebar. #}
-<section class="section-tight shell">
-  <p class="eyebrow">Step 2 of 3 — configure</p>
-  <div class="section-heading" style="margin-bottom:var(--space-6)">
-    <div>
-      <h1 style="font-size:clamp(28px,3vw,40px)">Your dataset can be analysed.</h1>
-      <p class="micro" style="margin-top:10px">{{ job.dataset_name }}</p>
-    </div>
-    <p>Everything below was read from your files rather than assumed. Check it, then
-      choose how much of the analysis space to run.</p>
-  </div>
+  {% if job.status == "done" %}
+    {% call callout('amber', 'This dataset has already been analysed') %}
+      <p>Running it again replaces the results at the same link. <a href="/results/{{ token }}">View the current results</a> instead.</p>
+    {% endcall %}
+  {% elif job.status == "running" %}
+    {% call callout('amber', 'A run is already in progress for this dataset') %}
+      <p>Starting another would replace it. <a href="/job/{{ token }}">Follow its progress</a> instead.</p>
+    {% endcall %}
+  {% endif %}
 
-  <form class="setup" method="post" action="/run/{{ token }}"
-        {#  Single-quoted attribute: `tojson` emits double quotes, which silently
-            terminate a double-quoted attribute and left Alpine with a truncated,
-            unparseable expression. JS strings inside therefore use double quotes. #}
-        x-data='{
-          mode: "quick",
-          declare: false,
-          counts: {{ {"quick": (previews.get("quick").n_valid if previews.get("quick") else 0),
-                      "full": (previews.get("full").n_valid if previews.get("full") else 0),
-                      "covariate": (previews.get("covariate").n_valid if previews.get("covariate") else 0)}|tojson }},
-          labels: {{ {"quick": MODE_LABELS["quick"], "full": MODE_LABELS["full"],
-                      "covariate": MODE_LABELS["covariate"]}|tojson }}
-        }'>
+  <script id="configure-state" type="application/json">{{ state|tojson }}</script>
+  <form id="configure-form" method="post" action="/run/{{ token }}"
+        x-data="configureState()" x-init="init()">
 
-    <!-- ---------------- 01 · data ---------------- -->
-    <section class="setup-step" aria-labelledby="parsed-title">
-      <div class="setup-head">
-        <span class="setup-number" aria-hidden="true">01</span>
-        <div>
-          <h2 id="parsed-title">Your data</h2>
-          <p>Orientation, value type and taxonomic rank are detected, not assumed.</p>
-        </div>
+    <!-- ================= 1. how much to run ================= -->
+    <section class="block" aria-labelledby="mode-title">
+      <div class="block-head">
+        <span class="block-number" aria-hidden="true">1</span>
+        <h2 id="mode-title">Choose how much of the space to run</h2>
+        <p>Three modes, never one fully crossed grid: crossing all seven choices would be over
+          500,000 analyses, which no web request can finish.</p>
       </div>
-      <div class="setup-body">
-        <dl class="kv">
-          <dt>Samples</dt>
-          <dd>{{ summary.n_samples }}
-            <span class="muted">({{ summary.n_group_a }} {{ summary.group_a }} · {{ summary.n_group_b }} {{ summary.group_b }})</span></dd>
-          <dt>Taxa</dt>
-          <dd>{{ summary.n_taxa|commafy }}{% if summary.collapsed_from %}
-            <span class="muted">(from {{ summary.collapsed_from }})</span>{% endif %}</dd>
-          <dt>Format</dt><dd>{{ summary.format }} · {{ summary.value_type }}</dd>
-          <dt>Library sizes</dt>
-          <dd>{{ summary.min_library|commafy }}–{{ summary.max_library|commafy }}
-            <span class="muted">median {{ summary.median_library|commafy }}</span></dd>
-          <dt>Sparsity</dt><dd>{{ summary.sparsity|percent(1) }} zeros</dd>
-        </dl>
-
-        {% if summary.warnings or summary.notes or dropped_depths %}
-          <div style="margin-top:var(--space-5);display:grid;gap:9px">
-            {% for warning in summary.warnings %}<p class="warn" style="margin:0">{{ warning }}</p>{% endfor %}
-            {% for note in summary.notes %}<p class="note" style="margin:0">{{ note }}</p>{% endfor %}
-            {% for note in dropped_depths %}<p class="note" style="margin:0">{{ note }}</p>{% endfor %}
-          </div>
-        {% endif %}
-      </div>
-    </section>
-
-    <!-- ---------------- 02 · study design ---------------- -->
-    <section class="setup-step" aria-labelledby="readiness-title">
-      <div class="setup-head">
-        <span class="setup-number" aria-hidden="true">02</span>
-        <div>
-          <h2 id="readiness-title">Study design</h2>
-          <p>Passing validation means the software can process your files. It does not
-            mean the data can answer the question. These are separate, and this is the
-            second one. <b>Nothing here blocks the analysis.</b></p>
-        </div>
-      </div>
-      <div class="setup-body">
-        <dl class="kv">
-          <dt>Comparison</dt>
-          <dd><b>{{ summary.group_a }}</b> against <b>{{ summary.group_b }}</b>
-            <span class="muted">from <code>{{ summary.group_column }}</code></span></dd>
-          <dt>Group sizes</dt>
-          <dd>{{ summary.n_group_a }} and {{ summary.n_group_b }}</dd>
-          <dt>Covariates available</dt>
-          <dd>{% if dataset.covariate_columns %}{{ dataset.covariate_columns|join(", ") }}
-            {% else %}<span class="muted">none usable in your metadata</span>{% endif %}</dd>
-        </dl>
-
-        <div class="readiness readiness-{{ readiness.worst }}" style="margin-top:var(--space-5)">
-          <p class="readiness-headline">{{ readiness.headline() }}</p>
-
-          {% if readiness.flagged %}
-            <ul class="readiness-list">
-              {% for check in readiness.flagged %}
-                <li class="readiness-item level-{{ check.level }}">
-                  <span class="readiness-level">{{ check.label }}</span>
-                  <div>
-                    <b>{{ check.title }}</b>
-                    <p>{{ check.detail }}</p>
-                    {% if check.advice %}<p class="readiness-advice">{{ check.advice }}</p>{% endif %}
-                  </div>
-                </li>
-              {% endfor %}
-            </ul>
-          {% endif %}
-
-          <details class="readiness-all">
-            <summary>All {{ readiness.checks|length }} checks</summary>
-            <ul class="readiness-list">
-              {% for check in readiness.checks %}
-                <li class="readiness-item level-{{ check.level }}">
-                  <span class="readiness-level">{{ check.label }}</span>
-                  <div><b>{{ check.title }}</b><p>{{ check.detail }}</p></div>
-                </li>
-              {% endfor %}
-            </ul>
-          </details>
-        </div>
-      </div>
-    </section>
-
-    <!-- ---------------- 03 · what varies ---------------- -->
-    <section class="setup-step" aria-labelledby="grid-title">
-      <div class="setup-head">
-        <span class="setup-number" aria-hidden="true">03</span>
-        <div>
-          <h2 id="grid-title">What the analysis will vary</h2>
-          <p>These are not settings for you to choose. MicroVerse runs every defensible
-            value of each and reports how much your result depends on them.</p>
-        </div>
-      </div>
-      <div class="setup-body">
-        <dl class="kv">
-          <dt>Rarefaction depths</dt><dd>{{ depths|join(", ") }}</dd>
-          <dt>Taxonomic levels</dt>
-          <dd>{{ ranks|join(" + ") }}{% if ranks|length == 1 %}
-            <span class="muted">(one level — no taxonomy supplied)</span>{% endif %}</dd>
-          <dt>Prevalence filters</dt><dd>0%, 5%, 10%, 20%</dd>
-          <dt>Transformations</dt><dd>raw counts, TSS, CLR, TMM</dd>
-        </dl>
-
-        {% set preview = previews.get("quick") %}
-        {% if preview %}
-          <div class="metrics" style="margin-top:var(--space-5)">
-            <div><b>{{ preview.n_enumerated|commafy }}</b><span>{{ dfn('enumerated', 'considered') }}</span></div>
-            <div><b>{{ preview.n_valid|commafy }}</b><span>{{ dfn('valid', 'statistically valid') }}</span></div>
-            <div><b>{{ preview.n_pruned|commafy }}</b><span>{{ dfn('pruned', 'ruled out') }}</span></div>
-          </div>
-          <p class="footnote">
-            Those {{ preview.n_valid|commafy }} analyses reduce to
-            <b>{{ preview.n_matrices|commafy }}</b> preprocessed matrices and
-            <b>{{ preview.n_fits|commafy }}</b> model fits, because multiple-testing
-            correction is applied afterwards to stored p-values and matrices are shared
-            across methods.
-          </p>
-
-          {% if preview.pruned_reasons %}
-            <details style="margin-top:var(--space-4)">
-              <summary>Why {{ preview.n_pruned|commafy }} combinations were ruled out</summary>
-              <div class="table-wrap" tabindex="0" role="region"
-                   aria-label="Reasons combinations were ruled out, scrollable"
-                   style="margin-top:var(--space-3)">
-                <table class="data">
-                  <thead><tr><th scope="col">Ruled out because</th><th scope="col" class="num">How many</th></tr></thead>
-                  <tbody>
-                    {% for reason, count in preview.pruned_reasons.items() %}
-                      <tr><td>{{ reason }}</td><td class="num">{{ count|commafy }}</td></tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            </details>
-          {% endif %}
-          {% for note in preview.notes %}<p class="note" style="margin-top:10px">{{ note }}</p>{% endfor %}
-        {% endif %}
-      </div>
-    </section>
-
-    <!-- ---------------- 04 · mode ---------------- -->
-    <section class="setup-step setup-step-input" aria-labelledby="mode-title">
-      <div class="setup-head">
-        <span class="setup-number" aria-hidden="true">04</span>
-        <div>
-          <h2 id="mode-title">How much to run</h2>
-          <p>Three modes, never one crossed grid — fully crossing all seven choices is
-            over 500,000 analyses, which is not achievable in web-request time.</p>
-        </div>
-      </div>
-      <div class="setup-body">
-        <fieldset style="border:0;padding:0;margin:0">
-          <legend class="visually-hidden">Analysis mode</legend>
-          <div class="choice">
-            {% for name in ["quick", "full", "covariate"] %}
-              {% set preview = previews.get(name) %}
-              {% set blocked = name == "covariate" and not dataset.covariate_columns %}
-              <label>
-                <input type="radio" name="mode" value="{{ name }}" x-model="mode"
-                       {% if name == "quick" %}checked{% endif %}
-                       {% if blocked %}disabled{% endif %}>
-                <span class="row">
-                  <span class="title">{{ MODE_LABELS[name] }}{% if name == "quick" %} <span class="muted" style="font-weight:400;font-size:13px">— default</span>{% endif %}</span>
-                  {% if preview %}<span class="count row-end">{{ preview.n_valid|commafy }} analyses</span>{% endif %}
+      <fieldset>
+        <legend class="visually-hidden">Analysis mode</legend>
+        <div class="mode-choices">
+          {% for name in ["quick", "full", "covariate"] %}
+            {% set preview = previews.get(name) %}
+            {% set blocked = name == "covariate" and not dataset.covariate_columns %}
+            <label class="mode-choice">
+              <input type="radio" name="mode" value="{{ name }}" x-model="mode"
+                     {% if name == "quick" %}checked{% endif %}
+                     {% if blocked %}disabled aria-describedby="blocked-{{ name }}"{% endif %}>
+              <span class="mode-card">
+                <span class="mode-head">
+                  <span class="mode-radio" aria-hidden="true"></span>
+                  <span class="mode-name">{{ MODE_LABELS[name] }}</span>
+                  {% if preview %}<span class="mode-count"{% if name == "covariate" %} x-text="covariateLabel()"{% endif %}>{{ preview.n_valid|commafy }}</span>{% endif %}
                 </span>
-                <span class="blurb">{{ MODE_BLURBS[name] }}</span>
+                {% if name == "quick" %}<span class="mode-tag">Recommended</span>{% endif %}
+                <span class="mode-blurb">{{ MODE_SUMMARIES[name] }}</span>
+                {% if preview %}<span class="micro"><span{% if name == "covariate" %} x-text="covariateLabel()"{% endif %}>{{ preview.n_valid|commafy }}</span> valid specifications</span>{% endif %}
                 {% if blocked %}
-                  <span class="warn-text">No usable covariate columns were found in your metadata.</span>
+                  <span class="micro" id="blocked-{{ name }}" style="color:var(--amber)">Not available:
+                    no usable covariate columns were found in your metadata.</span>
                 {% endif %}
-              </label>
-            {% endfor %}
-          </div>
-        </fieldset>
+              </span>
+            </label>
+          {% endfor %}
+        </div>
+      </fieldset>
 
-        <div x-show="mode === 'covariate'" x-cloak style="margin-top:var(--space-5)">
-          <p class="setup-sublabel">Covariates to vary</p>
-          <p class="muted" style="font-size:12.5px;margin:0 0 10px">
-            Every subset is enumerated — all 2<sup>k</sup> when k ≤ 6, otherwise 64 random
-            subsets stratified by size. The null and full models are always included.</p>
+      {% if dataset.covariate_columns %}
+      <div x-show="mode === 'covariate'" x-cloak style="margin-top:var(--space-5)">
+        <fieldset class="panel">
+          <legend class="visually-hidden">Covariates to vary</legend>
+          <p style="font-weight:700;margin:0 0 4px">Covariates to vary</p>
+          <p class="small muted" style="margin:0 0 12px">Every subset of the ticked covariates
+            is run: all 2<sup>k</sup> when k ≤ 6, otherwise 64 subsets sampled by size. The
+            unadjusted and fully adjusted models are always included.</p>
           <div class="chips">
             {% for column in dataset.covariate_columns %}
-              <label class="chip"><input type="checkbox" name="covariates" value="{{ column }}" checked> {{ column }}</label>
+              <label class="chip-check"><input type="checkbox" name="covariates" value="{{ column }}" x-model="covs" checked> {{ column }}</label>
             {% endfor %}
           </div>
+          <p class="micro" style="margin:12px 0 0" aria-live="polite">
+            <span x-text="covs.length">{{ dataset.covariate_columns|length }}</span> ticked ·
+            <span x-text="subsetsLabel()">{{ cov.n_subsets }}</span> covariate sets</p>
+        </fieldset>
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- ================= 2. the seven choices ================= -->
+    <section class="block" aria-labelledby="forks-title">
+      <div class="block-head">
+        <span class="block-number" aria-hidden="true">2</span>
+        <h2 id="forks-title">The seven analytical choices</h2>
+        <p>These are not settings. Every value listed is run, and the results report how much
+          each choice moves the answer. Dashed cards are held at one value in this mode.</p>
+      </div>
+      {% for name in ["quick", "full", "covariate"] %}
+        <div class="fork-grid" x-show="mode === '{{ name }}'"{% if name != 'quick' %} x-cloak{% endif %}
+             role="group" aria-label="{{ MODE_LABELS[name] }} mode: the seven choices">
+          {% for fork in space[name].cards %}
+            <article class="fork-card{% if fork.fixed %} is-fixed{% endif %}">
+              <div class="fork-top">
+                <span class="fork-number" aria-hidden="true">{{ fork.number }}</span>
+                <h3 class="fork-name">{{ fork.label }}</h3>
+                <span class="fork-count">{{ fork.count }} {{ 'level' if fork.count == 1 else 'levels' }}</span>
+              </div>
+              <p class="fork-question">{{ fork.question }}</p>
+              <ul class="fork-levels">{% for level in fork.levels %}<li>{{ level }}</li>{% endfor %}</ul>
+              {% if fork.note %}<p class="fork-note">{{ fork.note }}</p>{% endif %}
+            </article>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </section>
+
+    <!-- ================= 3. the space ================= -->
+    <section class="block" aria-labelledby="space-title">
+      <div class="block-head">
+        <span class="block-number" aria-hidden="true">3</span>
+        <h2 id="space-title">From candidate combinations to model fits</h2>
+        <p>Not every combination is coherent. Incoherent ones are ruled out with a stated
+          reason, and the valid ones share preprocessing and model fits wherever the
+          arithmetic allows.</p>
+      </div>
+      {% for name in ["quick", "full", "covariate"] %}
+        {% set s = space[name] %}
+        {% set r = s.report %}
+        {% if r %}
+        <div x-show="mode === '{{ name }}'"{% if name != 'quick' %} x-cloak{% endif %}>
+          <div class="flow" role="list" aria-label="{{ MODE_LABELS[name] }} mode: how the count is reached">
+            <div class="flow-node is-candidate" role="listitem">
+              <span class="flow-value">{{ r.n_enumerated|commafy }}</span>
+              <span class="flow-label">{{ dfn('enumerated', 'enumerated') }}</span>
+              <span class="flow-note">every combination of the levels above</span>
+            </div>
+            <div class="flow-node is-pruned" role="listitem">
+              <span class="flow-value">−{{ r.n_pruned|commafy }}</span>
+              <span class="flow-label">{{ dfn('pruned', 'ruled out') }}</span>
+              <span class="flow-note">statistically incoherent</span>
+            </div>
+            <div class="flow-node is-valid" role="listitem">
+              <span class="flow-value">{{ r.n_valid|commafy }}</span>
+              <span class="flow-label">{{ dfn('valid', 'statistically valid') }}</span>
+              <span class="flow-note">specifications that will run</span>
+            </div>
+            <div class="flow-node is-compute" role="listitem">
+              <span class="flow-value">{{ r.n_matrices|commafy }}</span>
+              <span class="flow-label">preprocessed matrices</span>
+              <span class="flow-note">shared by every test that uses them</span>
+            </div>
+            <div class="flow-node is-compute" role="listitem">
+              <span class="flow-value">{{ r.n_fits|commafy }}</span>
+              <span class="flow-label">{{ dfn('model_fit', 'model fits') }}</span>
+              <span class="flow-note">{% if s.per_fit %}× {{ s.per_fit }} corrections = {{ r.n_valid|commafy }}{% else %}one per test and matrix{% endif %}</span>
+            </div>
+          </div>
+
+          <details class="disclosure" style="margin-top:var(--space-4)">
+            <summary>How is this calculated?
+              <span class="summary-meta">{% if s.matches %}recounted and matches{% else %}see details{% endif %}</span></summary>
+            <div class="disclosure-body">
+              <p>The levels on each card, multiplied together:</p>
+              <p class="derivation">
+                {% for label, n in s.factors %}<span class="term">{{ n }} <small>{{ label }}</small></span>{% if not loop.last %}<span class="op">×</span>{% endif %}{% endfor %}
+                <span class="op">=</span> <span class="total">{{ s.product|commafy }}</span>
+              </p>
+              {% if s.extra %}
+                <p>Full mode then adds the three model-based methods, each on a stratified
+                  sample of the matrices it can accept, crossed with the
+                  {{ space.full.cards[5].count }} corrections:</p>
+                <p class="derivation">
+                  <span class="total">{{ s.product|commafy }}</span>
+                  {% for label, n in s.extra %}<span class="op">+</span><span class="term">{{ n|commafy }} <small>{{ label }}</small></span>{% endfor %}
+                  <span class="op">=</span> <span class="total">{{ s.total|commafy }}</span>
+                </p>
+              {% endif %}
+              <p>
+                {% if s.matches %}
+                  <span class="check-ok">✓ Matches</span> the {{ r.n_enumerated|commafy }}
+                  combinations the engine enumerated for this dataset.
+                {% else %}
+                  <span class="check-bad">Does not match</span> the engine's count of
+                  {{ r.n_enumerated|commafy }}; the engine's count is the one that runs.
+                {% endif %}
+                {% if name == "covariate" %}Counts assume every covariate is ticked.{% endif %}
+              </p>
+              <p>{{ r.n_enumerated|commafy }} − {{ r.n_pruned|commafy }} ruled out =
+                <b>{{ r.n_valid|commafy }}</b> valid specifications.
+                {% if s.per_fit %}Multiple-testing correction is applied afterwards to stored
+                p-values, so {{ r.n_valid|commafy }} specifications need only
+                {{ r.n_fits|commafy }} model fits ({{ r.n_valid|commafy }} ÷ {{ s.per_fit }}),
+                on {{ r.n_matrices|commafy }} preprocessed matrices.{% endif %}</p>
+
+              {% if r.pruned_reasons %}
+                <div class="table-wrap" tabindex="0" role="region"
+                     aria-label="Why combinations were ruled out, scrollable" style="margin-top:var(--space-4)">
+                  <table class="data">
+                    <caption>Why {{ r.n_pruned|commafy }} combinations were ruled out</caption>
+                    <thead><tr><th scope="col">Ruled out because</th><th scope="col" class="num">How many</th></tr></thead>
+                    <tbody>
+                      {% for reason, count in r.pruned_reasons.items() %}
+                        <tr><td>{{ reason }}</td><td class="num">{{ count|commafy }}</td></tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% endif %}
+              {% for note in r.notes %}<p class="note" style="margin-top:10px">{{ note }}</p>{% endfor %}
+            </div>
+          </details>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </section>
+
+    <!-- ================= 4. inside one specification ================= -->
+    <section class="block" aria-labelledby="inside-title">
+      <div class="block-head">
+        <span class="block-number" aria-hidden="true">4</span>
+        <h2 id="inside-title">Inside one specification</h2>
+        <p>Each specification applies its choices in this fixed order. The order is enforced
+          in one place in the engine: filtering before rarefying, for example, gives a
+          different answer.</p>
+      </div>
+      <ol class="pipeline">
+        <li><b>Rarefy</b><span>Subsample each sample to one depth, or not at all.</span></li>
+        <li><b>Collapse</b><span>Keep the input rank, or sum features to genus.</span></li>
+        <li><b>Filter</b><span>Drop taxa seen in too few samples ({{ dfn('prevalence_filter', 'prevalence') }}).</span></li>
+        <li><b>Transform</b><span>TSS, CLR {{ help('clr') }}, raw counts or TMM {{ help('tmm') }}.</span></li>
+        <li><b>Test</b><span>One statistical test compares the groups: a {{ dfn('p_value', 'p-value') }} per taxon.</span></li>
+        <li><b>Correct</b><span>BH or BY across the taxa tested: an {{ dfn('q_value', 'adjusted p-value') }}.</span></li>
+        <li class="is-output"><b>Call</b><span>Significant when the adjusted p-value is at or below the threshold.</span></li>
+      </ol>
+      <p class="pipeline-side"><span><b>Effect size, computed alongside:</b> the log<sub>2</sub>
+        fold change of mean relative abundance ({{ summary.group_b }} relative to
+        {{ summary.group_a }}), taken from the matrix after step 4 with one pseudocount for the
+        whole run. It is the same whichever test ran and whichever covariates were adjusted
+        for, so every specification can share one axis.</span></p>
+    </section>
+
+    <!-- ================= 5. across the space ================= -->
+    <section class="block" aria-labelledby="across-title">
+      <div class="block-head">
+        <span class="block-number" aria-hidden="true">5</span>
+        <h2 id="across-title">Across the specification space</h2>
+        <p>After the run, each taxon has one result from every specification that tested it.
+          Those results are summarised, not averaged into a single p-value.</p>
+      </div>
+      <div class="grid-3">
+        <div class="panel">
+          <h3>{{ dfn('significance_rate', 'How often significant') }}</h3>
+          <p class="small" style="margin-top:8px;color:var(--ink-2)">The share of the
+            specifications that tested the taxon and called it significant. Taxa removed by a
+            filter are not counted against it.</p>
+        </div>
+        <div class="panel">
+          <h3>{{ dfn('direction_agreement') }}</h3>
+          <p class="small" style="margin-top:8px;color:var(--ink-2)">The share of those
+            specifications that agree on which group the taxon is higher in.</p>
+        </div>
+        <div class="panel">
+          <h3>{{ dfn('tier', 'Robustness label') }}</h3>
+          <p class="small" style="margin-top:8px;color:var(--ink-2)">Those two numbers decide
+            the label, from <span class="tier robust">ROBUST</span> to
+            <span class="tier unstable">UNSTABLE</span>. A second analysis then attributes the
+            variation to the choices that caused it.</p>
         </div>
       </div>
     </section>
 
-    <!-- ---------------- 05 · declare (optional) ---------------- -->
-    <section class="setup-step setup-step-input" aria-labelledby="declare-title">
-      <div class="setup-head">
-        <span class="setup-number" aria-hidden="true">05</span>
-        <div>
-          <h2 id="declare-title">Your own pipeline <span class="setup-optional">optional</span></h2>
-          <p>Tell MicroVerse the pipeline you would otherwise have reported, and it locates
-            that pipeline in the distribution — the percentile of significance it sits at,
-            marked on every specification curve.</p>
-        </div>
+    <!-- ================= 6. declared pipeline ================= -->
+    <section class="block" aria-labelledby="declare-title">
+      <div class="block-head">
+        <span class="block-number" aria-hidden="true">6</span>
+        <h2 id="declare-title">Your own pipeline <span class="tag-optional" style="vertical-align:middle">optional</span></h2>
+        <p>Tell MicroVerse the pipeline you would otherwise have reported, and it locates that
+          pipeline in the distribution: the percentile it sits at, marked on every
+          specification curve.</p>
       </div>
-      <div class="setup-body">
-        <label class="check-row">
-          <input type="checkbox" name="declare" value="1" x-model="declare">
-          <span>I have a pipeline to declare</span>
-        </label>
+      <label class="check-row">
+        <input type="checkbox" name="declare" value="1" x-model="declare">
+        <span>I have a pipeline to declare</span>
+      </label>
 
-        <div x-show="declare" x-cloak class="declare-grid">
-          <label class="field"><span class="label">Rarefaction</span>
-            <select name="declared_rarefaction">
-              {% for d in depths %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
-            </select></label>
-          <label class="field"><span class="label">Rank</span>
-            <select name="declared_rank">
-              {% for r in ranks %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
-            </select></label>
-          <label class="field"><span class="label">Prevalence filter</span>
-            <select name="declared_prev_filter">
-              <option value="0.0">0%</option><option value="0.05">5%</option>
-              <option value="0.1" selected>10%</option><option value="0.2">20%</option>
-            </select></label>
-          <label class="field"><span class="label">Transformation</span>
-            <select name="declared_transform">
-              <option value="tss">TSS — relative abundance</option>
-              <option value="clr">CLR</option>
-              <option value="raw">raw counts</option>
-              <option value="tmm">TMM</option>
-            </select></label>
-          <label class="field"><span class="label">Statistical test</span>
-            <select name="declared_method">
-              {% for key, label in METHOD_LABELS.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
-            </select></label>
-          <label class="field"><span class="label">Multiple-testing method</span>
-            <select name="declared_fdr_method">
-              <option value="bh">Benjamini-Hochberg</option>
-              <option value="by">Benjamini-Yekutieli</option>
-            </select></label>
-          <label class="field"><span class="label">Significance threshold</span>
-            <select name="declared_fdr_threshold">
-              <option value="0.05">0.05</option><option value="0.1">0.10</option>
-            </select></label>
-        </div>
+      <div x-show="declare" x-cloak class="declare-grid">
+        <label class="field"><span class="label">Rarefaction</span>
+          <select name="declared_rarefaction">
+            {% for d in depths %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
+          </select></label>
+        <label class="field"><span class="label">Rank</span>
+          <select name="declared_rank">
+            {% for r in ranks %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+          </select></label>
+        <label class="field"><span class="label">Prevalence filter</span>
+          <select name="declared_prev_filter">
+            <option value="0.0">0%</option><option value="0.05">5%</option>
+            <option value="0.1" selected>10%</option><option value="0.2">20%</option>
+          </select></label>
+        <label class="field"><span class="label">Transformation</span>
+          <select name="declared_transform">
+            <option value="tss">TSS — relative abundance</option>
+            <option value="clr">CLR</option>
+            <option value="raw">raw counts</option>
+            <option value="tmm">TMM</option>
+          </select></label>
+        <label class="field"><span class="label">Statistical test</span>
+          <select name="declared_method">
+            {% for key, label in METHOD_LABELS.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+          </select></label>
+        <label class="field"><span class="label">Multiple-testing method</span>
+          <select name="declared_fdr_method">
+            <option value="bh">Benjamini-Hochberg</option>
+            <option value="by">Benjamini-Yekutieli</option>
+          </select></label>
+        <label class="field"><span class="label">Significance threshold</span>
+          <select name="declared_fdr_threshold">
+            <option value="0.05">0.05</option><option value="0.1">0.10</option>
+          </select></label>
       </div>
     </section>
 
-    <!-- ---------------- 06 · review and run ---------------- -->
-    <section class="setup-step setup-step-run" aria-labelledby="review-title">
-      <div class="setup-head">
-        <span class="setup-number" aria-hidden="true">06</span>
-        <div>
-          <h2 id="review-title">Review and run</h2>
-          <p>What is about to happen, from the choices above.</p>
-        </div>
+    <!-- ================= run ================= -->
+    <section class="next-step next-step-sticky" aria-label="Start the run">
+      <div class="next-copy">
+        <b><span x-text="labels[mode]">{{ MODE_LABELS['quick'] }}</span> mode ·
+          <span class="num" x-text="countLabel()">{{ previews.quick.n_valid|commafy if previews.quick else '—' }}</span> valid specifications</b>
+        <span>Most runs finish in one to two minutes; Full mode takes longer. You can close the page and come back.</span>
       </div>
-      <div class="setup-body">
-        <dl class="kv review-kv">
-          <dt>Dataset</dt>
-          <dd>{{ summary.n_samples }} samples · {{ summary.n_taxa|commafy }} taxa</dd>
-          <dt>Comparison</dt>
-          <dd>{{ summary.group_a }} against {{ summary.group_b }}</dd>
-          <dt>Mode</dt>
-          <dd><b x-text="labels[mode]">{{ MODE_LABELS['quick'] }}</b></dd>
-          <dt>Analyses to run</dt>
-          <dd><b class="num" x-text="counts[mode].toLocaleString()">{{ previews.get('quick').n_valid|commafy if previews.get('quick') else '—' }}</b></dd>
-          <dt>Declared pipeline</dt>
-          <dd><span x-text="declare ? 'yes — located in the distribution' : 'none'">none</span></dd>
-        </dl>
-
-        <div class="row" style="margin-top:var(--space-5)">
-          <button class="button button-primary" type="submit">
-            Run the multiverse <span aria-hidden="true">→</span></button>
-          <a class="text-action" href="/">Start over</a>
-        </div>
-        <p class="footnote" style="margin-top:var(--space-4)">
-          Results are kept for {{ RETENTION_DAYS }} days at a shareable link. Nothing is
-          sent anywhere else.</p>
+      <div class="next-actions">
+        <a class="btn btn-ghost" href="/validate/{{ token }}">Back to validation</a>
+        <button class="btn btn-primary btn-lg" type="submit">Run the analysis <span class="arrow" aria-hidden="true">→</span></button>
       </div>
     </section>
   </form>
-</section>
+</div>
 {% endblock %}
 
 {% block scripts %}
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.1/cdn.min.js"></script>
-<style>
-  [x-cloak] { display: none !important; }
-  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-</style>
 <script>
-// Selection state without relying on :has(), which older Firefox and Safari lack.
-// The stylesheet carries both rules, so this is enhancement, not a requirement.
-(function () {
-  "use strict";
-  function sync() {
-    document.querySelectorAll(".choice label").forEach(function (label) {
-      const input = label.querySelector("input");
-      if (!input) return;
-      label.classList.toggle("is-checked", input.checked);
-      label.classList.toggle("is-disabled", input.disabled);
-    });
-    document.querySelectorAll(".chip").forEach(function (chip) {
-      const input = chip.querySelector("input");
-      if (input) chip.classList.toggle("is-checked", input.checked);
+  /* Alpine state for the form. Read from a JSON block rather than written into an
+     attribute, so no value from the data can break out of the markup. */
+  function configureState() {
+    const initial = JSON.parse(document.getElementById("configure-state").textContent);
+    return Object.assign(initial, {
+      init: function () {},
+      subsets: function () {
+        const k = this.covs.length;
+        return k <= 6 ? Math.pow(2, k) : 64;
+      },
+      subsetsLabel: function () {
+        return (this.covs.length > 6 ? "up to " : "") + this.subsets().toLocaleString();
+      },
+      covariateLabel: function () {
+        if (!this.perSubset) return (this.counts.covariate || 0).toLocaleString();
+        return (this.covs.length > 6 ? "up to " : "") + (this.perSubset * this.subsets()).toLocaleString();
+      },
+      count: function () {
+        if (this.mode === "covariate" && this.perSubset) return this.perSubset * this.subsets();
+        return this.counts[this.mode] || 0;
+      },
+      countLabel: function () {
+        const prefix = this.mode === "covariate" && this.covs.length > 6 ? "up to " : "";
+        return prefix + this.count().toLocaleString();
+      }
     });
   }
-  document.addEventListener("change", sync);
-  document.addEventListener("DOMContentLoaded", sync);
-  sync();
-})();
 </script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.14.1/cdn.min.js"></script>
 {% endblock %}

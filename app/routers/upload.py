@@ -6,7 +6,7 @@ import hmac
 from fastapi import APIRouter, BackgroundTasks, File, Form, Header, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
-from .. import config, db, jobs, services, storage, uploads
+from .. import config, db, jobs, services, storage, ui, uploads
 from ..core.parsers import SUPPORTED_FORMATS
 from ..core.validation import DatasetError, NotFoundError
 from ..limits import enforce_rate_limit, run_queue
@@ -65,7 +65,7 @@ async def upload(
         group_column=group_column.strip(),
     )
     token = services.create_job(dataset, abundance.filename)
-    return RedirectResponse(f"/configure/{token}", status_code=303)
+    return RedirectResponse(f"/validate/{token}", status_code=303)
 
 
 # --- direct upload ---------------------------------------------------------
@@ -221,7 +221,7 @@ async def complete(request: Request):
         # way nothing reads them again, and leaving them costs storage quota.
         storage.purge(staging)
 
-    return {"token": token, "next": f"/configure/{token}"}
+    return {"token": token, "next": f"/validate/{token}"}
 
 
 @router.post("/upload/abandon", include_in_schema=False)
@@ -241,13 +241,16 @@ async def abandon(request: Request):
 def demo(name: str):
     dataset = services.load_demo(name)
     token = services.create_job(dataset, services.DEMO_DATASETS[name]["title"])
-    return RedirectResponse(f"/configure/{token}", status_code=303)
+    return RedirectResponse(f"/validate/{token}", status_code=303)
 
 
-@router.get("/configure/{token}", response_class=HTMLResponse, include_in_schema=False)
-def configure(request: Request, token: str):
-    # The job first: it is what validates the token, and storage is never handed one
-    # that has not been validated.
+def _setup(token: str) -> dict:
+    """Everything the validate and configure pages show, read from the stored dataset.
+
+    Both pages describe the same upload, so they load it the same way. The job comes
+    first: it is what validates the token, and storage is never handed one that has
+    not been validated.
+    """
     job = db.get_job(token)
     dataset = db.load_payload(token, "dataset") if job is not None else None
     if job is None or dataset is None:
@@ -273,17 +276,37 @@ def configure(request: Request, token: str):
         except Exception:
             previews[mode] = None
 
-    return templates.TemplateResponse(
-        request, "configure.html",
-        {
-            "job": job, "token": token, "dataset": dataset,
-            "summary": dataset.summary(), "previews": previews,
-            "readiness": assess(dataset),
-            "ranks": builder.ranks,
-            "depths": list(dict.fromkeys(name for name, _ in depth_levels)),
-            "dropped_depths": dropped_depths,
-        },
-    )
+    readiness = assess(dataset)
+    return {
+        "job": job, "token": token, "dataset": dataset,
+        "summary": dataset.summary(), "previews": previews,
+        "readiness": readiness,
+        "dataset_status": ui.dataset_status(readiness),
+        "capabilities": capabilities,
+        "ranks": builder.ranks,
+        "depths": list(dict.fromkeys(name for name, _ in depth_levels)),
+        "depth_labels": ui.depth_labels(depth_levels),
+        "dropped_depths": dropped_depths,
+        "builder": builder,
+    }
+
+
+@router.get("/validate/{token}", response_class=HTMLResponse, include_in_schema=False)
+def validate(request: Request, token: str):
+    """How the files were read, before anything is configured or run. Read-only."""
+    context = _setup(token)
+    context.pop("builder")
+    return templates.TemplateResponse(request, "validate.html", context)
+
+
+@router.get("/configure/{token}", response_class=HTMLResponse, include_in_schema=False)
+def configure(request: Request, token: str):
+    context = _setup(token)
+    builder = context.pop("builder")
+    context["space"] = ui.specification_space(
+        builder, context["capabilities"], context["dataset"].covariate_columns,
+        context["previews"])
+    return templates.TemplateResponse(request, "configure.html", context)
 
 
 @router.post("/run/{token}", include_in_schema=False)

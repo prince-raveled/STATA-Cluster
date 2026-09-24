@@ -1,13 +1,16 @@
 {% extends "base.html" %}
-{% from "_terms.html" import dfn, section_label %}
+{% from "_terms.html" import dfn, help, section_label %}
+{% from "_ui.html" import callout, stepper, next_step %}
 {% block title %}{{ evidence.name }} — evidence — MicroVerse{% endblock %}
+{% block header_cta %}{% endblock %}
+{% block workflow %}{{ stepper(WORKFLOW_STEPS('results', token, job.status)) }}{% endblock %}
 
 {% block content %}
+{% set tier = TIERS[row.robustness_tier] %}
 <div class="shell">
 
   <nav class="crumbs" aria-label="Breadcrumb">
-    <a href="/results/{{ token }}">← All taxa</a>
-    <span aria-hidden="true">·</span>
+    <a href="/results/{{ token }}#specifications">← All taxa</a>
     <span>{{ rank_in_table }} of {{ n_taxa }} in the table</span>
     <span class="crumbs-end">
       {% if neighbours.previous %}<a href="/results/{{ token }}/taxon/{{ neighbours.previous.id }}">← {{ neighbours.previous.label|truncate(26) }}</a>{% endif %}
@@ -16,113 +19,76 @@
   </nav>
 
   <!-- ============ the one sentence ============ -->
-  <section class="section-tight">
-    <p class="eyebrow">Evidence for one taxon</p>
+  <header class="page-head" style="padding-top:var(--space-5)">
+    <p class="eyebrow">Results · evidence for one taxon</p>
     <h1 class="taxon-name">{{ evidence.name }}</h1>
-    <div class="taxon-headline {{ TIERS[row.robustness_tier].class }}">
-      <div class="taxon-status">
-        <span class="tier {{ TIERS[row.robustness_tier].class }}">{{ row.robustness_tier }}</span>
-        <span class="taxon-status-blurb">{{ TIERS[row.robustness_tier].blurb }}</span>
-      </div>
-      <p>{{ evidence.headline() }}</p>
+    <div class="row" style="margin-top:var(--space-4)">
+      <span class="tier {{ tier.class }}">{{ row.robustness_tier }}</span>
+      <b>{{ TIER_HEADLINES[row.robustness_tier] }}</b>
+      <span class="muted small">{{ tier.blurb }}</span>
     </div>
-    {#  The same five figures that were in the sentence below the headline, in the
-        order a reader needs them: what the difference is, how often it held, whether
-        it kept its direction, how much it moved, and how much of the grid saw it.
-        Prose hid them; a strip lets them be compared down the column. #}
-    <dl class="evidence-strip">
-      <div>
-        <dt>Typical effect</dt>
-        <dd class="num">{{ row.median_effect|signed(2) }}<small>log2 fold change · {{ row.direction }}</small></dd>
-      </div>
-      <div>
-        <dt>{{ dfn('significance_rate', 'How often significant') }}</dt>
-        <dd class="num">{{ row.frac_significant|percent(0) }}<small>of the analyses that tested it</small></dd>
-      </div>
-      <div>
-        <dt>{{ dfn('direction_agreement', 'Direction agreement') }}</dt>
-        <dd class="num">{{ row.sign_consistency|percent(0) }}<small>agree on which group is higher</small></dd>
-      </div>
-      <div>
-        <dt>Effect range</dt>
-        <dd class="num">{{ row.iqr_low|signed(2) }} to {{ row.iqr_high|signed(2) }}<small>middle half of the estimates</small></dd>
-      </div>
-      <div>
-        <dt>Analyses run</dt>
-        <dd class="num">{{ row.n_specs_tested|commafy }}<small>of {{ row.n_specs_eligible|commafy }} that could have tested it</small></dd>
-      </div>
-    </dl>
-  </section>
+    <p class="purpose">{{ evidence.headline() }}</p>
+  </header>
 
-  <!-- ============ stability fingerprint ============ -->
-  <section class="section-tight">
-    {{ section_label('Four separate questions, not one label', '16.2') }}
-    <h2 class="mt0" style="font-size:22px">Stability, broken apart.</h2>
-    <p class="muted" style="font-size:13.5px;max-width:72ch;margin:8px 0 20px">
-      A {{ dfn('tier') }} compresses detection and direction into a single word and drops
-      magnitude entirely. These are the dimensions it compresses, kept separate — a taxon
-      can have a completely settled direction and a magnitude that is anyone's guess, and
-      one label cannot say that.
-    </p>
-    <div class="fingerprint">
-      {% for key, value in fingerprint.items() %}
-        {% set meta = fingerprint_labels[key] %}
-        <div class="fp-cell">
-          <div class="fp-bar" role="img"
-               aria-label="{{ meta[0] }}: {{ value|percent(0) if value == value else 'not available' }}">
-            <span style="height: {{ (value * 100)|round(0) if value == value else 0 }}%"></span>
-          </div>
-          <b>{{ value|percent(0) if value == value else '—' }}</b>
-          <span class="fp-name">{{ meta[0] }}</span>
-          <p>{{ meta[1] }}</p>
-        </div>
-      {% endfor %}
+  {#  The five figures in the order a reader needs them: what the difference is, how
+      often it held, whether it kept its direction, how much it moved, and how much of
+      the grid saw it. #}
+  <dl class="evidence-strip">
+    <div>
+      <dt>Typical effect</dt>
+      <dd class="num">{{ row.median_effect|signed(2) }}<small>log2 fold change · {{ row.direction }}</small></dd>
     </div>
-    <p class="note" style="margin-top:16px">
-      These are shares of the <i>analyses</i>, not probabilities about the biology.
-      Detection here is <b>{{ fingerprint.detection|percent(0) if fingerprint.detection == fingerprint.detection else 'not available' }}</b>,
-      which means {{ fingerprint.detection|percent(0) if fingerprint.detection == fingerprint.detection else 'an unknown share' }}
-      of the {{ row.n_specs_tested|commafy }} analyses that tested this taxon called it
-      significant. It does not mean there is a
-      {{ fingerprint.detection|percent(0) if fingerprint.detection == fingerprint.detection else 'corresponding' }}
-      chance the difference is real.
-    </p>
-  </section>
+    <div>
+      <dt>{{ dfn('significance_rate', 'How often significant') }}</dt>
+      <dd class="num">{{ row.frac_significant|percent(0) }}<small>of the analyses that tested it</small></dd>
+    </div>
+    <div>
+      <dt>{{ dfn('direction_agreement', 'Direction agreement') }}</dt>
+      <dd class="num">{{ row.sign_consistency|percent(0) }}<small>agree on which group is higher</small></dd>
+    </div>
+    <div>
+      <dt>Effect range</dt>
+      <dd class="num">{{ row.iqr_low|signed(2) }} to {{ row.iqr_high|signed(2) }}<small>middle half of the estimates</small></dd>
+    </div>
+    <div>
+      <dt>Analyses run</dt>
+      <dd class="num">{{ row.n_specs_tested|commafy }}<small>of {{ row.n_specs_eligible|commafy }} that could have tested it</small></dd>
+    </div>
+  </dl>
 
   <!-- ============ why did it change ============ -->
-  <section class="section-tight">
-    {{ section_label('Why the answer moved') }}
-    <h2 class="mt0" style="font-size:22px">Which choice is responsible?</h2>
-    <p class="muted" style="font-size:13.5px;max-width:72ch;margin:8px 0 20px">
-      For each analytical choice: how much the significance rate moves when you change
-      <i>only that one</i> and hold everything else fixed. This is measured, not modelled
-      — it is what happened across the analyses that ran.
-    </p>
+  <section class="result-section" aria-labelledby="influence-title">
+    <div class="section-head">
+      {{ section_label('Why the answer moved', '', 'purple') }}
+      <h2 id="influence-title">Which choice is responsible?</h2>
+      <p>For each analytical choice: how much the significance rate moves when you change
+        <i>only that one</i> and hold everything else fixed. This is measured, not modelled:
+        it is what happened across the analyses that ran.</p>
+    </div>
 
     {% set movers = evidence.ranked|selectattr('conditional_swing', '>=', 0.005)|list %}
     {% if evidence.ranked and not movers %}
-      <div class="card card-paper">
-        <p style="margin:0;font-size:14px;line-height:1.75">
-          <b>No analytical choice moved this taxon's answer.</b> All
+      <div class="panel">
+        <p style="margin:0"><b>No analytical choice moved this taxon's answer.</b> All
           {{ evidence.ranked|length }} choices were varied and every one of them left the
-          significance rate unchanged, so there is nothing here to rank — an ordered list
-          of {{ evidence.ranked|length }} zeros would imply a winner that the numbers do
-          not support.
+          significance rate unchanged, so there is nothing here to rank — an ordered list of
+          {{ evidence.ranked|length }} zeros would imply a winner that the numbers do not
+          support.
           {% if row.frac_significant <= 0.05 %}
             This taxon was not significant under essentially any analysis, so there was no
             answer for a choice to move.
           {% elif row.frac_significant >= 0.95 %}
-            This taxon was significant under essentially every analysis, so no choice
-            could have flipped it.
+            This taxon was significant under essentially every analysis, so no choice could
+            have flipped it.
           {% endif %}
         </p>
-        <details style="margin-top:14px">
+        <details class="disclosure" style="margin-top:14px">
           <summary>Show the per-choice breakdown anyway</summary>
-          <div class="influence-list" style="margin-top:14px">
+          <div class="disclosure-body">
             {% for inf in evidence.ranked %}
               <div class="influence-flat">
-                <span class="inf-name">{{ inf.label }}</span>
-                <span class="inf-value">{{ inf.conditional_swing|percent(0) }}</span>
+                <span>{{ inf.label }}</span>
+                <span class="num">{{ inf.conditional_swing|percent(0) }}</span>
               </div>
             {% endfor %}
           </div>
@@ -166,7 +132,7 @@
                   </tbody>
                 </table>
               </div>
-              <p class="footnote">
+              <p class="micro" style="margin:0">
                 Averaging over everything else instead gives {{ inf.marginal_swing|percent(0) }}
                 — that figure absorbs the other choices, so it can overstate this one.
               </p>
@@ -180,17 +146,70 @@
     {% endif %}
   </section>
 
+  <!-- ============ the curve ============ -->
+  <section class="result-section" aria-labelledby="curve-title">
+    <div class="section-head">
+      {{ section_label('Every analysis, plotted', '16.3', 'purple') }}
+      <h2 id="curve-title">The full distribution.</h2>
+      <p>Every analysis for this taxon, sorted by {{ dfn('effect_size') }} and coloured by
+        significance, over a panel showing which choice was active in each.</p>
+    </div>
+    <div class="panel">
+      <div class="plot-frame"><div id="curve" class="plot" data-taxon="{{ evidence.taxon_id }}"></div></div>
+      <ul class="plot-legend" aria-label="Legend">
+        <li><i class="sw-sig" aria-hidden="true"></i>significant after correction</li>
+        <li><i class="sw-null" aria-hidden="true"></i>not significant</li>
+        <li><i class="sw-declared" aria-hidden="true"></i>your declared pipeline, if any</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ stability fingerprint ============ -->
+  <section class="result-section" aria-labelledby="fingerprint-title">
+    <div class="section-head">
+      {{ section_label('Four separate questions, not one label', '16.2', 'purple') }}
+      <h2 id="fingerprint-title">Stability, broken apart.</h2>
+      <p>A {{ dfn('tier') }} compresses detection and direction into a single word and drops
+        magnitude entirely. These are the dimensions it compresses, kept separate: a taxon
+        can have a completely settled direction and a magnitude that is anyone's guess, and
+        one label cannot say that.</p>
+    </div>
+    <div class="fingerprint">
+      {% for key, value in fingerprint.items() %}
+        {% set meta = fingerprint_labels[key] %}
+        <div class="fp-cell">
+          <div class="fp-bar" role="img"
+               aria-label="{{ meta[0] }}: {{ value|percent(0) if value == value else 'not available' }}">
+            <span style="height: {{ (value * 100)|round(0) if value == value else 0 }}%"></span>
+          </div>
+          <b>{{ value|percent(0) if value == value else '—' }}</b>
+          <span class="fp-name">{{ meta[0] }}</span>
+          <p>{{ meta[1] }}</p>
+        </div>
+      {% endfor %}
+    </div>
+    <p class="note" style="margin-top:16px">
+      These are shares of the <i>analyses</i>, not probabilities about the biology.
+      Detection here is <b>{{ fingerprint.detection|percent(0) if fingerprint.detection == fingerprint.detection else 'not available' }}</b>,
+      which means {{ fingerprint.detection|percent(0) if fingerprint.detection == fingerprint.detection else 'an unknown share' }}
+      of the {{ row.n_specs_tested|commafy }} analyses that tested this taxon called it
+      significant. It does not mean there is a
+      {{ fingerprint.detection|percent(0) if fingerprint.detection == fingerprint.detection else 'corresponding' }}
+      chance the difference is real.
+    </p>
+  </section>
+
   <!-- ============ do the tests agree ============ -->
   {% if evidence.method_agreement %}
-    <section class="section-tight">
-      {{ section_label('Do the statistical tests agree?', '10') }}
-      <h2 class="mt0" style="font-size:22px">Method by method.</h2>
-      <p class="muted" style="font-size:13.5px;max-width:72ch;margin:8px 0 18px">
-        Tests disagreeing is a different problem from preprocessing moving the answer,
-        so it is shown separately. Each test's own native statistic is in the downloads;
-        the effect below is the {{ dfn('harmonised_effect', 'comparable effect size') }},
-        which is computed the same way for all of them.
-      </p>
+    <section class="result-section" aria-labelledby="methods-title">
+      <div class="section-head">
+        {{ section_label('Do the statistical tests agree?', '10', 'purple') }}
+        <h2 id="methods-title">Method by method.</h2>
+        <p>Tests disagreeing is a different problem from preprocessing moving the answer, so
+          it is shown separately. Each test's own native statistic is in the downloads; the
+          effect below is the {{ dfn('harmonised_effect', 'comparable effect size') }}, which is
+          computed the same way for all of them.</p>
+      </div>
       <div class="table-wrap" tabindex="0" role="region" aria-label="Results by statistical test, scrollable">
         <table class="data">
           <thead>
@@ -213,25 +232,11 @@
     </section>
   {% endif %}
 
-  <!-- ============ the curve ============ -->
-  <section class="section-tight">
-    {{ section_label('Every analysis, plotted', '16.3') }}
-    <h2 class="mt0" style="font-size:22px">The full distribution.</h2>
-    <p class="muted" style="font-size:13.5px;max-width:72ch;margin:8px 0 18px">
-      Every analysis for this taxon, sorted by {{ dfn('effect_size') }} and coloured by
-      significance, over a panel showing which choice was active in each.</p>
-    <div class="card">
-      <div class="plot-frame"><div id="curve" class="plot" data-taxon="{{ evidence.taxon_id }}"></div></div>
-      <div id="curve-declared" style="margin-top:14px"></div>
-    </div>
-  </section>
-
   <!-- ============ what this does not tell you ============ -->
-  <section class="section-tight">
-    <div class="card card-paper">
-      {{ section_label('Limits') }}
-      <h2 class="mt0" style="font-size:20px">What this page cannot tell you.</h2>
-      <ul class="limits-list">
+  <section class="result-section" aria-labelledby="limits-title">
+    <h2 id="limits-title" class="visually-hidden">What this page cannot tell you</h2>
+    {% call callout('red', 'Important interpretation') %}
+      <ul>
         {% for note in evidence.notes %}<li>{{ note }}</li>{% endfor %}
         <li>The analyses are <b>not independent evidence</b>. They are
           {{ row.n_specs_tested|commafy }} re-analyses of the same samples, so
@@ -253,17 +258,14 @@
             other people's cohorts, not a prediction about this taxon in your data.</li>
         {% endif %}
       </ul>
-    </div>
-  </section>
+    {% endcall %}
 
-  <!-- ============ provenance ============ -->
-  <section class="section-tight">
-    <details class="provenance">
+    <details class="disclosure" style="margin-top:var(--space-4)">
       <summary>Where these numbers come from</summary>
-      <div class="provenance-body">
+      <div class="disclosure-body">
         <p>Every figure on this page is derived from the stored per-analysis results for
           this taxon — nothing here is recomputed for display.</p>
-        <ul>
+        <ul class="limits-list">
           <li><a href="/download/{{ token }}/long">The full results export</a> holds one
             row per analysis for every taxon, including this one.</li>
           <li><a href="/download/{{ token }}/manifest">The run manifest</a> records the
@@ -276,13 +278,17 @@
     </details>
   </section>
 
+  {% call next_step("Back to every taxon", "Compare this taxon against the rest of the run.") %}
+    {% if neighbours.next %}<a class="btn btn-ghost" href="/results/{{ token }}/taxon/{{ neighbours.next.id }}">Next taxon</a>{% endif %}
+    <a class="btn btn-primary" href="/results/{{ token }}#specifications">All taxa <span class="arrow" aria-hidden="true">→</span></a>
+  {% endcall %}
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.3/plotly.min.js"
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="/static/js/curve.js?v={{ VERSION }}"></script>
+<script src="/static/js/curve.js?v={{ ASSETS }}"></script>
 <script>
   (function () {
     var node = document.getElementById("curve");
@@ -291,7 +297,7 @@
       .then(function (r) { return r.json(); })
       .then(function (data) { MicroVerseCurve.render("curve", data); })
       .catch(function () {
-        node.innerHTML = "<p class='note'>The plot could not be loaded. "
+        node.innerHTML = "<p class='plot-empty'>The plot could not be loaded. "
           + "Every value behind it is in the results export.</p>";
       });
   })();
