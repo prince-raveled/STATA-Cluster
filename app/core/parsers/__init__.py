@@ -1,9 +1,14 @@
 """Format dispatch: filename hint first, content sniffing second (SPEC §8)."""
 from __future__ import annotations
 
+import gzip
+import io
+import zipfile
+
 import pandas as pd
 
 from .base import (  # noqa: F401  (re-exported)
+    MAX_DECOMPRESSED_BYTES,
     RANK_NAMES,
     AbundanceTable,
     ParseError,
@@ -21,8 +26,54 @@ SUPPORTED_FORMATS = (
 )
 
 
+#: Spreadsheet formats people upload by mistake. They are zip (or OLE) containers, so
+#: without this they reached the .qza reader and were called broken QIIME 2 artifacts.
+SPREADSHEET_SUFFIXES = (".xlsx", ".xlsm", ".xls", ".ods", ".numbers")
+
+
+def _gunzip(raw, filename: str):
+    """Decompress a gzipped upload, which the upload form offers (.gz), within a limit.
+
+    It used to be decoded as text as it stood, and failed with a tokenizer error about
+    line 23. The limit is the one .qza archives already have, so a small compressed file
+    cannot expand into all the memory the host has.
+    """
+    if not isinstance(raw, (bytes, bytearray)) or bytes(raw[:2]) != b"\x1f\x8b":
+        return raw, filename
+    try:
+        with gzip.GzipFile(fileobj=io.BytesIO(raw)) as handle:
+            data = handle.read(MAX_DECOMPRESSED_BYTES + 1)
+    except (OSError, EOFError) as exc:
+        raise ParseError(
+            f"'{filename}' looks gzipped but could not be decompressed: {exc}") from exc
+    if len(data) > MAX_DECOMPRESSED_BYTES:
+        raise ParseError(f"'{filename}' expands past the {MAX_DECOMPRESSED_BYTES / 1e6:,.0f} MB "
+                         "decompression limit.")
+    name = filename[:-3] if filename.lower().endswith(".gz") else filename
+    return data, name
+
+
+def _refuse_spreadsheet(raw, filename: str) -> None:
+    name = (filename or "").lower()
+    head = bytes(raw[:8]) if isinstance(raw, (bytes, bytearray)) else b""
+    is_ole = head.startswith(b"\xd0\xcf\x11\xe0")                     # legacy .xls
+    is_workbook = False
+    if head.startswith(b"PK\x03\x04") and not name.endswith(".qza"):
+        try:
+            members = zipfile.ZipFile(io.BytesIO(raw)).namelist()
+            is_workbook = any(m.startswith(("xl/", "content.xml")) for m in members)
+        except zipfile.BadZipFile:
+            pass
+    if name.endswith(SPREADSHEET_SUFFIXES) or is_ole or is_workbook:
+        raise ParseError(
+            f"'{filename}' is a spreadsheet workbook, which MicroVerse does not read directly. "
+            "Save the sheet as CSV or TSV (File > Save As) and upload that.")
+
+
 def parse_abundance(raw: bytes, filename: str = "", sample_ids=None) -> AbundanceTable:
     """Parse an uploaded abundance table of any supported format."""
+    raw, filename = _gunzip(raw, filename)
+    _refuse_spreadsheet(raw, filename)
     name = (filename or "").lower()
     if name.endswith(".qza"):
         return parse_qza(raw)
@@ -44,6 +95,8 @@ def parse_abundance(raw: bytes, filename: str = "", sample_ids=None) -> Abundanc
 
 def parse_metadata(raw: bytes, filename: str = "") -> pd.DataFrame:
     """Sample metadata: IDs in the first column, one row per sample."""
+    raw, filename = _gunzip(raw, filename)
+    _refuse_spreadsheet(raw, filename)
     frame = read_delimited(raw, filename)
     frame.index = [str(i).strip() for i in frame.index]
     frame.index.name = "sample_id"
@@ -72,6 +125,8 @@ def parse_metadata(raw: bytes, filename: str = "") -> pd.DataFrame:
 
 def parse_taxonomy_map(raw: bytes, filename: str = "") -> dict:
     """Optional two-column feature-ID -> lineage map."""
+    raw, filename = _gunzip(raw, filename)
+    _refuse_spreadsheet(raw, filename)
     frame = read_delimited(raw, filename)
     if frame.shape[1] == 0:
         raise ParseError("The taxonomy file needs at least two columns: feature ID and lineage.")

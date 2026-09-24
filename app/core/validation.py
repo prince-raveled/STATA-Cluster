@@ -169,6 +169,20 @@ def infer_group_column(metadata: pd.DataFrame) -> str:
             return str(name)
     binary = [c for c in metadata.columns if metadata[c].dropna().nunique() == 2]
     if not binary:
+        # A column that is evidently the grouping but has one value, or three, is the
+        # usual cause; naming it and its values says what to fix.
+        likely = [c for c in metadata.columns if str(c).strip().lower() in named]
+        if likely:
+            column = likely[0]
+            values = sorted(str(v) for v in metadata[column].dropna().unique())
+            shown = ", ".join(values[:5]) + (", …" if len(values) > 5 else "")
+            raise DatasetError(
+                f"The '{column}' column has {len(values)} "
+                f"value{'' if len(values) == 1 else 's'} ({shown}); MicroVerse compares "
+                "exactly two groups.",
+                "Keep the two groups you want to compare, dropping or merging the others, "
+                "or name another column with exactly two values in the group-column box.",
+            )
         raise DatasetError(
             "No binary grouping column found in the metadata.",
             "MicroVerse compares exactly two groups. Add a column with two values "
