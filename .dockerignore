@@ -11,4 +11,6 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 *.log
+.env
+.env.*
 node_modules/

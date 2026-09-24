@@ -1,0 +1,16 @@
+# What `vercel deploy` from a working copy must not upload. Git-based deployments
+# already see only tracked files, and every path here is untracked, so this changes
+# nothing for them; without it the CLI uploads everything, including a local .env and
+# the multi-gigabyte validation cache in data/.
+.env
+.env.*
+!.env.example
+data/
+.venv/
+.venv*/
+build/
+*.egg-info/
+.coverage
+.pytest_cache/
+.ruff_cache/
+*.log

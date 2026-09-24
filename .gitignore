@@ -1,4 +1,11 @@
 .venv/
+
+# Local settings. .env.example says to copy it to .env and fill it in; the copy holds
+# real credentials and must never be committed.
+.env
+.env.*
+!.env.example
+
 data/
 __pycache__/
 *.pyc
