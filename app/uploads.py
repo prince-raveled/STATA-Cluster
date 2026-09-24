@@ -50,7 +50,7 @@ ALLOWED_CONTENT_TYPES = (
 
 #: How long a browser has to finish uploading. Generous enough for 64 MB on a slow
 #: connection, short enough that a leaked ticket stops working quickly.
-TICKET_TTL_SECONDS = 1800
+TICKET_TTL_SECONDS = config.UPLOAD_URL_TTL_SECONDS
 
 #: Signing key. A deployment that sets a worker secret gets tickets that survive a
 #: restart; one that does not gets a per-process key, which is correct for development
