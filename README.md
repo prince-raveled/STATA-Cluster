@@ -85,6 +85,26 @@ that attribution step. Each run records its own phase timings in the job summary
   tells you which percentile of significance it sits at.
 - **A methods paragraph** with citations, and the full specification-level results.
 
+### Robustness tiers
+
+Each taxon gets exactly one tier from two numbers, counted only over the specifications
+that actually tested it: the fraction in which it was significant, and the fraction
+agreeing on the direction of its effect. The first rule that matches wins
+(`assign_tier` in `app/core/robustness.py`):
+
+| Tier | Rule |
+|---|---|
+| INSUFFICIENT | tested in fewer than 10 specifications, or its measurements are undefined — not tiered |
+| ROBUST | significant in ≥ 80%, direction agreement ≥ 95% |
+| CONDITIONAL | significant in 30–80%, direction agreement ≥ 95% (also: ≥ 30% with agreement 80–95%) |
+| FRAGILE | significant in more than 0% and under 30%, direction agreement ≥ 80% |
+| UNSTABLE | direction agreement below 80% |
+| NOT DETECTED | never significant |
+
+A tier measures how much the conclusion depends on analytical choice, not whether an
+effect is real or large. How often each tier replicated on held-out data is on the
+`/validation` page and in SPEC §24.6.
+
 ## Design constraints that are not negotiable
 
 **Pipeline order (§9).** `rarefy → collapse → prevalence filter → transform → test → FDR`.
