@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="t">
+  <title id="t">MicroVerse</title>
+  <!-- A double helix inside a hexagon of connected nodes: one dataset, analysed every way.
+       Purplish brown line work, peach helix, pink and neptune nodes. -->
+  <g fill="none" stroke="#554345" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 8 L52.8 20 L52.8 44 L32 56 L11.2 44 L11.2 20 Z"/>
+    <path d="M32 13 V17 M32 47 V51 M17.5 23.6 L20.8 25.5 M46.5 23.6 L43.2 25.5 M17.5 40.4 L20.8 38.5 M46.5 40.4 L43.2 38.5"/>
+  </g>
+  <!-- rungs, under the strands -->
+  <g stroke="#554345" stroke-width="2" stroke-linecap="round">
+    <path d="M27.6 22.6 H36.4 M27.6 41.4 H36.4"/>
+  </g>
+  <!-- the strand passing under -->
+  <path d="M38.6 19.5 C38.6 29 25.4 31 25.4 44.5" fill="none" stroke="#554345" stroke-width="6.6" stroke-linecap="round"/>
+  <path d="M38.6 19.5 C38.6 29 25.4 31 25.4 44.5" fill="none" stroke="#EEC7A0" stroke-width="3.4" stroke-linecap="round"/>
+  <!-- the strand passing over -->
+  <path d="M25.4 19.5 C25.4 29 38.6 31 38.6 44.5" fill="none" stroke="#554345" stroke-width="6.6" stroke-linecap="round"/>
+  <path d="M25.4 19.5 C25.4 29 38.6 31 38.6 44.5" fill="none" stroke="#EEC7A0" stroke-width="3.4" stroke-linecap="round"/>
+  <!-- nodes -->
+  <g stroke="#554345" stroke-width="2.4">
+    <circle cx="32" cy="8" r="5" fill="#7FB9B9"/>
+    <circle cx="52.8" cy="20" r="5" fill="#D463A1"/>
+    <circle cx="52.8" cy="44" r="5" fill="#7FB9B9"/>
+    <circle cx="32" cy="56" r="5" fill="#7FB9B9"/>
+    <circle cx="11.2" cy="44" r="5" fill="#D463A1"/>
+    <circle cx="11.2" cy="20" r="5" fill="#7FB9B9"/>
+  </g>
+</svg>

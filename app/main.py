@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import config, db
@@ -136,6 +136,15 @@ def about(request: Request):
         {"citations": citation_list(), "retention_days": config.RETENTION_DAYS,
          "glossary": glossary_sections()},
     )
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    """Browsers ask for /favicon.ico whatever the page declares; answer with the mark
+    rather than a 404 in every console."""
+    return FileResponse(config.BASE_DIR / "app" / "static" / "img" / "favicon.svg",
+                        media_type="image/svg+xml",
+                        headers={"Cache-Control": "public, max-age=86400"})
 
 
 @app.get("/validation", response_class=HTMLResponse, include_in_schema=False)

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- The logo on a light tile, with heavier lines, so it survives 16 px and dark tabs. -->
+  <rect width="64" height="64" rx="14" fill="#fbf1e7"/>
+  <g transform="translate(4.5 4.5) scale(0.86)">
+    <path d="M32 8 L52.8 20 L52.8 44 L32 56 L11.2 44 L11.2 20 Z" fill="none" stroke="#554345" stroke-width="3.4" stroke-linejoin="round"/>
+    <path d="M38.6 19.5 C38.6 29 25.4 31 25.4 44.5" fill="none" stroke="#554345" stroke-width="8.4" stroke-linecap="round"/>
+    <path d="M38.6 19.5 C38.6 29 25.4 31 25.4 44.5" fill="none" stroke="#EEC7A0" stroke-width="4.4" stroke-linecap="round"/>
+    <path d="M25.4 19.5 C25.4 29 38.6 31 38.6 44.5" fill="none" stroke="#554345" stroke-width="8.4" stroke-linecap="round"/>
+    <path d="M25.4 19.5 C25.4 29 38.6 31 38.6 44.5" fill="none" stroke="#EEC7A0" stroke-width="4.4" stroke-linecap="round"/>
+    <g stroke="#554345" stroke-width="3.2">
+      <circle cx="32" cy="8" r="6" fill="#7FB9B9"/>
+      <circle cx="52.8" cy="20" r="6" fill="#D463A1"/>
+      <circle cx="52.8" cy="44" r="6" fill="#7FB9B9"/>
+      <circle cx="32" cy="56" r="6" fill="#7FB9B9"/>
+      <circle cx="11.2" cy="44" r="6" fill="#D463A1"/>
+      <circle cx="11.2" cy="20" r="6" fill="#7FB9B9"/>
+    </g>
+  </g>
+</svg>

@@ -183,12 +183,7 @@ main { display: block; min-height: 60vh; }
 }
 .site-header .shell { display: flex; align-items: center; gap: var(--space-5); min-height: var(--header-h); }
 .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; margin-right: auto; }
-.brand-mark { display: inline-grid; grid-template-columns: repeat(4, 4px); align-items: end; gap: 2px; height: 22px; }
-.brand-mark i { display: block; width: 4px; background: var(--brown); border-radius: 1px; }
-.brand-mark i:nth-child(1) { height: 9px; opacity: .55; }
-.brand-mark i:nth-child(2) { height: 16px; opacity: .75; }
-.brand-mark i:nth-child(3) { height: 12px; opacity: .9; }
-.brand-mark i:nth-child(4) { height: 22px; background: var(--pink); }
+.brand-logo { flex: none; width: 38px; height: 38px; }
 .brand-name { display: grid; line-height: 1.1; }
 .brand-name b { font: 700 17px/1.1 var(--sans); letter-spacing: -.01em; }
 .brand-name small { font-size: 11.5px; color: var(--ink-3); letter-spacing: .01em; }
