@@ -36,6 +36,13 @@ COPY MICROVERSE_SPEC_v2_idea2.md CONTRIBUTING.md README.md pyproject.toml ./
 # than failing. 1.1 MB, and the builder stage only; the runtime does not need it.
 COPY docs ./docs
 
+# The same is true of the deployment checks: they read vercel.json, .gitignore and the
+# Blob signing service's source, to assert the host is configured to find what it needs
+# and that the Python and JavaScript sides agree. Without them nine tests fail and the
+# gate stops the build. Builder stage only; the runtime serves none of them.
+COPY vercel.json .gitignore ./
+COPY blob/api ./blob/api
+
 # Generate the demo datasets at build time so the landing page works offline.
 ENV PYTHONPATH=/install/lib/python3.12/site-packages
 RUN python examples/make_examples.py
