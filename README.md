@@ -30,7 +30,8 @@ python -m venv .venv && .venv/Scripts/pip install -r requirements-dev.txt
 .venv/Scripts/python -m uvicorn app.main:app --reload
 ```
 
-Open <http://127.0.0.1:8000>, click a demo dataset, and run it. API docs at `/api/docs`.
+Open <http://127.0.0.1:8000>, load a demo dataset, check how it was read, and run it.
+API docs at `/api/docs`.
 
 With Docker:
 
@@ -185,6 +186,8 @@ app/routers/ upload, job, results, api
 app/storage.py, db.py, jobs.py, queue_worker.py, uploads.py
              where bytes live, the job table, how a run starts, the queue
              consumer, direct-upload tickets -- each with a local and a Vercel side
+app/ui.py    presentation helpers: the workflow stepper, run stages, help terms,
+             and the fork-by-fork recount the configure page checks against the grid
 app/templates, app/static   Jinja2 + HTMX + Alpine + Plotly + Tabulator, no build step
 blob/        the JavaScript Blob signing service (Vercel only) and its tests
 tests/       the pytest suite, including the SPEC §19 verification gate
@@ -194,16 +197,34 @@ deploy/      Dockerfile support, lock generation, deployment notes
 
 ## Interface
 
-An editorial research interface rather than a dashboard: a paper ground with ink type,
-one indigo accent reserved for the brand, and the tier palette kept strictly separate
-from it so a coloured row never reads as branding. Display type is a serif; labels and
-every numeral are monospaced and tabular, so columns of results align down the page.
-Geometry is rules and rectangles, not rounded cards.
+One workflow, shown on every page of a run as a five-step indicator:
+**Dataset → Validate → Configure → Run → Results.**
+
+| Step | Page | What it answers |
+|---|---|---|
+| Dataset | `/` | What MicroVerse does, what it does not claim, and where to upload or pick a demo |
+| Validate | `/validate/{token}` | Were the files read as intended, and can the design answer the question? Read-only; never blocks |
+| Configure | `/configure/{token}` | The seven choices and every level each mode runs, how they multiply into the count (recomputed and checked against the engine), and the fixed order inside one specification |
+| Run | `/job/{token}` | The engine's own stages and its matrix counter; the page can be closed |
+| Results | `/results/{token}` | Robustness first, then the specification curve and per-specification statistics, choice attribution, every taxon and every specification, the interpretation limits, and described downloads |
+
+Backward links in the indicator appear only where following them cannot lose or corrupt
+anything: configuration is not linked while a run is in progress. The Method (`/about`)
+and Evidence (`/validation`) pages sit outside the workflow.
+
+Colour is a vocabulary with one meaning per hue: red for what must not be missed
+(invalidity, interpretation limits, errors), blue for information and methodology, green
+for valid or complete, amber for caution, purple for analytical output (tiers,
+specifications, curves), neutral for everything else. The tiers use a violet scale, with
+UNSTABLE in the caution hue. No status is carried by colour alone: every callout has a
+title and an icon, every tier its name. Every text colour clears WCAG AA on the surfaces
+it is used on, and the pages report no axe-core violations (WCAG 2.1 A/AA and best
+practice) at desktop and phone widths.
 
 There is no build step — Jinja2 templates, one stylesheet, HTMX for job polling, Alpine
-for two form toggles, Plotly for the curve and Tabulator for the table. Plot colours are
-read from the stylesheet at render time, so the specification curve and the page cannot
-drift apart.
+for the configure form, Plotly for the curve and Tabulator for the tables. Plot colours
+are read from the stylesheet at render time, so the specification curve and the page
+cannot drift apart.
 
 ## Code quality
 
