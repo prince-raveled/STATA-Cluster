@@ -14,9 +14,18 @@ from .core.evidence import (
     matrix_rows,
     tier_sentence,
 )
-from .core.glossary import glossary_sections, term
+from .core.glossary import glossary_sections
 from .core.models import FORK_LABELS, METHOD_LABELS, ordinal
 from .core.robustness import TIERS
+from .ui import (
+    MODE_SUMMARIES,
+    TIER_HEADLINES,
+    glossary_with_ui_terms,
+    help_term,
+    pruning_rules,
+    run_stages,
+    workflow_steps,
+)
 
 templates = Jinja2Templates(directory=str(config.BASE_DIR / "app" / "templates"))
 
@@ -77,8 +86,18 @@ templates.env.filters["duration"] = duration
 templates.env.filters["ordinal"] = ordinal
 templates.env.filters["tier_sentence"] = tier_sentence
 templates.env.globals.update(
-    TERM=term,
-    GLOSSARY=glossary_sections(),
+    TERM=help_term,
+    GLOSSARY=glossary_with_ui_terms(glossary_sections()),
+    TIER_HEADLINES=TIER_HEADLINES,
+    MODE_SUMMARIES=MODE_SUMMARIES,
+    TIER_ORDER=list(TIERS),
+    WORKFLOW_STEPS=workflow_steps,
+    RUN_STAGES=run_stages,
+    PRUNING_RULES=pruning_rules(),
+    # Changes whenever the stylesheet or scripts change shape, so a returning visitor
+    # never renders new markup against a cached stylesheet. The application version
+    # is recorded in every run manifest and is deliberately not bumped for a restyle.
+    ASSETS=f"{config.VERSION}-ui3",
     TIERS=TIERS,
     TIER_REPLICATION=TIER_REPLICATION,
     TIER_VALIDATION=TIER_VALIDATION,
