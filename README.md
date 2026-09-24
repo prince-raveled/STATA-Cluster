@@ -183,9 +183,10 @@ values.
 app/core/    the engine: parsers, preprocess, grid, validity, methods,
              effects, fdr, robustness, attribution, runner, report
 app/routers/ upload, job, results, api
-app/storage.py, db.py, jobs.py, queue_worker.py, uploads.py
+app/storage.py, db.py, jobs.py, queue_worker.py, uploads.py, grants.py
              where bytes live, the job table, how a run starts, the queue
-             consumer, direct-upload tickets -- each with a local and a Vercel side
+             consumer, direct-upload tickets, and the signed grants the Blob
+             signing service acts on -- each with a local and a Vercel side
 app/ui.py    presentation helpers: the workflow stepper, run stages, help terms,
              and the fork-by-fork recount the configure page checks against the grid
 app/templates, app/static   Jinja2 + HTMX + Alpine + Plotly + Tabulator, no build step

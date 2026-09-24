@@ -8,10 +8,11 @@ fallback could not have worked anyway: those files are 8-11 MB for a demo, and a
 function response on Vercel stops at 4.5 MB.
 
 So in object storage the two large exports are never streamed and never rebuilt: the
-browser is sent to the signing route, which asks `/download/grant` and redirects to a
-short-lived URL for exactly one object. Everything here runs a real analysis; the Blob
-store is an in-memory stand-in for `vercel.blob`, and in Blob mode the disk under the
-deployment root is made unwritable, so a write that should not happen fails loudly.
+browser is sent to the signing route with a grant this application signed for exactly
+one object (app/grants.py), and the route redirects to a short-lived URL for it.
+Everything here runs a real analysis; the Blob store is an in-memory stand-in for
+`vercel.blob`, and in Blob mode the disk under the deployment root is made unwritable,
+so a write that should not happen fails loudly.
 """
 from __future__ import annotations
 
@@ -20,13 +21,14 @@ import io
 import time
 import zipfile
 from types import SimpleNamespace
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app import config, db, services, storage
+from app import config, db, grants, services, storage
 from app.main import app
-from tests.fakes import SECRET, FakeBlob, use_blob
+from tests.fakes import FakeBlob, use_blob
 
 #: The largest body a Vercel Function may return.
 RESPONSE_CAP = 4_500_000
@@ -170,8 +172,8 @@ def test_a_blob_run_stores_every_export_and_writes_nothing_to_disk(blob_run):
 def test_a_large_blob_export_is_a_redirect_not_a_body(client, blob, kind):
     response = client.get(f"/download/{blob.token}/{kind}", follow_redirects=False)
     assert response.status_code == 307
-    assert response.headers["location"] == (
-        f"{config.BLOB_DOWNLOAD_HANDLER}?token={blob.token}&name={LARGE[kind]}")
+    assert response.headers["location"].startswith(f"{config.BLOB_DOWNLOAD_HANDLER}?grant=")
+    assert granted(response)["pathname"] == f"microverse/{blob.token}/{LARGE[kind]}"
     assert len(response.content) < 1024, "the file was streamed through the function"
 
 
@@ -256,84 +258,69 @@ def test_a_malformed_token_is_404_in_blob_mode(client, blob, token):
     assert client.get(f"/download/{token}/bundle").status_code == 404
 
 
-# --- the grant the signing route asks for --------------------------------------
-def ask(client, body, secret=SECRET):
-    return client.post("/download/grant", json=body,
-                       headers={"X-Microverse-Worker": secret})
+# --- the grant the signing route acts on ------------------------------------------
+def granted(response):
+    """The claims of the grant a download redirect carries, or None if it is invalid."""
+    raw = parse_qs(urlparse(response.headers["location"]).query)["grant"][0]
+    return grants.verify(raw, "download")
 
 
 def test_a_grant_names_one_object_for_a_short_time(client, blob):
     before = time.time()
-    response = ask(client, {"token": blob.token, "name": "bundle.zip"})
-    assert response.status_code == 200
-    grant = response.json()
+    response = client.get(f"/download/{blob.token}/bundle", follow_redirects=False)
+    grant = granted(response)
     assert grant["pathname"] == f"microverse/{blob.token}/bundle.zip"
     assert grant["access"] == "private"
     ttl_ms = config.DOWNLOAD_URL_TTL_SECONDS * 1000
     assert before * 1000 + ttl_ms - 5000 <= grant["valid_until"] <= time.time() * 1000 + ttl_ms
 
 
-@pytest.mark.parametrize("secret", ["", "not-the-secret"])
-def test_a_grant_needs_the_shared_secret(client, blob, secret):
-    assert ask(client, {"token": blob.token, "name": "bundle.zip"}, secret).status_code == 403
+def test_only_the_large_exports_are_ever_signed(client, blob):
+    """The pickled run, the dataset and staged uploads are not downloads, and nothing
+    else a reader can ask for is sent to the signer."""
+    import app.routers.results as results
+
+    signed = set()
+    for kind in results.DOWNLOADS:
+        response = client.get(f"/download/{blob.token}/{kind}", follow_redirects=False)
+        if response.status_code == 307:
+            signed.add(granted(response)["pathname"].rsplit("/", 1)[-1])
+    assert signed == set(LARGE.values())
 
 
-def test_an_unconfigured_deployment_grants_nothing(client, blob, monkeypatch):
-    monkeypatch.setattr(config, "WORKER_SECRET", "")
-    assert ask(client, {"token": blob.token, "name": "bundle.zip"}, "").status_code == 403
+def test_a_grant_expires(client, blob, monkeypatch):
+    response = client.get(f"/download/{blob.token}/bundle", follow_redirects=False)
+    later = time.time() + config.DOWNLOAD_URL_TTL_SECONDS + 5
+    monkeypatch.setattr(grants.time, "time", lambda: later)
+    assert granted(response) is None
 
 
-@pytest.mark.parametrize("name", ["run.pkl.gz", "dataset.pkl.gz", "summary.pkl.gz",
-                                  "abundance", "manifest.json", "../bundle.zip",
-                                  "bundle.zip/..", "", "*"])
-def test_only_the_large_exports_can_ever_be_signed(client, blob, name):
-    """The pickled run, the dataset and staged uploads are not downloads."""
-    assert ask(client, {"token": blob.token, "name": name}).status_code == 404
+def test_a_download_grant_cannot_be_used_to_upload(client, blob):
+    response = client.get(f"/download/{blob.token}/bundle", follow_redirects=False)
+    raw = parse_qs(urlparse(response.headers["location"]).query)["grant"][0]
+    assert grants.verify(raw, "upload") is None
 
 
-@pytest.mark.parametrize("token", ["", "not-a-token", "../../etc", "0" * 24])
-def test_a_grant_for_an_unknown_job_is_refused(client, blob, token):
-    assert ask(client, {"token": token, "name": "bundle.zip"}).status_code == 404
+def test_a_grant_from_another_deployment_is_refused(client, blob, monkeypatch):
+    response = client.get(f"/download/{blob.token}/bundle", follow_redirects=False)
+    monkeypatch.setattr(config, "WORKER_SECRET", "another-deployments-secret")
+    assert granted(response) is None
 
 
-def test_a_grant_for_an_unfinished_job_is_refused(client, blob):
+def test_no_grant_is_made_for_an_unfinished_job(client, blob):
     token = add_job(status="running")
     try:
-        assert ask(client, {"token": token, "name": "bundle.zip"}).status_code == 409
+        response = client.get(f"/download/{token}/bundle", follow_redirects=False)
+        assert response.status_code == 409
+        assert "grant" not in response.headers.get("location", "")
     finally:
         drop(token)
 
 
-@pytest.mark.parametrize("body", [b"{not json", b"[]", b"null", b'"bundle.zip"'])
-def test_a_malformed_grant_request_is_400(client, blob, body):
-    response = client.post("/download/grant", content=body,
-                           headers={"X-Microverse-Worker": SECRET,
-                                    "Content-Type": "application/json"})
-    assert response.status_code == 400
-
-
-def test_a_disk_backed_deployment_has_nothing_to_grant(client, local_run, monkeypatch):
-    monkeypatch.setattr(config, "WORKER_SECRET", SECRET)
-    assert ask(client, {"token": local_run.token, "name": "bundle.zip"}).status_code == 404
-
-
-def test_the_grant_route_is_not_advertised(client):
+def test_the_old_grant_route_is_gone(client):
+    assert client.post("/download/grant", json={}).status_code in (404, 405)
     paths = client.get("/api/openapi.json").json()["paths"]
     assert "/download/grant" not in paths
-
-
-def test_the_two_languages_agree_on_what_download_grant_returns():
-    """The signer is JavaScript and the authority is Python: renaming a field on either
-    side must fail here rather than on the first download in production."""
-    import re
-
-    js = (config.BASE_DIR / "blob" / "api" / "blob-upload.js").read_text(encoding="utf-8")
-    reads = set(re.findall(r"\bgrant\.([a-z_]+)", js))
-    source = (config.BASE_DIR / "app" / "routers" / "results.py").read_text(encoding="utf-8")
-    block = source.split("async def grant(")[1]
-    returns = set(re.findall(r'"([a-z_]+)":', block)) - {"error"}
-    assert reads, "the JavaScript reads nothing from the grant"
-    assert reads <= returns, f"JavaScript reads fields Python never sends: {reads - returns}"
 
 
 def test_the_signing_route_is_declared_to_the_host():

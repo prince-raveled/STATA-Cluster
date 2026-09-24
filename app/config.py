@@ -78,13 +78,14 @@ BLOB_ACCESS = _setting("MICROVERSE_BLOB_ACCESS", "private")
 #: points at api/blob-upload.js rather than anything in this application.
 BLOB_UPLOAD_HANDLER = (
     os.environ.get("MICROVERSE_BLOB_HANDLER") or "").strip() or "/api/blob-upload"
-#: Route that turns a grant from `/download/grant` into a signed, short-lived URL for
+#: Route that turns a signed download grant (app/grants.py) into a short-lived URL for
 #: one private object. The same JavaScript service as the upload handler, because
 #: signing a read is also something only that SDK can do; vercel.json routes both.
 BLOB_DOWNLOAD_HANDLER = "/api/blob-download"
-#: Shared secret between this application and the Blob signing service
-#: (blob/api/blob-upload.js), which presents it to /upload/ticket and /download/grant.
-#: It also signs upload tickets, so every instance must share it. Unset refuses both.
+#: Optional key shared with the Blob signing service. It signs upload tickets and the
+#: grants the service acts on (app/grants.py). Unset, both sides derive a key from
+#: BLOB_READ_WRITE_TOKEN instead, which every deployment with a Blob store gives both
+#: services -- so a deployment needs nothing beyond its store to accept uploads.
 WORKER_SECRET = os.environ.get("MICROVERSE_WORKER_SECRET", "")
 #: How long an undelivered run request stays claimable. A run that could not start
 #: because every slot was busy must still be there when one frees up, so this is set
@@ -95,6 +96,11 @@ QUEUE_RETENTION_SECONDS = int(os.environ.get("MICROVERSE_QUEUE_TTL", str(6 * 360
 RETENTION_DAYS = int(os.environ.get("MICROVERSE_RETENTION_DAYS", "90"))
 #: Uploads are bounded so a single request cannot exhaust a small free-tier dyno.
 MAX_UPLOAD_BYTES = int(os.environ.get("MICROVERSE_MAX_UPLOAD", str(64 * 1024 * 1024)))
+#: The most a plain form post can carry to this host. Vercel refuses a function request
+#: body above 4.5 MB before the application sees it, so there the form is only a
+#: fallback for small files, with headroom for the multipart framing; elsewhere it is
+#: the upload limit itself.
+FORM_UPLOAD_LIMIT_BYTES = 4_000_000 if ON_VERCEL else MAX_UPLOAD_BYTES
 
 VERSION = "1.0.0"
 SPEC_VERSION = "2.0 (frozen)"

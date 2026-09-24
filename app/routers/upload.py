@@ -1,8 +1,6 @@
 """Landing page, upload, demo datasets, run configuration."""
 from __future__ import annotations
 
-import hmac
-
 from fastapi import APIRouter, BackgroundTasks, File, Form, Header, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
@@ -86,7 +84,8 @@ async def authorize(request: Request):
 
     files = uploads.validate_request(body.get("files") or {})
     ticket = uploads.issue(files)
-    staging = uploads.staging_token(uploads.verify(ticket)["id"])
+    issued = uploads.verify(ticket)
+    staging = uploads.staging_token(issued["id"])
     try:
         targets = {
             field: storage.authorize_upload(staging, field, entry["size"])
@@ -102,56 +101,18 @@ async def authorize(request: Request):
                      "hint": "The file will be sent through the application instead.",
                      "fallback": "form"},
         )
-    return {"ticket": ticket, "uploads": targets}
-
-
-@router.post("/upload/ticket", include_in_schema=False)
-async def ticket(request: Request, x_microverse_worker: str = Header(default="")):
-    """Decide whether a ticket authorises one pathname. Called by the token minter.
-
-    The minting endpoint holds the store credential but none of the rules. This is
-    where the rules are, and it answers one question: may the browser holding this
-    ticket write to exactly this pathname, and under what limits. Keeping the answer
-    here means the size limit, the expiry and the field scoping have one
-    implementation rather than two that must be kept in agreement.
-
-    The pathname is the part that matters. `upload()` sends whatever the browser
-    passed it, so it is checked against the one the ticket implies rather than
-    trusted — otherwise a valid ticket would authorise writing anywhere in the store.
-    """
-    if not config.WORKER_SECRET or not hmac.compare_digest(
-            str(x_microverse_worker or ""), config.WORKER_SECRET):
-        return JSONResponse({"error": "Not authorised."}, status_code=403)
-
-    try:
-        body = await request.json()
-    except Exception:                                        # noqa: BLE001
-        return JSONResponse({"error": "Malformed request."}, status_code=400)
-
-    payload = uploads.verify(body.get("ticket"))
-    if payload is None:
-        return JSONResponse({"error": "That upload has expired."}, status_code=403)
-
-    presented = str(body.get("pathname") or "")
-    staging = uploads.staging_token(payload["id"])
-    allowed = {
-        storage.backend().authorize(staging, field, entry["size"])["pathname"]: entry
-        for field, entry in payload["files"].items()
-    }
-    entry = allowed.get(presented)
-    if entry is None:
-        return JSONResponse(
-            {"error": "That upload is not authorised for this location."},
-            status_code=403,
-        )
-
+    for target in targets.values():
+        if target.get("strategy") == "vercel-blob":
+            # What the signing service will mint a token for: this pathname and no
+            # other, under the limits written into the grant, until the ticket
+            # expires. A field the browser did not declare gets no grant at all.
+            target["grant"] = uploads.upload_grant(target["pathname"], issued["exp"])
     return {
-        # The store enforces this, so a browser that lied about the size at
-        # /upload/authorize still cannot write more than the application allows.
-        "maximum_size_in_bytes": config.MAX_UPLOAD_BYTES,
-        "allowed_content_types": list(uploads.ALLOWED_CONTENT_TYPES),
-        # Milliseconds, and never beyond the life of the ticket that authorised it.
-        "valid_until": int(payload["exp"]) * 1000,
+        "ticket": ticket,
+        "uploads": targets,
+        # If the store will not take the files, the plain form is the fallback only
+        # up to what this host lets a request body carry.
+        "form_limit": config.FORM_UPLOAD_LIMIT_BYTES,
     }
 
 

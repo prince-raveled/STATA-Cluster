@@ -1,13 +1,13 @@
 """The whole production path, in production's configuration, end to end.
 
-upload -> ticket -> store -> dataset -> job -> queue -> worker -> analysis -> results
--> downloads, with results in (fake) Blob storage, runs delivered by a real
+upload -> ticket and grants -> store -> dataset -> job -> queue -> worker -> analysis
+-> results -> downloads, with results in (fake) Blob storage, runs delivered by a real
 `vercel.queue` in this process, and the deployment root read-only. Nothing here
 calls `services.execute` directly: the run happens because a message was published
 by the route and consumed by the subscriber Vercel compiles, as it does in production.
 
-The second half runs `blob/api/blob-upload.js` in Node against this application over
-HTTP, so the contract between the two languages is exercised by both sides rather
+The second half runs `blob/api/blob-upload.js` in Node on grants this application
+signed, so the contract between the two languages is exercised by both sides rather
 than described by either. It needs Node and `blob/node_modules`; CI provides both and
 sets MICROVERSE_REQUIRE_NODE=1, so there it fails rather than skips.
 """
@@ -20,16 +20,16 @@ import io
 import json
 import os
 import shutil
-import socket
 import subprocess
 import threading
 import time
 import zipfile
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app import config, db, jobs, limits, queue_worker, storage
+from app import config, db, grants, jobs, limits, queue_worker, storage, uploads
 from app.main import app
 from tests.fakes import SECRET, FakeBlob, use_blob
 
@@ -43,6 +43,11 @@ def _tsv(frame, index_name):
     frame = frame.copy()
     frame.index.name = index_name
     return frame.to_csv(sep="\t").encode()
+
+
+def _grant_in(response) -> str:
+    """The signed grant a download redirect carries to the signing route."""
+    return parse_qs(urlparse(response.headers["location"]).query)["grant"][0]
 
 
 @pytest.fixture(scope="module")
@@ -78,15 +83,13 @@ def flow(synthetic, tmp_path_factory):
         targets = granted.json()["uploads"]
         record["targets"] = targets
 
-        # 2. For each file: the minter asks MicroVerse, then the store takes the bytes.
+        # 2. For each file: the signer checks the grant, then the store takes the bytes.
         for field, payload in (("abundance", abundance), ("metadata", metadata)):
             target = targets[field]
             assert target["strategy"] == "vercel-blob"
-            check = client.post("/upload/ticket",
-                                json={"ticket": ticket, "pathname": target["pathname"]},
-                                headers={"X-Microverse-Worker": SECRET})
-            assert check.status_code == 200, check.text
-            assert check.json()["maximum_size_in_bytes"] == config.MAX_UPLOAD_BYTES
+            claims = grants.verify(target["grant"], "upload")
+            assert claims is not None and claims["pathname"] == target["pathname"]
+            assert claims["maximum_size_in_bytes"] == config.MAX_UPLOAD_BYTES
             fake.objects[target["pathname"]] = payload
 
         # 3. The staged bytes become a dataset and a job, through the usual validation.
@@ -121,9 +124,8 @@ def flow(synthetic, tmp_path_factory):
             for kind in ("manifest", "robustness", "specifications", "attribution",
                          "methods", "bundle", "long")}
         record["grants"] = {
-            name: client.post("/download/grant", json={"token": token, "name": name},
-                              headers={"X-Microverse-Worker": SECRET})
-            for name in ("bundle.zip", "results_long.csv.gz")}
+            name: grants.verify(_grant_in(record["downloads"][kind]), "download")
+            for kind, name in (("bundle", "bundle.zip"), ("long", "results_long.csv.gz"))}
 
         yield record
         reset_default_queue_clients()
@@ -180,19 +182,21 @@ def test_small_exports_stream_and_large_ones_redirect(flow):
         assert len(downloads[kind].content) < 4_500_000
     for kind, name in (("bundle", "bundle.zip"), ("long", "results_long.csv.gz")):
         assert downloads[kind].status_code == 307, kind
-        assert downloads[kind].headers["location"] == (
-            f"/api/blob-download?token={flow['token']}&name={name}")
+        assert downloads[kind].headers["location"].startswith("/api/blob-download?grant=")
+        claims = flow["grants"][name]
+        assert claims is not None, kind
+        assert claims["pathname"] == f"microverse/{flow['token']}/{name}"
+        assert claims["access"] == "private"
+        assert claims["valid_until"] <= (time.time() + config.DOWNLOAD_URL_TTL_SECONDS) * 1000
 
 
 def test_what_a_grant_names_is_the_file_the_run_wrote(flow):
     bundle = flow["grants"]["bundle.zip"]
-    assert bundle.status_code == 200
-    raw = flow["fake"].objects[bundle.json()["pathname"]]
+    raw = flow["fake"].objects[bundle["pathname"]]
     assert zipfile.ZipFile(io.BytesIO(raw)).testzip() is None
 
     long = flow["grants"]["results_long.csv.gz"]
-    assert long.status_code == 200
-    text = gzip.decompress(flow["fake"].objects[long.json()["pathname"]]).decode()
+    text = gzip.decompress(flow["fake"].objects[long["pathname"]]).decode()
     assert text.splitlines()[0].startswith("spec_id")
 
 
@@ -226,38 +230,21 @@ class _FakeBlobApi(http.server.BaseHTTPRequestHandler):
         return
 
 
-def _free_port() -> int:
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
-
-
 @pytest.fixture(scope="module")
 def live(flow):
-    """This application on a real port, and a fake Blob control API beside it."""
+    """A fake Blob control API for the signing route to sign downloads against.
+
+    Nothing plays MicroVerse: the route no longer calls it. What it acts on is the
+    grant this application signed, which is the point of the test.
+    """
     if not NODE_READY:
         if REQUIRE_NODE:
             pytest.fail("Node and blob/node_modules are required (MICROVERSE_REQUIRE_NODE=1)")
         pytest.skip("needs node and `npm ci` in blob/")
-    import uvicorn
-
-    port = _free_port()
-    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port,
-                                           log_level="warning", lifespan="off"))
-    thread = threading.Thread(target=server.run, daemon=True)
-    thread.start()
     blob_api = http.server.ThreadingHTTPServer(("127.0.0.1", 0), _FakeBlobApi)
     threading.Thread(target=blob_api.serve_forever, daemon=True).start()
-    for _ in range(100):
-        if server.started:
-            break
-        time.sleep(0.05)
-    assert server.started, "the application did not start"
-    yield {"app": f"http://127.0.0.1:{port}",
-           "blob_api": f"http://127.0.0.1:{blob_api.server_address[1]}"}
-    server.should_exit = True
+    yield {"blob_api": f"http://127.0.0.1:{blob_api.server_address[1]}"}
     blob_api.shutdown()
-    thread.join(timeout=10)
 
 
 NODE_SCRIPT = r"""
@@ -271,50 +258,68 @@ const upload = (clientPayload, pathname) => POST(new Request('https://x.test/api
   body: JSON.stringify({ type: 'blob.generate-client-token',
                          payload: { pathname, clientPayload, multipart: false } }),
 }));
-const download = (token, name) => GET(new Request(
-  `https://x.test/api/blob-download?token=${token}&name=${encodeURIComponent(name)}`));
+const download = (grant) => GET(new Request(
+  `https://x.test/api/blob-download?grant=${encodeURIComponent(grant)}`));
 const input = JSON.parse(process.env.CASES);
-const out = {
-  minted: await call(await upload(input.ticket, input.pathname)),
-  forged: await call(await upload('not.a-ticket', input.pathname)),
-  elsewhere: await call(await upload(input.ticket, 'microverse/' + 'f'.repeat(24) + '/abundance')),
-  bundle: await call(await download(input.token, 'bundle.zip')),
-  pickle: await call(await download(input.token, 'run.pkl.gz')),
-  unknown: await call(await download('0'.repeat(24), 'bundle.zip')),
-};
+const elsewhere = 'microverse/' + 'f'.repeat(24) + '/abundance';
+const out = {};
+// Keyed by the worker secret, as on a deployment that sets one.
+out.minted = await call(await upload(input.grant, input.pathname));
+out.forged = await call(await upload('not.a-grant', input.pathname));
+out.elsewhere = await call(await upload(input.grant, elsewhere));
+out.uploadAsDownload = await call(await download(input.grant));
+out.bundle = await call(await download(input.download));
+out.tampered = await call(await download('f' + input.download.slice(1)));
+// Keyed by the store token alone, as on a deployment with nothing else configured.
+delete process.env.MICROVERSE_WORKER_SECRET;
+out.derived = await call(await upload(input.derived, input.pathname));
+out.otherKey = await call(await upload(input.grant, input.pathname));
+out.expired = await call(await upload(input.expired, input.pathname));
+delete process.env.BLOB_READ_WRITE_TOKEN;
+out.unconfigured = await call(await upload(input.derived, input.pathname));
 console.log(JSON.stringify(out));
 """
 
 
-def test_the_javascript_service_and_this_application_agree(flow, live, tmp_path):
+def test_the_javascript_service_and_this_application_agree(flow, live, tmp_path, monkeypatch):
     client = TestClient(app)
     limits.rate_limiter.reset()
     granted = client.post("/upload/authorize", json={"files": {
         "abundance": {"filename": "counts.tsv", "size": 1000},
         "metadata": {"filename": "meta.tsv", "size": 100}}}).json()
-    pathname = granted["uploads"]["abundance"]["pathname"]
+    target = granted["uploads"]["abundance"]
+    store = "vercel_blob_rw_teststore_notarealsecret"
+
+    # The same approval from a deployment with no worker secret, keyed by its store.
+    monkeypatch.setattr(config, "WORKER_SECRET", "")
+    monkeypatch.setenv("BLOB_READ_WRITE_TOKEN", store)
+    derived = uploads.upload_grant(target["pathname"], int(time.time()) + 60)
+    expired = uploads.upload_grant(target["pathname"], int(time.time()) - 1)
 
     script = tmp_path / "drive.mjs"
     script.write_text(NODE_SCRIPT, encoding="utf-8")
     env = {**os.environ,
            "HANDLER_URL": (BLOB_ROOT / "api" / "blob-upload.js").as_uri(),
-           "MICROVERSE_BACKEND_URL": live["app"],
            "MICROVERSE_WORKER_SECRET": SECRET,
-           "BLOB_READ_WRITE_TOKEN": "vercel_blob_rw_teststore_notarealsecret",
+           "BLOB_READ_WRITE_TOKEN": store,
            "VERCEL_BLOB_API_URL": live["blob_api"],
-           "CASES": json.dumps({"ticket": granted["ticket"], "pathname": pathname,
-                                "token": flow["token"]})}
+           "CASES": json.dumps({"grant": target["grant"], "pathname": target["pathname"],
+                                "download": _grant_in(flow["downloads"]["bundle"]),
+                                "derived": derived, "expired": expired})}
     done = subprocess.run([NODE, str(script)], env=env, capture_output=True, text=True,
                           timeout=60, check=False)
     assert done.returncode == 0, done.stderr
     out = json.loads(done.stdout.strip().splitlines()[-1])
 
-    # Upload: a real ticket for its own pathname mints; anything else does not.
+    # Upload: a real grant for its own pathname mints; anything else does not.
     assert out["minted"]["status"] == 200, out["minted"]["text"]
     assert json.loads(out["minted"]["text"])["clientToken"].startswith(
         "vercel_blob_client_teststore_")
-    assert out["forged"]["status"] == 403
-    assert out["elsewhere"]["status"] == 403
+    for case in ("forged", "elsewhere", "otherKey", "expired"):
+        assert out[case]["status"] == 403, (case, out[case]["text"])
+    assert out["derived"]["status"] == 200, out["derived"]["text"]
+    assert out["unconfigured"]["status"] == 500
+    assert "BLOB_READ_WRITE_TOKEN" in out["unconfigured"]["text"]
 
     # Download: the finished run's bundle is signed for its own pathname, read-only.
     assert out["bundle"]["status"] == 302, out["bundle"]["text"]
@@ -322,7 +327,8 @@ def test_the_javascript_service_and_this_application_agree(flow, live, tmp_path)
         f"https://teststore.private.blob.vercel-storage.com/microverse/{flow['token']}"
         "/bundle.zip?")
     assert _FakeBlobApi.seen[-1][1]["operations"] == ["get"]
-    assert out["pickle"]["status"] == 404
-    assert out["unknown"]["status"] == 404
+    assert out["uploadAsDownload"]["status"] == 403
+    assert out["tampered"]["status"] == 403
     for case in out.values():
         assert SECRET not in json.dumps(case)
+        assert "notarealsecret" not in json.dumps(case)

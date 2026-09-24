@@ -24,7 +24,7 @@ import json
 import secrets
 import time
 
-from . import config
+from . import config, grants
 from .core.validation import DatasetError
 
 #: The form's three file inputs. A ticket may name these and nothing else.
@@ -52,14 +52,17 @@ ALLOWED_CONTENT_TYPES = (
 #: connection, short enough that a leaked ticket stops working quickly.
 TICKET_TTL_SECONDS = config.UPLOAD_URL_TTL_SECONDS
 
-#: Signing key. A deployment that sets a worker secret gets tickets that survive a
-#: restart; one that does not gets a per-process key, which is correct for development
-#: and means an abandoned ticket cannot be replayed against a new process.
-_PROCESS_KEY = secrets.token_urlsafe(32)
-
 
 def _signing_key() -> bytes:
-    return (config.WORKER_SECRET or _PROCESS_KEY).encode("utf-8")
+    """The key `grants` shares with the signing service.
+
+    Every instance of a deployment derives the same one, which matters: the ticket
+    issued at /upload/authorize comes back at /upload/complete, and on a serverless
+    host the two requests often reach different instances. A per-process key (what a
+    host with neither a worker secret nor a Blob store gets) is right for development,
+    where there is one process.
+    """
+    return grants.base_key()
 
 
 def _b64(raw: bytes) -> str:
@@ -141,6 +144,25 @@ def staging_token(ticket_id: str) -> str:
     job token so the existing path check applies to it unchanged.
     """
     return ticket_id
+
+
+def upload_grant(pathname: str, expires: int) -> str:
+    """Approve writing one object, for the signing service to act on.
+
+    Every limit the store will enforce is decided here and carried in the grant: the
+    application's size cap (not the size the browser declared), the media types, and
+    an expiry no later than the ticket's (`expires`, in seconds). The service in blob/
+    checks the signature and applies these values; it has none of its own.
+    """
+    return grants.sign(
+        "upload",
+        pathname=pathname,
+        # The store enforces this, so a browser that lied about the size at
+        # /upload/authorize still cannot write more than the application allows.
+        maximum_size_in_bytes=config.MAX_UPLOAD_BYTES,
+        allowed_content_types=list(ALLOWED_CONTENT_TYPES),
+        valid_until=int(expires) * 1000,
+    )
 
 
 def issue(files: dict) -> str:

@@ -16,7 +16,7 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 
-from app import config, limits, storage, uploads
+from app import config, grants, limits, storage, uploads
 from app.main import app
 
 EXAMPLES = config.EXAMPLES_DIR
@@ -334,104 +334,172 @@ def test_the_local_backend_names_its_strategy_too(client):
         assert target["strategy"] == "staged"
 
 
-# --- /upload/ticket: the rules stay in Python -------------------------------
+# --- grants: the rules stay in Python, the approval travels signed -------------
 def _blob_mode(monkeypatch):
     monkeypatch.setattr(config, "STORAGE_BACKEND", "blob")
     monkeypatch.setattr(config, "WORKER_SECRET", "s3cret")
     storage.reset()
 
 
-def test_the_minter_is_told_the_limits_for_an_authorised_pathname(client, monkeypatch):
+def _grant(granted, field="abundance"):
+    return grants.verify(granted["uploads"][field]["grant"], "upload")
+
+
+def test_every_blob_target_carries_a_grant_for_its_own_pathname(client, monkeypatch):
+    _blob_mode(monkeypatch)
+    granted = client.post("/upload/authorize", json=declare(taxonomy=True)).json()
+    for field, target in granted["uploads"].items():
+        claims = grants.verify(target["grant"], "upload")
+        assert claims is not None, field
+        assert claims["pathname"] == target["pathname"]
+
+
+def test_the_grant_carries_the_applications_limits_not_the_browsers(client, monkeypatch):
+    """The store enforces what the grant says, so it must be the application's cap."""
+    _blob_mode(monkeypatch)
+    small = {"abundance": {"filename": "counts.tsv", "size": 10}}
+    granted = client.post("/upload/authorize", json=declare(replace=small)).json()
+    claims = _grant(granted)
+    assert claims["maximum_size_in_bytes"] == config.MAX_UPLOAD_BYTES
+    assert claims["allowed_content_types"] == list(uploads.ALLOWED_CONTENT_TYPES)
+
+
+def test_a_grant_expires_with_its_ticket(client, monkeypatch):
     _blob_mode(monkeypatch)
     granted = client.post("/upload/authorize", json=declare()).json()
-    pathname = granted["uploads"]["abundance"]["pathname"]
-
-    response = client.post("/upload/ticket",
-                           json={"ticket": granted["ticket"], "pathname": pathname},
-                           headers={"X-Microverse-Worker": "s3cret"})
-    assert response.status_code == 200
-    body = response.json()
-    assert body["maximum_size_in_bytes"] == config.MAX_UPLOAD_BYTES
-    assert "text/*" in body["allowed_content_types"]
-    assert body["valid_until"] > 0
-
-
-def test_the_minter_must_present_the_shared_secret(client, monkeypatch):
-    """Otherwise the token minter is an open door into the store."""
-    _blob_mode(monkeypatch)
-    granted = client.post("/upload/authorize", json=declare()).json()
-    pathname = granted["uploads"]["abundance"]["pathname"]
-
-    for headers in ({}, {"X-Microverse-Worker": "wrong"}):
-        response = client.post("/upload/ticket",
-                               json={"ticket": granted["ticket"], "pathname": pathname},
-                               headers=headers)
-        assert response.status_code == 403
-
-
-def test_an_unconfigured_deployment_authorises_nobody(client, monkeypatch):
-    monkeypatch.setattr(config, "STORAGE_BACKEND", "blob")
-    monkeypatch.setattr(config, "WORKER_SECRET", "")
-    storage.reset()
-    response = client.post("/upload/ticket", json={"ticket": "x", "pathname": "y"},
-                           headers={"X-Microverse-Worker": ""})
-    assert response.status_code == 403
-
-
-def test_a_ticket_cannot_authorise_a_pathname_it_does_not_own(client, monkeypatch):
-    """The browser supplies the pathname to upload(), so it is checked, not trusted."""
-    _blob_mode(monkeypatch)
-    mine = client.post("/upload/authorize", json=declare()).json()
-    theirs = client.post("/upload/authorize", json=declare()).json()
-    their_path = theirs["uploads"]["abundance"]["pathname"]
-
-    response = client.post("/upload/ticket",
-                           json={"ticket": mine["ticket"], "pathname": their_path},
-                           headers={"X-Microverse-Worker": "s3cret"})
-    assert response.status_code == 403
-
-
-@pytest.mark.parametrize("pathname", [
-    "", "microverse/../../etc/passwd", "other-prefix/x/abundance",
-    "microverse/0000/taxonomy", "/etc/passwd",
-])
-def test_an_arbitrary_pathname_is_refused(client, monkeypatch, pathname):
-    _blob_mode(monkeypatch)
-    granted = client.post("/upload/authorize", json=declare()).json()
-    response = client.post("/upload/ticket",
-                           json={"ticket": granted["ticket"], "pathname": pathname},
-                           headers={"X-Microverse-Worker": "s3cret"})
-    assert response.status_code == 403
-
-
-def test_a_field_the_ticket_never_named_has_no_pathname(client, monkeypatch):
-    """No taxonomy was declared, so no token may be minted for one."""
-    _blob_mode(monkeypatch)
-    granted = client.post("/upload/authorize", json=declare()).json()
-    staging = uploads.staging_token(uploads.verify(granted["ticket"])["id"])
-
-    response = client.post(
-        "/upload/ticket",
-        json={"ticket": granted["ticket"],
-              "pathname": f"microverse/{staging}/taxonomy"},
-        headers={"X-Microverse-Worker": "s3cret"})
-    assert response.status_code == 403
-
-
-def test_an_expired_ticket_mints_nothing(client, monkeypatch):
-    _blob_mode(monkeypatch)
-    granted = client.post("/upload/authorize", json=declare()).json()
-    pathname = granted["uploads"]["abundance"]["pathname"]
+    ticket = uploads.verify(granted["ticket"])
+    assert _grant(granted)["valid_until"] == ticket["exp"] * 1000
 
     later = time.time() + uploads.TICKET_TTL_SECONDS + 5
-    monkeypatch.setattr(uploads.time, "time", lambda: later)
-    response = client.post("/upload/ticket",
-                           json={"ticket": granted["ticket"], "pathname": pathname},
-                           headers={"X-Microverse-Worker": "s3cret"})
-    assert response.status_code == 403
+    monkeypatch.setattr(grants.time, "time", lambda: later)
+    assert _grant(granted) is None
+
+
+def test_a_field_the_browser_did_not_declare_gets_no_grant(client, monkeypatch):
+    """No taxonomy was declared, so there is nothing to mint a taxonomy token from."""
+    _blob_mode(monkeypatch)
+    granted = client.post("/upload/authorize", json=declare()).json()
+    assert set(granted["uploads"]) == {"abundance", "metadata"}
+
+
+def test_a_tampered_grant_approves_nothing(client, monkeypatch):
+    """Rewriting the pathname inside a real grant breaks its signature."""
+    import base64
+    import json as _json
+
+    _blob_mode(monkeypatch)
+    raw = client.post("/upload/authorize", json=declare()).json()["uploads"]["abundance"]["grant"]
+    body, signature = raw.split(".")
+    claims = _json.loads(base64.urlsafe_b64decode(body + "=" * (-len(body) % 4)))
+    claims["pathname"] = "microverse/" + "f" * 24 + "/abundance"
+    forged = base64.urlsafe_b64encode(
+        _json.dumps(claims, sort_keys=True, separators=(",", ":")).encode()).decode().rstrip("=")
+    assert grants.verify(f"{forged}.{signature}", "upload") is None
+
+
+@pytest.mark.parametrize("raw", ["", "x", "a.b", "a.b.c", None, "..", "not.a-grant"])
+def test_a_malformed_grant_approves_nothing(raw):
+    assert grants.verify(raw, "upload") is None
+
+
+def test_an_upload_grant_cannot_be_used_to_read(client, monkeypatch):
+    _blob_mode(monkeypatch)
+    raw = client.post("/upload/authorize", json=declare()).json()["uploads"]["abundance"]["grant"]
+    assert grants.verify(raw, "upload") is not None
+    assert grants.verify(raw, "download") is None
+
+
+def test_a_ticket_is_not_a_grant_and_a_grant_is_not_a_ticket(client, monkeypatch):
+    _blob_mode(monkeypatch)
+    granted = client.post("/upload/authorize", json=declare()).json()
+    assert grants.verify(granted["ticket"], "upload") is None
+    assert uploads.verify(granted["uploads"]["abundance"]["grant"]) is None
+
+
+def test_a_grant_from_another_key_approves_nothing(client, monkeypatch):
+    _blob_mode(monkeypatch)
+    raw = client.post("/upload/authorize", json=declare()).json()["uploads"]["abundance"]["grant"]
+    monkeypatch.setattr(config, "WORKER_SECRET", "a-different-secret")
+    assert grants.verify(raw, "upload") is None
+
+
+def test_without_a_worker_secret_the_key_comes_from_the_store_token(monkeypatch):
+    """So a deployment needs nothing beyond its Blob store, on every instance.
+
+    Two instances of one deployment share its environment, not their memory: the
+    ticket issued at /upload/authorize must verify at /upload/complete wherever that
+    request lands. Replacing the per-process key stands in for the other instance.
+    """
+    monkeypatch.setattr(config, "WORKER_SECRET", "")
+    monkeypatch.setenv("BLOB_READ_WRITE_TOKEN", "vercel_blob_rw_store_secretpart")
+    ticket = uploads.issue({"abundance": {"filename": "a.tsv", "size": 1},
+                            "metadata": {"filename": "m.tsv", "size": 1}})
+    grant = uploads.upload_grant("microverse/" + "0" * 24 + "/abundance",
+                                 int(time.time()) + 60)
+    monkeypatch.setattr(grants, "_PROCESS_KEY", b"another-instance" * 2)
+    assert uploads.verify(ticket) is not None
+    assert grants.verify(grant, "upload") is not None
+
+    monkeypatch.setenv("BLOB_READ_WRITE_TOKEN", "vercel_blob_rw_store_otherstore")
+    assert uploads.verify(ticket) is None, "a different store must not share the key"
+
+
+def test_the_key_never_is_the_store_token_itself(monkeypatch):
+    """The store token signs nothing directly: it only seeds a derived key."""
+    monkeypatch.setattr(config, "WORKER_SECRET", "")
+    monkeypatch.setenv("BLOB_READ_WRITE_TOKEN", "vercel_blob_rw_store_secretpart")
+    assert grants.base_key() != b"vercel_blob_rw_store_secretpart"
+    assert b"secretpart" not in grants.base_key()
+
+
+def test_the_callback_routes_are_gone(client):
+    """The signing service no longer asks; nothing should still be listening."""
+    for route in ("/upload/ticket", "/download/grant"):
+        response = client.post(route, json={})
+        assert response.status_code in (404, 405), route
+
+
+def test_authorize_says_how_much_the_form_can_carry(client):
+    granted = client.post("/upload/authorize", json=declare()).json()
+    assert granted["form_limit"] == config.FORM_UPLOAD_LIMIT_BYTES
+
+
+def test_on_vercel_the_form_fallback_stays_under_the_request_body_cap():
+    """Vercel refuses a function request body over 4.5 MB before the app sees it."""
+    import os
+    import subprocess
+    import sys
+
+    probe = "from app import config; print(config.FORM_UPLOAD_LIMIT_BYTES)"
+    # Prepended, not replaced: the container image finds its dependencies on PYTHONPATH.
+    path = os.pathsep.join(p for p in (str(config.BASE_DIR), os.environ.get("PYTHONPATH")) if p)
+    env = {**os.environ, "VERCEL": "1", "PYTHONPATH": path}
+    done = subprocess.run([sys.executable, "-c", probe], env=env, capture_output=True,
+                          text=True, cwd=config.BASE_DIR, check=True)
+    assert 0 < int(done.stdout.strip()) < 4_500_000
+
+
+SCRIPT = config.BASE_DIR / "app" / "static" / "js" / "upload.js"
+
+
+def test_the_script_hands_the_signer_the_grant_not_the_ticket():
+    js = SCRIPT.read_text(encoding="utf-8")
+    assert "clientPayload: target.grant" in js
+    assert "clientPayload: issued" not in js
+
+
+def test_the_script_falls_back_to_the_form_only_when_the_form_can_carry_it():
+    """"Failed to retrieve the client token" is the SDK's only word for the signer
+    saying no. Shown as it was, it told the researcher nothing; for files the form
+    can carry, the form is used instead, and larger ones get a plain explanation."""
+    js = SCRIPT.read_text(encoding="utf-8")
+    assert "retrieve the client token" in js
+    assert "totalBytes > formLimit" in js
+    assert "auth.form_limit" in js
 
 
 def test_the_minting_endpoint_is_declared_to_the_host():
+
     """Vercel must route /api/blob-upload to the JS service, not to FastAPI."""
     import json as _json
 
@@ -446,22 +514,31 @@ def test_the_minting_endpoint_is_declared_to_the_host():
     assert sources.index(config.BLOB_UPLOAD_HANDLER) < sources.index("/(.*)")
 
 
-def test_the_two_languages_agree_on_what_upload_ticket_returns():
-    """The minter is JavaScript and the authority is Python, so the contract drifts
-    silently unless something checks it. Renaming a field on either side fails here
+def test_the_two_languages_agree_on_what_a_grant_carries(monkeypatch):
+    """The signer is JavaScript and the authority is Python, so the contract drifts
+    silently unless something checks it. Renaming a claim on either side fails here
     rather than at the first upload on a deployment nobody has tested yet.
+    (tests/test_serverless_flow.py runs the two against each other for real.)
     """
     import re
 
+    monkeypatch.setattr(config, "STORAGE_BACKEND", "blob")
+    monkeypatch.setattr(config, "BLOB_ACCESS", "private")
+    storage.reset()
     js = MINTER.read_text(encoding="utf-8")
-    reads = set(re.findall(r"granted\.([a-z_]+)", js))
+    reads = set(re.findall(r"(?:grant|claims)\.([a-z_]+)", js))
 
-    router = (config.BASE_DIR / "app" / "routers" / "upload.py").read_text(encoding="utf-8")
-    block = router.split("async def ticket(")[1].split("@router")[0]
-    returns = set(re.findall(r'"([a-z_]+)":', block)) - {"error"}
+    upload = grants.verify(uploads.upload_grant("microverse/" + "0" * 24 + "/abundance",
+                                                int(time.time()) + 60), "upload")
+    link = storage.backend().url("0" * 24, "bundle.zip")
+    from urllib.parse import parse_qs, urlparse
+    download = grants.verify(parse_qs(urlparse(link).query)["grant"][0], "download")
+    signed = set(upload) | set(download)
 
-    assert reads, "the JavaScript reads nothing from the authorisation response"
-    assert reads <= returns, f"JavaScript reads fields Python never sends: {reads - returns}"
+    assert reads, "the JavaScript reads nothing from a grant"
+    assert reads <= signed, f"JavaScript reads claims Python never signs: {reads - signed}"
+    for label in ("microverse/key/v1", "microverse/grant/v1"):
+        assert f"'{label}'" in js, f"the key label {label} differs between the two sides"
 
 
 def test_the_minter_holds_no_rules_of_its_own():
@@ -481,7 +558,7 @@ def test_the_minter_holds_no_rules_of_its_own():
     numbers = set(re.findall(r"\b\d+\b", code)) - statuses
     assert not numbers, (
         f"the minter contains its own numeric limits {numbers}; every limit must "
-        "come from /upload/ticket so there is one source of truth"
+        "come from the grant app/uploads.py signs, so there is one source of truth"
     )
     assert ".tsv" not in code and ".biom" not in code, (
         "filename rules look duplicated in the minter"

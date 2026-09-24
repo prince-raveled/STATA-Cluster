@@ -1,12 +1,10 @@
 """Results dashboard, specification curve, and downloads (SPEC §16, §18)."""
 from __future__ import annotations
 
-import hmac
 import re
-import time
 
 import numpy as np
-from fastapi import APIRouter, Header, Request
+from fastapi import APIRouter, Request
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
@@ -303,48 +301,3 @@ def download(token: str, kind: str):
     return Response(content=payload, media_type=media_type,
                     headers={"Content-Disposition": disposition})
 
-
-@router.post("/download/grant", include_in_schema=False)
-async def grant(request: Request, x_microverse_worker: str = Header(default="")):
-    """Decide whether the signing route may sign a read of one stored export.
-
-    Called by `api/blob-upload.js`, never by a browser. The signer holds the store
-    credential and none of the rules; this answers the only question it asks -- may a
-    URL be signed for this job's copy of this file, and for how long -- so who may
-    read what has one implementation, here.
-
-    A job token is the capability for its results, exactly as it is for the page and
-    every other download, so a finished job may have its stored exports read. Only
-    the names in `ON_DISK` can be granted: the pickled run, the dataset and anything
-    staged under the same token are not downloads, whatever a caller asks for.
-    """
-    if not config.WORKER_SECRET or not hmac.compare_digest(
-            str(x_microverse_worker or ""), config.WORKER_SECRET):
-        return JSONResponse({"error": "Not authorised."}, status_code=403)
-
-    try:
-        body = await request.json()
-    except Exception:                                        # noqa: BLE001
-        return JSONResponse({"error": "Malformed request."}, status_code=400)
-    if not isinstance(body, dict):
-        return JSONResponse({"error": "Malformed request."}, status_code=400)
-
-    name = str(body.get("name") or "")
-    if name not in ON_DISK.values():
-        return JSONResponse({"error": "There is no such download."}, status_code=404)
-    try:
-        _require_finished_job(str(body.get("token") or ""))
-    except DatasetError as exc:
-        return JSONResponse({"error": exc.message}, status_code=exc.status_code)
-    if storage.is_local():
-        # Nothing to sign: this deployment hands the file over itself.
-        return JSONResponse({"error": "There is no such download."}, status_code=404)
-
-    token = str(body["token"])
-    return {
-        "pathname": storage.backend().pathname(token, name),
-        "access": config.BLOB_ACCESS,
-        # Milliseconds, as the signer wants them. Long enough to start the download,
-        # short enough that a copied link is not a lasting handle on someone's data.
-        "valid_until": int((time.time() + config.DOWNLOAD_URL_TTL_SECONDS) * 1000),
-    }

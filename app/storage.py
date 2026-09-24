@@ -34,11 +34,12 @@ import io
 import pickle
 import re
 import shutil
+import time
 from pathlib import Path
 from typing import Protocol
 from urllib.parse import urlencode
 
-from . import config
+from . import config, grants
 
 #: A job or staging token: what `db.new_token` and `uploads.issue` generate.
 TOKEN_PATTERN = re.compile(r"^[0-9a-f]{24}$")
@@ -155,10 +156,6 @@ class BlobBackend:
     def _key(self, token: str, name: str) -> str:
         return f"{self.prefix}/{checked(token, name)}/{name}"
 
-    def pathname(self, token: str, name: str) -> str:
-        """The store pathname of one object, for the route that signs a read of it."""
-        return self._key(token, name)
-
     @staticmethod
     def _blob():
         # Imported here so local runs and the test suite never load the SDK.
@@ -212,13 +209,21 @@ class BlobBackend:
         the blob's own URL. A private blob needs a signed, short-lived URL, and only
         the JavaScript SDK can sign one (`issueSignedToken` + `presignUrl`), so the
         link is to the route that does: `api/blob-upload.js` answers
-        GET `BLOB_DOWNLOAD_HANDLER` by asking this application for a grant
-        (`/download/grant`) and redirecting to the URL it signs. The rules about who
-        may read what stay in Python; the signing happens there.
+        GET `BLOB_DOWNLOAD_HANDLER` by checking the grant in the link and redirecting
+        to the URL it signs for exactly that object. Who may read what is decided by
+        the caller before it asks for this link (results.py serves only a finished
+        job's stored exports); the grant carries that decision, and nothing else.
         """
         if config.BLOB_ACCESS != "public":
-            query = urlencode({"token": checked(token, name), "name": name})
-            return f"{config.BLOB_DOWNLOAD_HANDLER}?{query}"
+            grant = grants.sign(
+                "download",
+                pathname=self._key(token, name),
+                access=config.BLOB_ACCESS,
+                # Long enough to start the download, short enough that a copied link
+                # is not a lasting handle on someone's data.
+                valid_until=int((time.time() + config.DOWNLOAD_URL_TTL_SECONDS) * 1000),
+            )
+            return f"{config.BLOB_DOWNLOAD_HANDLER}?{urlencode({'grant': grant})}"
         blob = self._blob()
         try:
             return blob.get_download_url(blob.head(self._key(token, name)).url)
@@ -231,12 +236,13 @@ class BlobBackend:
         Minting is `generateClientTokenFromReadWriteToken`, which exists only in the
         JavaScript SDK — `vercel.blob` in Python can use a client token but not issue
         one. Rather than hand a browser `BLOB_READ_WRITE_TOKEN`, which writes
-        anything in the store, the browser is pointed at `api/blob-upload.js`, and
-        that route asks this application whether the pathname is allowed before it
-        issues anything. The rules stay here; only the signing happens there.
+        anything in the store, the browser is pointed at `api/blob-upload.js`, which
+        mints a token only for a pathname this application signed a grant for
+        (`uploads.upload_grant`, added by the route). The rules stay here; only the
+        signing happens there.
 
-        The pathname is returned so the browser has nothing to invent, and
-        `/upload/ticket` checks the one it presents against the signed ticket anyway.
+        The pathname is returned so the browser has nothing to invent, and the
+        signing route checks the one it presents against the grant anyway.
         """
         if not config.BLOB_UPLOAD_HANDLER:
             raise DirectUploadUnavailable(

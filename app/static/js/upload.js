@@ -116,14 +116,14 @@
     return blobClient;
   }
 
-  function toBlobStore(target, issued, file) {
+  function toBlobStore(target, file) {
     return loadBlobClient().then(function (client) {
-      // The pathname is the server's, not ours, and /upload/ticket checks it again
-      // against the signed ticket before any token is issued.
+      // The pathname is the server's, not ours, and the signing route checks it
+      // again against the server's signed grant before any token is issued.
       return client.upload(target.pathname, file, {
         access: target.access || "private",
         handleUploadUrl: target.handler,
-        clientPayload: issued,
+        clientPayload: target.grant,
         contentType: file.type || "application/octet-stream",
         abortSignal: inFlight.signal,
         onUploadProgress: function (progress) {
@@ -133,14 +133,20 @@
         },
       });
     }).catch(function (error) {
+      var message = String((error && error.message) || "");
+      // The signing route said no, or could not be reached. The SDK throws away its
+      // reason and reports only this, so it is not about the file: it is this
+      // deployment not issuing upload permission. The form can still carry small
+      // files, and the caller decides whether these are small enough.
+      if (/retrieve the client token/i.test(message)) {
+        throw { unauthorised: true };
+      }
       // A rejection from the store is about this file, so it is worth showing.
       // Anything else -- the CDN blocked, the route missing -- is not, and falls
       // through to the form. The SDK's errors are all named plain "Error", so the
-      // name never identified them; the fixed prefix on their message does. Matching
-      // on the name sent every store rejection, including a minting route that could
-      // not mint, quietly down the form path instead.
-      if (error && String(error.message || "").indexOf("Vercel Blob:") === 0) {
-        throw { handled: true, payload: { error: error.message, hint: "" } };
+      // name never identified them; the fixed prefix on their message does.
+      if (message.indexOf("Vercel Blob:") === 0) {
+        throw { handled: true, payload: { error: message, hint: "" } };
       }
       throw error;
     });
@@ -177,8 +183,11 @@
     inFlight = new AbortController();
 
     var declared = { files: {} };
+    var totalBytes = 0;
+    var formLimit = 0;
     Object.keys(files).forEach(function (name) {
       declared.files[name] = { filename: files[name].name, size: files[name].size };
+      totalBytes += files[name].size;
     });
 
     say("Preparing…");
@@ -201,6 +210,7 @@
       })
       .then(function (auth) {
         ticket = auth.ticket;
+        formLimit = Number(auth.form_limit) || 0;
         var names = Object.keys(auth.uploads);
         var done = 0;
         return names.reduce(function (chain, name) {
@@ -208,7 +218,7 @@
             var target = auth.uploads[name];
             say("Uploading " + (done + 1) + " of " + names.length + "…");
             var sent = target.strategy === "vercel-blob"
-              ? toBlobStore(target, auth.ticket, files[name])
+              ? toBlobStore(target, files[name])
               : toStagingRoute(target, auth.ticket, files[name]);
             return sent.then(function () { done += 1; });
           });
@@ -244,8 +254,22 @@
           showError(error.payload);
           return;
         }
+        if (error && error.unauthorised && formLimit && totalBytes > formLimit) {
+          // Storage would not take the files, and they are too large for the form,
+          // which this host refuses above its request-body cap with a page of its own.
+          abandon();
+          restore();
+          showError({
+            error: "The file storage did not accept this upload.",
+            hint: "Reload the page and choose your files again. If it happens again, " +
+                  "the site's storage is misconfigured; files under " +
+                  Math.floor(formLimit / 1e6) + " MB in total can still be uploaded.",
+          });
+          return;
+        }
         // Something went wrong before the server had an opinion — offline, blocked,
-        // a host without this route. Fall back to the plain form post.
+        // a host without this route, or storage not authorising files small enough
+        // for the form. Fall back to the plain form post.
         abandon();
         say("Uploading…");
         form.submit();

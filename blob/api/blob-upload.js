@@ -10,13 +10,21 @@
 //
 // So this file exists, and does nothing else. It decides nothing about who may
 // upload or download, what a valid filename is, or how large a file may be. Those
-// rules live in `app/uploads.py` and `app/routers/results.py` and stay there: this
-// route asks MicroVerse whether a request is allowed, and signs only what MicroVerse
-// approved. Adding a rule here would mean two places to keep in agreement, and one of
-// them would eventually be wrong.
+// rules live in `app/uploads.py` and `app/routers/results.py` and stay there:
+// MicroVerse writes its decision into a signed grant (`app/grants.py`), and this route
+// checks the signature and signs exactly what the grant names, under the limits the
+// grant carries. Adding a rule here would mean two places to keep in agreement, and one
+// of them would eventually be wrong.
+//
+// The grant travels with the request rather than being fetched from MicroVerse. An
+// earlier version asked FastAPI over HTTP, which needed the application's public URL
+// and a second shared secret on every deployment, and on a preview deployment behind
+// Vercel's login the call to the deployment's own URL was stopped at the login wall.
 //
 // BLOB_READ_WRITE_TOKEN is read here and never leaves: what reaches the browser is
-// derived from it, scoped to one pathname, and short-lived.
+// derived from it, scoped to one pathname, and short-lived. It is also where the grant
+// key comes from when MICROVERSE_WORKER_SECRET is not set, derived exactly as
+// app/grants.py derives it.
 //
 // Named method exports only -- there must be no default export. Vercel's Node
 // launcher replaces a module with its default export when it has one, and a default
@@ -25,8 +33,14 @@
 // GET or POST, ended as FUNCTION_INVOCATION_FAILED. blob/test/ loads this file
 // through the launcher itself so the shape cannot regress.
 
+import { createHmac, timingSafeEqual } from 'node:crypto';
+
 import { BlobError, issueSignedToken, presignUrl } from '@vercel/blob';
 import { handleUpload } from '@vercel/blob/client';
+
+// Must match app/grants.py. Changing either invalidates every grant in flight.
+const BASE_LABEL = 'microverse/key/v1';
+const GRANT_LABEL = 'microverse/grant/v1';
 
 /** An answer with a status, as opposed to an error nobody anticipated. */
 class Refusal extends Error {
@@ -37,52 +51,48 @@ class Refusal extends Error {
 }
 
 /**
- * The three settings this route cannot work without, read per request.
+ * The key grants are signed with, read per request.
  *
- * Missing any of them is the deployment's fault, never the caller's, so it is a 500
- * that names what is missing -- names only, never a value.
+ * The store token is the one setting this route cannot work without. Missing it is
+ * the deployment's fault, never the caller's, so it is a 500 that names it -- the
+ * name only, never a value.
  */
-function settings() {
-  const env = {
-    MICROVERSE_BACKEND_URL: (process.env.MICROVERSE_BACKEND_URL || '').replace(/\/+$/, ''),
-    MICROVERSE_WORKER_SECRET: process.env.MICROVERSE_WORKER_SECRET || '',
-    BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN || '',
-  };
-  const missing = Object.keys(env).filter((name) => !env[name]);
-  if (missing.length) {
+function grantKey() {
+  const store = process.env.BLOB_READ_WRITE_TOKEN || '';
+  if (!store) {
     // An unconfigured deployment must not be an open signing endpoint.
-    throw new Refusal(500, `Blob access is not configured on this deployment (missing: ${missing.join(', ')}).`);
+    throw new Refusal(500, 'Blob access is not configured on this deployment (missing: BLOB_READ_WRITE_TOKEN).');
   }
-  return { backend: env.MICROVERSE_BACKEND_URL, secret: env.MICROVERSE_WORKER_SECRET };
+  const shared = process.env.MICROVERSE_WORKER_SECRET || '';
+  const base = shared
+    ? Buffer.from(shared, 'utf8')
+    : createHmac('sha256', store).update(BASE_LABEL).digest();
+  return createHmac('sha256', base).update(GRANT_LABEL).digest();
 }
 
 /**
- * Ask MicroVerse whether a request is allowed. Returns its answer, or throws.
+ * The claims of a grant MicroVerse signed for `use`, or null.
  *
- * MicroVerse refusing (403, 404, 409) is passed on as it was given; anything else
- * going wrong between the two services is a gateway failure, not the caller's.
+ * Null for anything forged, malformed, meant for the other use, or expired: the
+ * caller refuses all of them the same way, because none of them is an approval.
  */
-async function ask(route, body) {
-  const { backend, secret } = settings();
-  let response;
+function approved(raw, use) {
+  const key = grantKey();
+  const [body, signature, ...rest] = String(raw || '').split('.');
+  if (!body || !signature || rest.length) return null;
+  const expected = createHmac('sha256', key).update(body).digest();
+  const given = Buffer.from(signature, 'base64url');
+  if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
+  let claims;
   try {
-    response = await fetch(`${backend}${route}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Microverse-Worker': secret,
-      },
-      body: JSON.stringify(body),
-    });
+    claims = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
   } catch {
-    throw new Refusal(502, 'MicroVerse could not be reached to authorise this request.');
+    return null;
   }
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const status = [403, 404, 409].includes(response.status) ? response.status : 502;
-    throw new Refusal(status, payload.error || 'That request is not authorised.');
-  }
-  return payload;
+  if (!claims || typeof claims !== 'object' || claims.use !== use) return null;
+  if (typeof claims.pathname !== 'string' || !claims.pathname) return null;
+  if (!(Number(claims.valid_until) > Date.now())) return null;
+  return claims;
 }
 
 function refuse(error) {
@@ -108,30 +118,38 @@ export async function POST(request) {
   }
 
   try {
-    settings();
+    grantKey();
     const result = await handleUpload({
       body,
       request,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
-        const granted = await ask('/upload/ticket', { ticket: clientPayload, pathname });
+        const grant = approved(clientPayload, 'upload');
+        if (!grant) {
+          throw new Refusal(403, 'That upload has expired.');
+        }
+        // `upload()` sends whatever pathname the browser passed it, so it is checked
+        // against the one MicroVerse signed rather than trusted -- otherwise a valid
+        // grant would authorise writing anywhere in the store.
+        if (grant.pathname !== pathname) {
+          throw new Refusal(403, 'That upload is not authorised for this location.');
+        }
         return {
-          // The pathname the token is bound to is the one MicroVerse approved, and
-          // a random suffix would move it somewhere neither side can find again.
+          // A random suffix would move the object somewhere neither side can find.
           addRandomSuffix: false,
           allowOverwrite: true,
-          // The application's own 64 MB limit, enforced by the store itself rather
-          // than trusted from the browser's declaration.
-          maximumSizeInBytes: granted.maximum_size_in_bytes,
-          allowedContentTypes: granted.allowed_content_types,
-          validUntil: granted.valid_until,
+          // The application's own limits, enforced by the store itself rather than
+          // trusted from the browser's declaration.
+          maximumSizeInBytes: grant.maximum_size_in_bytes,
+          allowedContentTypes: grant.allowed_content_types,
+          validUntil: grant.valid_until,
           tokenPayload: JSON.stringify({ pathname }),
         };
       },
-      onUploadCompleted: async () => {
-        // Nothing to do. MicroVerse reads the object when the browser calls
-        // /upload/complete, which is also what validates it and creates the job,
-        // so there is no state here that a missed callback could leave behind.
-      },
+      // No onUploadCompleted, deliberately. MicroVerse reads the object when the
+      // browser calls /upload/complete, which is also what validates it and creates
+      // the job, so there is nothing for a completion callback to do -- and giving one
+      // makes the store call this deployment back, which on a preview behind Vercel's
+      // login is stopped at the login wall.
     });
     return Response.json(result);
   } catch (error) {
@@ -155,10 +173,10 @@ export async function GET(request) {
     return Response.json({ error: 'Not found.' }, { status: 404 });
   }
   try {
-    const grant = await ask('/download/grant', {
-      token: url.searchParams.get('token') || '',
-      name: url.searchParams.get('name') || '',
-    });
+    const grant = approved(url.searchParams.get('grant'), 'download');
+    if (!grant) {
+      throw new Refusal(403, 'That download link has expired. Open the results page and download again.');
+    }
     let presignedUrl;
     try {
       const signed = await issueSignedToken({

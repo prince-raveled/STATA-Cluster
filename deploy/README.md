@@ -27,18 +27,26 @@ project needs:
 |---|---|---|
 | `MICROVERSE_DB` | you | PostgreSQL URL (Neon); SQLite is refused on Vercel, with a message saying so |
 | `BLOB_READ_WRITE_TOKEN` | the Blob store, when attached | the store credential; never leaves the server |
-| `MICROVERSE_WORKER_SECRET` | you | long random value shared by the app and the signing service; also signs upload tickets |
-| `MICROVERSE_BACKEND_URL` | you | where the signing service reaches the app: the production URL |
+| `MICROVERSE_WORKER_SECRET` | you, optionally | a long random value; when set, it keys upload tickets and the grants below instead of a key derived from the store token |
 
-Without the last two the signing service answers 500 and names what is missing, and
-direct upload and the large downloads do not work. Queue credentials are provided by
-the platform.
+The signing service never calls the app. The app signs each approval into a **grant**
+(`app/grants.py`): an upload grant names one pathname, the size cap, the media types and
+an expiry; a download grant names one stored export and an expiry. The browser carries
+it to `/api/blob-upload` or `/api/blob-download`, and the service checks the signature
+and signs exactly what the grant names. Both sides derive the key from
+`MICROVERSE_WORKER_SECRET` when it is set and from `BLOB_READ_WRITE_TOKEN` otherwise, so
+a deployment with its Blob store attached needs nothing else, and a preview behind
+Vercel's login works like production. Without `BLOB_READ_WRITE_TOKEN` the service answers
+500 and names it. Queue credentials are provided by the platform.
+
+If the service will not issue an upload token, the page posts the form instead when the
+files fit in a Vercel request body (under 4 MB together), and otherwise says the upload
+was not accepted.
 
 Releasing: a push to `vercel-migration` builds a **preview**, which sits behind Vercel
 login; production changes only when a deployment is promoted in the dashboard.
 Environment variables apply to deployments made after they are set, so redeploy after
-changing one. A preview's `MICROVERSE_BACKEND_URL` still points at production, so test
-uploads and large downloads on production after promoting.
+changing one.
 
 ## Sizing
 
