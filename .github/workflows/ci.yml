@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    # vercel-migration is the branch Vercel deploys to production, so it is tested on
+    # every push like main, not only when a pull request happens to be open.
+    branches: [main, master, vercel-migration]
   pull_request:
   workflow_dispatch:
 
@@ -13,18 +15,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.11", "3.12", "3.13", "3.14"]
+        # pyproject.toml requires >=3.12: numpy 2.5.3 and scipy 1.18.1, as pinned,
+        # publish nothing for 3.11. Vercel offers 3.12-3.14; the image uses 3.12.
+        python: ["3.12", "3.13", "3.14"]
+    env:
+      # The cross-language flow test fails rather than skips when Node is missing.
+      MICROVERSE_REQUIRE_NODE: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
           cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: blob/package-lock.json
 
       - name: Install
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
+          npm ci --prefix blob
 
       - name: Lint
         run: ruff check .
@@ -34,6 +47,35 @@ jobs:
 
       - name: Test
         run: pytest -q
+
+  blob-service:
+    name: Blob signing service, through Vercel's Node launcher
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: blob/package-lock.json
+
+      - name: Install
+        run: npm ci --prefix blob
+
+      # The launcher Vercel wraps a Node function in. It is what ran the old
+      # `export default POST` as a (req, res) handler, so the tests load the route
+      # through it. Only the one self-contained file is taken, not the builder.
+      - name: Fetch @vercel/node's launcher
+        run: |
+          cd "$RUNNER_TEMP"
+          npm pack @vercel/node@13.0.1 --silent
+          tar -xzf vercel-node-13.0.1.tgz package/dist/bundling-handler.js
+          echo "VERCEL_NODE_LAUNCHER=$RUNNER_TEMP/package/dist/bundling-handler.js" >> "$GITHUB_ENV"
+
+      - name: Test
+        env:
+          MICROVERSE_REQUIRE_LAUNCHER: "1"
+        run: npm test --prefix blob
 
   reference-validation:
     name: Compare against reference implementations
