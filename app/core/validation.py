@@ -111,7 +111,9 @@ class Dataset:
         covariates = hashlib.sha256()
         if self.covariate_columns:
             frame = self.metadata.loc[list(counts.columns), list(self.covariate_columns)]
-            covariates.update(frame.to_csv().encode())
+            # "\n", not the default os.linesep: a fingerprint has to be the same for
+            # the same data on every machine, and Windows would otherwise hash "\r\n".
+            covariates.update(frame.to_csv(lineterminator="\n").encode())
 
         return {
             "abundance_sha256": digest.hexdigest(),

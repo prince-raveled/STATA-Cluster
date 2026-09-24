@@ -161,3 +161,20 @@ def test_missing_group_values_are_dropped_with_a_warning():
     dataset = validate_dataset(table, metadata, "group")
     assert dataset.n_samples == 20
     assert any("no value for" in w for w in dataset.warnings)
+
+
+def test_the_covariate_fingerprint_does_not_depend_on_the_machine(dataset, monkeypatch):
+    """The same data must fingerprint the same everywhere.
+
+    pandas writes CSV with os.linesep, so the covariate hash used to be "\r\n"-based on
+    Windows and "\n"-based on Linux: the demo's manifest from a local run and from the
+    deployment disagreed on covariates_sha256 for identical data.
+    """
+    import os
+
+    assert dataset.covariate_columns, "the fixture must carry covariates for this to test"
+    monkeypatch.setattr(os, "linesep", "\r\n")
+    windows = dataset.fingerprint()["covariates_sha256"]
+    monkeypatch.setattr(os, "linesep", "\n")
+    linux = dataset.fingerprint()["covariates_sha256"]
+    assert windows == linux
