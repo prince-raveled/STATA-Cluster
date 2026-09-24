@@ -27,6 +27,12 @@
       }
     },
     {
+      "source": "/api/blob-download",
+      "destination": {
+        "service": "blob_upload"
+      }
+    },
+    {
       "source": "/(.*)",
       "destination": {
         "service": "microverse"

@@ -74,6 +74,10 @@ BLOB_ACCESS = _setting("MICROVERSE_BLOB_ACCESS", "private")
 #: points at api/blob-upload.js rather than anything in this application.
 BLOB_UPLOAD_HANDLER = (
     os.environ.get("MICROVERSE_BLOB_HANDLER") or "").strip() or "/api/blob-upload"
+#: Route that turns a grant from `/download/grant` into a signed, short-lived URL for
+#: one private object. The same JavaScript service as the upload handler, because
+#: signing a read is also something only that SDK can do; vercel.json routes both.
+BLOB_DOWNLOAD_HANDLER = "/api/blob-download"
 #: Shared secret the worker route requires, so only the queue can start an analysis.
 WORKER_SECRET = os.environ.get("MICROVERSE_WORKER_SECRET", "")
 #: How long an undelivered run request stays claimable. A run that could not start

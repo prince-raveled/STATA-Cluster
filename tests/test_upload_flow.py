@@ -475,7 +475,7 @@ def test_the_minter_holds_no_rules_of_its_own():
 
     # The HTTP statuses the route answers with are vocabulary, not limits. Named one
     # by one, so a size or a lifetime that happens to have three digits still fails.
-    statuses = {"400", "403", "404", "409", "500", "502"}
+    statuses = {"302", "400", "403", "404", "409", "500", "502"}
     numbers = set(re.findall(r"\b\d+\b", code)) - statuses
     assert not numbers, (
         f"the minter contains its own numeric limits {numbers}; every limit must "

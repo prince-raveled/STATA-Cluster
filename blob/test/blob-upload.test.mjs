@@ -168,6 +168,7 @@ describe('module shape', () => {
     const mod = await import(ENTRY);
     assert.equal(mod.default, undefined);
     assert.equal(typeof mod.POST, 'function');
+    assert.equal(typeof mod.GET, 'function');
   });
 });
 
@@ -266,6 +267,63 @@ describe('POST /api/blob-upload', () => {
   }
 });
 
+// --- download: signing one read ----------------------------------------------------
+describe('GET /api/blob-download', () => {
+  test('redirects to a signed URL for exactly the granted object', async () => {
+    const response = await download();
+    assert.equal(response.status, 302);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    const location = new URL(response.headers.get('location'));
+    assert.equal(location.host, `${STORE}.private.blob.vercel-storage.com`);
+    assert.equal(location.pathname, `/microverse/${TOKEN}/bundle.zip`);
+    assert.equal(location.searchParams.get('cache'), '0', 'a rerun must not be served stale');
+    assert.ok([...location.searchParams.keys()].length > 1, 'the URL carries no signature');
+
+    const grant = seen.find((r) => r.path === '/download/grant');
+    assert.equal(grant.headers['x-microverse-worker'], SECRET);
+    assert.deepEqual(grant.body, { token: TOKEN, name: 'bundle.zip' });
+    const signed = seen.find((r) => r.path.startsWith('/signed-token'));
+    assert.equal(signed.body.pathname, `microverse/${TOKEN}/bundle.zip`);
+    assert.deepEqual(signed.body.operations, ['get'], 'a download token must only read');
+    assertNoSecretIn(location.toString());
+  });
+
+  test('what MicroVerse refuses is refused with its status', async () => {
+    for (const [status, error] of [[404, 'That job no longer exists.'],
+                                   [409, 'That run has not finished yet.'],
+                                   [403, 'Not authorised.']]) {
+      behaviour['/download/grant'] = { status, body: { error } };
+      const response = await download();
+      assert.equal(response.status, status);
+      assert.equal((await response.json()).error, error);
+    }
+    assert.ok(!seen.some((r) => r.path.startsWith('/signed-token')), 'nothing may be signed');
+  });
+
+  test('an unknown download is passed through as 404', async () => {
+    const response = await download(`token=${TOKEN}&name=run.pkl.gz`);
+    assert.equal(response.status, 404);
+  });
+
+  test('the store refusing to sign is a gateway failure', async () => {
+    configure({ BLOB_READ_WRITE_TOKEN: `vercel_blob_rw_${STORE}_adifferenttoken` });
+    const response = await download();
+    assert.equal(response.status, 502);
+  });
+
+  test('an unconfigured deployment signs nothing', async () => {
+    configure({ MICROVERSE_WORKER_SECRET: undefined });
+    const response = await download();
+    assert.equal(response.status, 500);
+    assert.equal(seen.length, 0);
+  });
+
+  test('GET on any other path is 404', async () => {
+    const response = await download('', '/api/blob-upload');
+    assert.equal(response.status, 404);
+  });
+});
+
 // --- the way Vercel actually invokes it ---------------------------------------------
 function findLauncher() {
   if (process.env.VERCEL_NODE_LAUNCHER) return process.env.VERCEL_NODE_LAUNCHER;
@@ -326,6 +384,13 @@ describe('through Vercel\'s Node launcher', { skip: !launcherPath && !requireLau
       method: 'POST', headers: { 'content-type': 'application/json' }, body: '{not json',
     });
     assert.equal(response.status, 400);
+  });
+
+  test('a download redirect survives the launcher', async () => {
+    const response = await fetch(`${url}/api/blob-download?token=${TOKEN}&name=bundle.zip`,
+                                 { redirect: 'manual' });
+    assert.equal(response.status, 302);
+    assert.ok(response.headers.get('location').includes('.private.blob.vercel-storage.com/'));
   });
 
   test('a method with no handler is 405, the launcher\'s own answer', async () => {

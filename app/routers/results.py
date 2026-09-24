@@ -1,10 +1,12 @@
 """Results dashboard, specification curve, and downloads (SPEC §16, §18)."""
 from __future__ import annotations
 
+import hmac
 import re
+import time
 
 import numpy as np
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Header, Request
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
@@ -41,7 +43,9 @@ from ..templating import templates
 
 router = APIRouter()
 
-#: Files written once at run time and streamed from disk rather than rebuilt per request.
+#: Files written once at run time and served from where they were stored, never rebuilt
+#: per request. On object storage they exceed a function's response cap, so the
+#: browser is sent to the store for them (`_stored_download`).
 ON_DISK = {"bundle": "bundle.zip", "long": "results_long.csv.gz"}
 
 DOWNLOADS = {
@@ -205,6 +209,63 @@ def curve(token: str, taxon_id: int):
     return JSONResponse(specification_curve(run, taxon_id))
 
 
+def _require_finished_job(token: str):
+    """The job row alone, with `_require`'s answers, for a download that never needs
+    the run itself: loading three pickles to serve a file that is already stored is
+    work a large export can do without."""
+    job = db.get_job(token)
+    if job is None:
+        raise NotFoundError("That job no longer exists.",
+                            f"Results are kept for {config.RETENTION_DAYS} days.")
+    if job.status != "done":
+        raise RunNotReadyError(
+            "That run has not finished yet." if job.status != "error"
+            else (job.error or "That run failed."),
+            job.error_hint or f"Check progress at /job/{token}.",
+        )
+    return job
+
+
+def _stored_download(token: str, kind: str):
+    """Serve one of the two large exports from wherever the run stored it.
+
+    They are written once when the run finishes, and on object storage they are
+    larger than a function may return (4.5 MB on Vercel; the bundle for a demo is
+    8-11 MB). So on disk they are handed over as a file, and in the store the browser
+    is sent to the object itself -- never streamed through here, and never rebuilt
+    here, which would produce the same oversized response.
+    """
+    job = _require_finished_job(token)
+    stored = ON_DISK[kind]
+    filename, media_type = DOWNLOADS[kind]
+
+    if storage.is_local():
+        # A read creates nothing: the path is only looked at.
+        path = storage.LocalBackend.path(token, stored)
+        if path.exists():
+            disposition = f'attachment; filename="{_safe_stem(job.dataset_name)}_{filename}"'
+            return FileResponse(path, media_type=media_type,
+                                headers={"Content-Disposition": disposition})
+        return None       # a run from before these were stored: rebuilt below, as ever
+
+    if not storage.exists(token, stored):
+        raise NotFoundError(
+            "This export is no longer stored.",
+            f"Results are kept for {config.RETENTION_DAYS} days. The robustness table, "
+            "specifications and manifest can still be downloaded individually.",
+        )
+    direct = storage.download_url(token, stored)
+    if not direct:
+        error = DatasetError(
+            "This deployment cannot produce a download link for this file.",
+            "The file is too large to send through the application. This is a "
+            "configuration problem on the server, not a problem with your results.",
+        )
+        error.status_code = 503
+        raise error
+    return RedirectResponse(direct, status_code=307)
+
+
 @router.get("/download/{token}/{kind}", include_in_schema=False)
 def download(token: str, kind: str):
     if kind not in DOWNLOADS:
@@ -213,23 +274,14 @@ def download(token: str, kind: str):
             "Available: " + ", ".join(DOWNLOADS) +
             ". There is no 'best specification' export, by design (SPEC §18).",
         )
+    if kind in ON_DISK:
+        served = _stored_download(token, kind)
+        if served is not None:
+            return served
+
     job, run, summary, attribution = _require(token)
     filename, media_type = DOWNLOADS[kind]
     disposition = f'attachment; filename="{_safe_stem(job.dataset_name)}_{filename}"'
-
-    # The two large artefacts are written once when the run finishes. Serving them
-    # from where they were stored keeps a download off the heap for a table with
-    # thousands of taxa — and where the host caps a response smaller than a result
-    # bundle, the browser is sent to the object store instead of through the cap.
-    if kind in ON_DISK:
-        stored = ON_DISK[kind]
-        direct = storage.download_url(token, stored)
-        if direct:
-            return RedirectResponse(direct, status_code=307)
-        path = config.job_dir(token) / stored
-        if path.exists():
-            return FileResponse(path, media_type=media_type,
-                                headers={"Content-Disposition": disposition})
 
     if kind == "manifest":
         import json
@@ -250,3 +302,49 @@ def download(token: str, kind: str):
 
     return Response(content=payload, media_type=media_type,
                     headers={"Content-Disposition": disposition})
+
+
+@router.post("/download/grant", include_in_schema=False)
+async def grant(request: Request, x_microverse_worker: str = Header(default="")):
+    """Decide whether the signing route may sign a read of one stored export.
+
+    Called by `api/blob-upload.js`, never by a browser. The signer holds the store
+    credential and none of the rules; this answers the only question it asks -- may a
+    URL be signed for this job's copy of this file, and for how long -- so who may
+    read what has one implementation, here.
+
+    A job token is the capability for its results, exactly as it is for the page and
+    every other download, so a finished job may have its stored exports read. Only
+    the names in `ON_DISK` can be granted: the pickled run, the dataset and anything
+    staged under the same token are not downloads, whatever a caller asks for.
+    """
+    if not config.WORKER_SECRET or not hmac.compare_digest(
+            str(x_microverse_worker or ""), config.WORKER_SECRET):
+        return JSONResponse({"error": "Not authorised."}, status_code=403)
+
+    try:
+        body = await request.json()
+    except Exception:                                        # noqa: BLE001
+        return JSONResponse({"error": "Malformed request."}, status_code=400)
+    if not isinstance(body, dict):
+        return JSONResponse({"error": "Malformed request."}, status_code=400)
+
+    name = str(body.get("name") or "")
+    if name not in ON_DISK.values():
+        return JSONResponse({"error": "There is no such download."}, status_code=404)
+    try:
+        _require_finished_job(str(body.get("token") or ""))
+    except DatasetError as exc:
+        return JSONResponse({"error": exc.message}, status_code=exc.status_code)
+    if storage.is_local():
+        # Nothing to sign: this deployment hands the file over itself.
+        return JSONResponse({"error": "There is no such download."}, status_code=404)
+
+    token = str(body["token"])
+    return {
+        "pathname": storage.backend().pathname(token, name),
+        "access": config.BLOB_ACCESS,
+        # Milliseconds, as the signer wants them. Long enough to start the download,
+        # short enough that a copied link is not a lasting handle on someone's data.
+        "valid_until": int((time.time() + config.DOWNLOAD_URL_TTL_SECONDS) * 1000),
+    }

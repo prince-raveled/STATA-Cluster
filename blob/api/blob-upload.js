@@ -1,20 +1,22 @@
-// The one thing MicroVerse cannot do in Python: mint a browser upload token.
+// The things MicroVerse cannot do in Python: sign for the Blob store.
 //
 // Vercel's Blob SDK can issue a credential scoped to a single pathname, so a browser
-// can write one object and nothing else. That function exists only in the JavaScript
-// SDK -- `vercel.blob` in Python can use a client token but not create one -- and
-// without it a 64 MB abundance table has to travel through a function whose request
-// body caps at 4.5 MB.
+// can write one object and nothing else, and it can sign a short-lived URL that reads
+// one private object and nothing else. Both exist only in the JavaScript SDK --
+// `vercel.blob` in Python can use a client token but not create one, and has no URL
+// signing at all -- and without them a 64 MB abundance table has to travel through a
+// function whose request body caps at 4.5 MB, and a 10 MB results bundle through one
+// whose response does.
 //
 // So this file exists, and does nothing else. It decides nothing about who may
-// upload, what a valid filename is, or how large a file may be. Those rules live in
-// `app/uploads.py` and stay there: this route asks MicroVerse whether the signed
-// ticket the browser presented really authorises the pathname it is asking for, and
-// mints a token only if MicroVerse says yes. Adding a rule here would mean two
-// places to keep in agreement, and one of them would eventually be wrong.
+// upload or download, what a valid filename is, or how large a file may be. Those
+// rules live in `app/uploads.py` and `app/routers/results.py` and stay there: this
+// route asks MicroVerse whether a request is allowed, and signs only what MicroVerse
+// approved. Adding a rule here would mean two places to keep in agreement, and one of
+// them would eventually be wrong.
 //
 // BLOB_READ_WRITE_TOKEN is read here and never leaves: what reaches the browser is
-// derived from it, scoped to one pathname, size-capped, and short-lived.
+// derived from it, scoped to one pathname, and short-lived.
 //
 // Named method exports only -- there must be no default export. Vercel's Node
 // launcher replaces a module with its default export when it has one, and a default
@@ -23,7 +25,7 @@
 // GET or POST, ended as FUNCTION_INVOCATION_FAILED. blob/test/ loads this file
 // through the launcher itself so the shape cannot regress.
 
-import { BlobError } from '@vercel/blob';
+import { BlobError, issueSignedToken, presignUrl } from '@vercel/blob';
 import { handleUpload } from '@vercel/blob/client';
 
 /** An answer with a status, as opposed to an error nobody anticipated. */
@@ -146,3 +148,42 @@ export async function POST(request) {
   }
 }
 
+/** Download: redirect to a short-lived URL for one object MicroVerse approved. */
+export async function GET(request) {
+  const url = new URL(request.url);
+  if (!url.pathname.endsWith('/api/blob-download')) {
+    return Response.json({ error: 'Not found.' }, { status: 404 });
+  }
+  try {
+    const grant = await ask('/download/grant', {
+      token: url.searchParams.get('token') || '',
+      name: url.searchParams.get('name') || '',
+    });
+    let presignedUrl;
+    try {
+      const signed = await issueSignedToken({
+        pathname: grant.pathname,
+        operations: ['get'],
+        validUntil: grant.valid_until,
+      });
+      ({ presignedUrl } = await presignUrl(signed, {
+        operation: 'get',
+        pathname: grant.pathname,
+        access: grant.access,
+        validUntil: grant.valid_until,
+        // A rerun rewrites the same pathname; the CDN may hold the old copy for a
+        // minute, and a results file must never be the previous run's.
+        useCache: false,
+      }));
+    } catch (error) {
+      console.error('[blob] signing failed:', error && error.name, error && error.message);
+      throw new Refusal(502, 'The Blob store could not sign this download.');
+    }
+    return new Response(null, {
+      status: 302,
+      headers: { Location: presignedUrl, 'Cache-Control': 'no-store' },
+    });
+  } catch (error) {
+    return refuse(error);
+  }
+}

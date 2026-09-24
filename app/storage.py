@@ -9,8 +9,9 @@ Both backends implement the same operations and nothing else:
 
     put(token, name, data)   store bytes
     get(token, name)         read them back, or None
+    exists(token, name)      whether an object is stored, without reading it
     purge(token)             delete everything for one job
-    url(token, name)         a direct download link, or None to stream via the app
+    url(token, name)         a link the browser can follow, or None to stream via the app
     authorize(token, name)   where the browser may write one object, and how
 
 `local` is the default and is byte-for-byte what MicroVerse has always done — same
@@ -35,6 +36,7 @@ import re
 import shutil
 from pathlib import Path
 from typing import Protocol
+from urllib.parse import urlencode
 
 from . import config
 
@@ -82,6 +84,7 @@ def _content_type(name: str) -> str:
 class Backend(Protocol):
     def put(self, token: str, name: str, data: bytes) -> None: ...
     def get(self, token: str, name: str) -> bytes | None: ...
+    def exists(self, token: str, name: str) -> bool: ...
     def purge(self, token: str) -> None: ...
     def url(self, token: str, name: str) -> str | None: ...
     def authorize(self, token: str, name: str, size: int) -> dict: ...
@@ -108,6 +111,9 @@ class LocalBackend:
     def get(self, token: str, name: str) -> bytes | None:
         path = self.path(token, name)
         return path.read_bytes() if path.exists() else None
+
+    def exists(self, token: str, name: str) -> bool:
+        return self.path(token, name).exists()
 
     def purge(self, token: str) -> None:
         shutil.rmtree(config.JOBS_DIR / checked(token), ignore_errors=True)
@@ -149,6 +155,9 @@ class BlobBackend:
     def _key(self, token: str, name: str) -> str:
         return f"{self.prefix}/{checked(token, name)}/{name}"
 
+    def pathname(self, token: str, name: str) -> str:
+        """The store pathname of one object, for the route that signs a read of it."""
+        return self._key(token, name)
 
     @staticmethod
     def _blob():
@@ -172,6 +181,20 @@ class BlobBackend:
         except Exception:                                     # noqa: BLE001
             return None          # absent or expired reads the same as absent on disk
 
+    def exists(self, token: str, name: str) -> bool:
+        """Whether the object is stored. Only "not found" means no.
+
+        Anything else -- a credential the store refuses, the store unreachable -- is
+        raised, because answering "absent" would turn a broken deployment into a
+        stream of "your results have expired" pages.
+        """
+        blob = self._blob()
+        try:
+            blob.head(self._key(token, name))
+        except blob.BlobNotFoundError:
+            return False
+        return True
+
     def purge(self, token: str) -> None:
         blob = self._blob()
         try:
@@ -183,17 +206,19 @@ class BlobBackend:
             return           # purge is best-effort; the database row is authoritative
 
     def url(self, token: str, name: str) -> str | None:
-        """A link the browser can follow, when the store's access model allows one.
+        """A link the browser can follow, so the bytes never pass through a function.
 
-        There is no presigning here to reach for. `get_download_url` appends
-        `?download=1` to a blob's own URL and signs nothing, so a link works in a
-        browser exactly when the blob is public. A private blob needs the store
-        credential on every read, which is the server's and stays the server's, so
-        the honest answer is None and the app streams it — within whatever response
-        cap the host imposes.
+        A public blob has one already: `get_download_url` appends `?download=1` to
+        the blob's own URL. A private blob needs a signed, short-lived URL, and only
+        the JavaScript SDK can sign one (`issueSignedToken` + `presignUrl`), so the
+        link is to the route that does: `api/blob-upload.js` answers
+        GET `BLOB_DOWNLOAD_HANDLER` by asking this application for a grant
+        (`/download/grant`) and redirecting to the URL it signs. The rules about who
+        may read what stay in Python; the signing happens there.
         """
         if config.BLOB_ACCESS != "public":
-            return None
+            query = urlencode({"token": checked(token, name), "name": name})
+            return f"{config.BLOB_DOWNLOAD_HANDLER}?{query}"
         blob = self._blob()
         try:
             return blob.get_download_url(blob.head(self._key(token, name)).url)
@@ -249,6 +274,14 @@ def put_bytes(token: str, name: str, data: bytes) -> None:
 def get_bytes(token: str, name: str) -> bytes | None:
     return backend().get(token, name)
 
+
+def exists(token: str, name: str) -> bool:
+    return backend().exists(token, name)
+
+
+def is_local() -> bool:
+    """True when this process can hand a stored file straight from disk."""
+    return backend().name == "local"
 
 
 def put_text(token: str, name: str, text: str) -> None:
