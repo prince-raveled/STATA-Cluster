@@ -13,10 +13,11 @@ Both backends preserve the lifecycle the frontend already polls:
                                                                       ->  frontend polls
 
 `inline` is the default and is exactly what MicroVerse has always done. `queue`
-publishes the token to a Vercel Queues topic; delivery invokes the worker route,
-which runs the same `services.execute`. The queue's own per-consumer concurrency cap
-is what keeps the global limit global once more than one instance exists — an
-in-process semaphore cannot do that job when the process is not the only one.
+publishes the token to a Vercel Queues topic; delivery invokes the subscriber in
+`app/queue_worker.py`, which runs the same `services.execute`. The queue's own
+per-consumer concurrency cap is what keeps the global limit global once more than one
+instance exists — an in-process semaphore cannot do that job when the process is not
+the only one.
 
 Nothing here decides *what* runs. It decides *where the call comes from*.
 """

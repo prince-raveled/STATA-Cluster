@@ -58,7 +58,7 @@ ON_VERCEL = bool(os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"))
 #: silently wrong into one that is merely unconfigured, which fails far more clearly.
 STORAGE_BACKEND = _setting("MICROVERSE_STORAGE", "blob" if ON_VERCEL else "local")
 #: How the analysis is started: "inline" (Starlette's background threadpool) or
-#: "queue" (a message whose delivery invokes the worker route). Inline needs the
+#: "queue" (a Vercel Queues message, consumed by app/queue_worker.py). Inline needs the
 #: process to outlive the response, which on Vercel it does not.
 JOB_BACKEND = _setting("MICROVERSE_JOBS", "queue" if ON_VERCEL else "inline")
 #: Lifetime of a signed download link. Long enough to click, short enough that a
@@ -82,17 +82,14 @@ BLOB_UPLOAD_HANDLER = (
 #: one private object. The same JavaScript service as the upload handler, because
 #: signing a read is also something only that SDK can do; vercel.json routes both.
 BLOB_DOWNLOAD_HANDLER = "/api/blob-download"
-#: Shared secret the worker route requires, so only the queue can start an analysis.
+#: Shared secret between this application and the Blob signing service
+#: (blob/api/blob-upload.js), which presents it to /upload/ticket and /download/grant.
+#: It also signs upload tickets, so every instance must share it. Unset refuses both.
 WORKER_SECRET = os.environ.get("MICROVERSE_WORKER_SECRET", "")
 #: How long an undelivered run request stays claimable. A run that could not start
 #: because every slot was busy must still be there when one frees up, so this is set
 #: well beyond QUEUE_WAIT_SECONDS rather than at the queue's 24-hour default.
 QUEUE_RETENTION_SECONDS = int(os.environ.get("MICROVERSE_QUEUE_TTL", str(6 * 3600)))
-#: Absolute base URL of this deployment, used to address the worker route. Vercel
-#: sets VERCEL_URL to the deployment host without a scheme.
-_vercel_host = os.environ.get("VERCEL_PROJECT_PRODUCTION_URL") or os.environ.get("VERCEL_URL", "")
-PUBLIC_BASE_URL = os.environ.get(
-    "MICROVERSE_BASE_URL", f"https://{_vercel_host}" if _vercel_host else "").rstrip("/")
 
 #: SPEC §16.5 — permanent token URL, 90-day retention.
 RETENTION_DAYS = int(os.environ.get("MICROVERSE_RETENTION_DAYS", "90"))

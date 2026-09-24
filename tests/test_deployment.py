@@ -141,59 +141,16 @@ def test_no_declared_pipeline_stays_none():
     assert jobs.rebuild_declared({}) is None
 
 
-# --- the worker route -------------------------------------------------------
-def test_the_worker_refuses_everyone_when_no_secret_is_configured(client, monkeypatch):
-    """An unconfigured deployment must not leave an open way to start work."""
-    monkeypatch.setattr(config, "WORKER_SECRET", "")
+# --- no HTTP route starts an analysis ---------------------------------------
+@pytest.mark.parametrize("secret", ["", "anything"])
+def test_only_the_queue_subscriber_can_start_a_queued_run(client, monkeypatch, secret):
+    """/internal/run was the queue's first delivery target. Vercel delivers to the
+    subscriber declared in pyproject.toml instead (app/queue_worker.py), so the route
+    had no caller left and was removed rather than kept as a second way in."""
+    monkeypatch.setattr(config, "WORKER_SECRET", "anything")
     response = client.post("/internal/run", json={"token": TOKEN},
-                           headers={"X-Microverse-Worker": ""})
-    assert response.status_code == 404
-
-
-def test_the_worker_refuses_a_wrong_secret(client, monkeypatch):
-    monkeypatch.setattr(config, "WORKER_SECRET", "the-real-secret")
-    response = client.post("/internal/run", json={"token": TOKEN},
-                           headers={"X-Microverse-Worker": "not-it"})
-    assert response.status_code == 404
-
-
-def test_the_worker_rejects_a_malformed_token(client, monkeypatch):
-    monkeypatch.setattr(config, "WORKER_SECRET", "s")
-    response = client.post("/internal/run", json={"token": "../../etc/passwd"},
-                           headers={"X-Microverse-Worker": "s"})
-    assert response.status_code == 400
-
-
-def test_a_message_for_a_vanished_job_is_accepted_not_retried(client, monkeypatch):
-    """Retention expired. Redelivery will never succeed, so it must not look like one."""
-    monkeypatch.setattr(config, "WORKER_SECRET", "s")
-    response = client.post("/internal/run", json={"token": TOKEN},
-                           headers={"X-Microverse-Worker": "s"})
-    assert response.status_code == 200
-    assert response.json()["status"] == "gone"
-
-
-def test_a_finished_job_is_not_run_a_second_time(client, monkeypatch):
-    """Delivery is at-least-once, and a rerun would overwrite a result being read."""
-    monkeypatch.setattr(config, "WORKER_SECRET", "s")
-    with db.session() as session:
-        session.add(db.Job(token=TOKEN, status="done", mode="quick"))
-        session.commit()
-    try:
-        response = client.post("/internal/run", json={"token": TOKEN},
-                               headers={"X-Microverse-Worker": "s"})
-        assert response.status_code == 200
-        assert response.json()["status"] == "done"
-    finally:
-        with db.session() as session:
-            job = session.get(db.Job, TOKEN)
-            if job is not None:
-                session.delete(job)
-                session.commit()
-
-
-def test_the_worker_route_is_not_advertised(client):
-    """It is infrastructure, not API surface."""
+                           headers={"X-Microverse-Worker": secret})
+    assert response.status_code in (404, 405)
     schema = client.get("/api/openapi.json").json()
     assert not [p for p in schema["paths"] if p.startswith("/internal")]
 
