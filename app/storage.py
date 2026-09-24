@@ -140,11 +140,11 @@ class BlobBackend:
     result URL that is public forever is a different promise from one the app can
     stop serving, and microbiome data is not ours to make public by default.
 
-    That choice has a cost this SDK cannot buy off. There is no presigning in
-    `vercel.blob`, so a private object can only be read with the store credential,
-    which means the app streams every download and the host's response cap applies
-    to it. `MICROVERSE_BLOB_ACCESS=public` trades the promise for the cap. Neither
-    option is free, so neither is chosen silently.
+    The Python SDK cannot sign a URL, so a private object is read here with the store
+    credential, or -- for the exports too large for a function's response -- through
+    a short-lived URL the JavaScript service signs (see `url`).
+    `MICROVERSE_BLOB_ACCESS=public` serves objects from permanent public URLs instead,
+    a different promise about the data, so it is never chosen silently.
     """
 
     name = "blob"

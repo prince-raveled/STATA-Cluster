@@ -67,11 +67,11 @@ DOWNLOAD_URL_TTL_SECONDS = int(os.environ.get("MICROVERSE_DOWNLOAD_TTL", "900"))
 #: Lifetime of a browser's permission to write one uploaded object. Long enough for
 #: 64 MB on a slow connection, short enough that a leaked one stops working quickly.
 UPLOAD_URL_TTL_SECONDS = int(os.environ.get("MICROVERSE_UPLOAD_TTL", "1800"))
-#: Whether result objects are readable by URL alone. "private" is the default and
-#: keeps every read behind the store credential, which means the app streams
-#: downloads and the host's response cap applies to them. "public" lets a browser
-#: fetch a result directly from an unguessable URL, which is the only way past that
-#: cap with this SDK -- and a different promise about the data, so it is opt-in.
+#: Whether result objects are readable by URL alone. "private" is the default: every
+#: read needs the store credential, and the large exports reach the browser as a
+#: short-lived signed URL made by the Blob signing service (see BLOB_DOWNLOAD_HANDLER).
+#: "public" serves them from an unguessable but permanent URL instead -- a different
+#: promise about the data, so it is opt-in.
 BLOB_ACCESS = _setting("MICROVERSE_BLOB_ACCESS", "private")
 #: Route that mints a browser upload token. Empty disables direct upload, and the
 #: browser posts the form instead. Only the JavaScript SDK can sign these, so this

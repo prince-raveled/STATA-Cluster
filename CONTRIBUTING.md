@@ -102,4 +102,5 @@ Never rate-limit reads. A results URL is meant to be shared and must keep workin
 
     .venv/Scripts/python -m pytest -q
     .venv/Scripts/python -m ruff check .
+    npm ci --prefix blob && npm test --prefix blob      # the Blob signing service
     .venv/Scripts/python -m uvicorn app.main:app --reload

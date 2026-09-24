@@ -66,8 +66,11 @@ web-request time. So the modes are separated:
 | **Full** | Quick + ANCOM-BC, ALDEx2, PyDESeq2 on a stratified matrix sample | ~1,700–3,400 valid | ~19 s |
 | **Covariate** | fork 7 over every covariate subset, on a reference sub-grid | ~500–2,300 valid | ~5 s |
 
-Runtimes are for the bundled demo datasets on 4 cores. The spec's budget is 90 s for
-Quick and 10 minutes for Full.
+Runtimes are model fitting for the bundled demo datasets on 4 cores. The spec's budget
+is 90 s for Quick and 10 minutes for Full. A complete run also apportions the variation
+between the choices and writes the exports: roughly 30 s more on a laptop, and on the
+public instance (one vCPU) a Quick run takes one to two minutes end to end, most of it
+that attribution step. Each run records its own phase timings in the job summary.
 
 ### What comes back
 
@@ -105,8 +108,19 @@ significance, the interface says so.
 
 ## Deployment
 
-The image is built and exercised on every push by `.github/workflows/ci.yml`, which
-starts the container, runs a complete analysis through it and downloads the bundle.
+The public instance, <https://stata-cluster.vercel.app>, runs on Vercel's free plan from
+the `vercel-migration` branch. FastAPI is a Python function; datasets and results live
+in private Vercel Blob storage; a run is published to Vercel Queues and executed by the
+subscriber in `app/queue_worker.py`; job records live in PostgreSQL. A small JavaScript
+service in `blob/` signs the two things the Python SDK cannot: a browser's upload token,
+so a table goes straight to storage, and a short-lived download URL for the exports too
+large for a function's 4.5 MB response. Configuration, and how a release reaches
+production, are in [deploy/README.md](deploy/README.md).
+
+Everywhere else the defaults are a disk and a long-lived process — local storage,
+inline runs, SQLite — which is what local development and the Docker image use. The
+image is built and exercised on every push by `.github/workflows/ci.yml`, which starts
+the container, runs a complete analysis through it and downloads the bundle.
 
 ```bash
 fly launch --no-deploy && fly volumes create microverse_data --size 10 && fly deploy
@@ -119,7 +133,9 @@ run at the §8 taxon ceiling needs about 25 s of CPU and ~300 MB.
 MicroVerse bounds its own load: an in-process queue caps simultaneous runs
 (`MICROVERSE_MAX_CONCURRENT`, default `min(4, cpus)`) with a bounded backlog, and a
 per-client rate limit covers uploading and starting runs. Reading results is never
-limited, so a shared link keeps working. `/healthz` reports queue depth.
+limited, so a shared link keeps working. `/healthz` reports queue depth and which
+storage, job and database backends the process chose. On Vercel the same
+`MICROVERSE_MAX_CONCURRENT` is the queue consumer's concurrency, which is global.
 
 Both exist because of a measurement: unbounded, six simultaneous runs took 63 s each
 against ~10 s alone. Bounded, the same six take 45 s and latency is predictable.
@@ -146,9 +162,14 @@ values.
 app/core/    the engine: parsers, preprocess, grid, validity, methods,
              effects, fdr, robustness, attribution, runner, report
 app/routers/ upload, job, results, api
+app/storage.py, db.py, jobs.py, queue_worker.py, uploads.py
+             where bytes live, the job table, how a run starts, the queue
+             consumer, direct-upload tickets -- each with a local and a Vercel side
 app/templates, app/static   Jinja2 + HTMX + Alpine + Plotly + Tabulator, no build step
-tests/       176 tests, including the SPEC §19 verification gate
-examples/    three simulated cohorts with known spiked taxa
+blob/        the JavaScript Blob signing service (Vercel only) and its tests
+tests/       the pytest suite, including the SPEC §19 verification gate
+examples/    the generator for three simulated cohorts with known spiked taxa
+deploy/      Dockerfile support, lock generation, deployment notes
 ```
 
 ## Interface
@@ -301,12 +322,13 @@ marker — so every table read as kingdom-rank and was refused as uncollapsible.
   starts it, runs a whole analysis through the container and downloads the bundle — so
   a green badge means the container works. It cannot be built on this machine: Docker
   Desktop needs administrator rights and so does `wsl --install`, and WSL is not
-  installed. What is checked locally is the layer that actually fails — all 73
-  dependencies resolve to Linux wheels for Python 3.12, and CI fails if
+  installed. What is checked locally is the layer that actually fails — every
+  dependency resolves to a Linux wheel for Python 3.12, and CI fails if
   `requirements.lock.txt` is stale.
-- **Never deployed.** `fly.toml`, `render.yaml` and `deploy/README.md` are ready, and
-  `tests/reference/load_test.py` accepts `MICROVERSE_URL` so the host's CPU can be
-  verified against the O6 budget once it is live — which is what SPEC §20 asks for.
+- **The O6 budget is not verified on the live host.** The public instance runs on
+  Vercel's free plan; `tests/reference/load_test.py` accepts `MICROVERSE_URL` but has not
+  been run against it, which is what SPEC §20 asks for. Fly.io and Render are
+  configured (`fly.toml`, `render.yaml`) but not deployed.
 - **No browser testing outside Chromium.** The one risky CSS feature (`:has()`) now has
   a scripted fallback, so selection state shows even where it is unsupported.
 - **ANCOM-BC's bias term still differs from R's by 0.020 natural-log units** — a
@@ -317,6 +339,7 @@ marker — so every table read as kingdom-rank and was refused as uncollapsible.
 
 ```bash
 .venv/Scripts/python -m pytest -q
+npm ci --prefix blob && npm test --prefix blob      # the Blob signing service
 ```
 
 `tests/test_worked_example.py` encodes SPEC §19 — the tiers the engine must reproduce.

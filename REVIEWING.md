@@ -175,7 +175,8 @@ homoscedastic approximation, and its standard error wrongly including the bias v
 ## 7. Reproducing everything
 
 ```bash
-.venv/Scripts/python -m pytest -q                       # 307 tests
+.venv/Scripts/python -m pytest -q                       # the whole suite
+npm ci --prefix blob && npm test --prefix blob         # the Blob signing service
 .venv/Scripts/python -m ruff check .
 .venv/Scripts/python tests/reference/run_all.py         # every external check
 .venv/Scripts/python deploy/verify_image.py             # container, minus the daemon
@@ -253,7 +254,8 @@ Concretely, the findings that would falsify parts of this:
 app/core/        the engine — statistics, no web framework
 app/routers/     HTTP, thin
 app/templates/   Jinja2; no build step, no bundler
-tests/           307 automated tests
+tests/           the automated suite
+blob/            the JavaScript Blob signing service used on Vercel, and its tests
 tests/reference/ checks that need R, network, or a second environment
 docs/            the JSON records every validation claim is read from
 deploy/          Dockerfile support, lock generation, image verification

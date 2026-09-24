@@ -19,7 +19,7 @@ dependencies = { file = ["requirements.txt"] }
 
 # The host installs this project to build the function, which makes setuptools go
 # looking for packages. Left to guess, its flat-layout discovery finds seven
-# candidates at the top level -- api, app, data, deploy, docs, examples, tests --
+# candidates at the top level -- app, blob, data, deploy, docs, examples, tests --
 # and refuses rather than choose. Only `app` is importable at runtime, so only `app`
 # is declared. This is packaging metadata; nothing here affects what the code does.
 [tool.setuptools.packages.find]
