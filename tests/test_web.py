@@ -495,7 +495,7 @@ def test_the_configure_page_shows_how_its_count_is_reached(client):
     token = landed.headers["location"].rsplit("/", 1)[-1]
     page = client.get(f"/configure/{token}").text
     assert "How is this calculated?" in page
-    assert "✓ Matches" in page
+    assert '<span class="check-ok">Matches</span>' in page
     assert "Inside one specification" in page
     assert f'action="/run/{token}"' in page
 

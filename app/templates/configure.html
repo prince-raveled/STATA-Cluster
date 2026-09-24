@@ -25,7 +25,7 @@
                     "Every defensible value of every analytical choice is run. Here you choose how much of that space to explore, then start the run.") %}
     <span class="chip">{{ job.dataset_name }}</span>
     <span class="chip">{{ summary.n_samples }} samples · {{ summary.n_taxa|commafy }} taxa</span>
-    {{ status(dataset_status.tone, dataset_status.label, dataset_status.glyph) }}
+    {{ status(dataset_status.tone, dataset_status.label) }}
     <a class="small" href="/validate/{{ token }}">Review validation</a>
   {% endcall %}
 
@@ -191,7 +191,7 @@
               {% endif %}
               <p>
                 {% if s.matches %}
-                  <span class="check-ok">✓ Matches</span> the {{ r.n_enumerated|commafy }}
+                  <span class="check-ok">Matches</span> the {{ r.n_enumerated|commafy }}
                   combinations the engine enumerated for this dataset.
                 {% else %}
                   <span class="check-bad">Does not match</span> the engine's count of
@@ -343,7 +343,7 @@
       </div>
       <div class="next-actions">
         <a class="btn btn-ghost" href="/validate/{{ token }}">Back to validation</a>
-        <button class="btn btn-primary btn-lg" type="submit">Run the analysis <span class="arrow" aria-hidden="true">→</span></button>
+        <button class="btn btn-primary btn-lg" type="submit">Run the analysis</button>
       </div>
     </section>
   </form>

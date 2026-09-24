@@ -363,7 +363,7 @@
           <details class="disclosure" style="margin-top:14px">
             <summary>Diagnostics</summary>
             <div class="disclosure-body">
-              <div class="table-wrap">
+              <div class="table-wrap" tabindex="0" role="region" aria-label="Attribution diagnostics, scrollable">
                 <table class="data">
                   <thead><tr><th scope="col">Choice</th><th scope="col" class="num">Main</th>
                     <th scope="col" class="num">Second</th><th scope="col" class="num">Interval</th></tr></thead>
@@ -730,7 +730,7 @@
     renderVertical: "basic",
     pagination: true, paginationSize: 15, paginationSizeSelector: [15, 25, 50, 100, 500],
     initialSort: [{ column: "frac_significant", dir: "desc" }],
-    columnDefaults: { headerHozAlign: "left" },
+    columnDefaults: { headerHozAlign: "left", headerWordWrap: true },
     columns: [
       { title: "Taxon", field: "label", minWidth: 180, headerFilter: "input", frozen: true,
         formatter: (cell) => '<a class="taxon-link" href="/results/' + token
@@ -862,7 +862,7 @@
       cells.push("<div><b>" + (isNum(row.median_effect) ? row.median_effect.toFixed(2) : "–")
         + "</b><span>typical effect (log2)</span></div>");
       cells.push('<div><a class="taxon-link" href="/results/' + token + "/taxon/" + encodeURIComponent(taxonId)
-        + '">Open this taxon →</a><span>why it moved, choice by choice</span></div>');
+        + '">Open this taxon</a><span>why it moved, choice by choice</span></div>');
     }
     box.innerHTML = cells.join("");
   }

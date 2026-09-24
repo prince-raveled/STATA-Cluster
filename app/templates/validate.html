@@ -6,7 +6,6 @@
 {% block workflow %}{{ stepper(WORKFLOW_STEPS('validate', token, job.status)) }}{% endblock %}
 
 {% set LEVEL_TONE = {"serious": "red", "caution": "amber", "note": "blue", "ok": "green"} %}
-{% set LEVEL_GLYPH = {"serious": "!", "caution": "!", "note": "i", "ok": "✓"} %}
 
 {% block content %}
 <div class="shell">
@@ -19,7 +18,7 @@
   <!-- ============ status ============ -->
   <section class="panel" aria-labelledby="status-title" style="display:grid;gap:12px">
     <h2 id="status-title" class="visually-hidden">Dataset status</h2>
-    <div>{{ status(dataset_status.tone, dataset_status.label, dataset_status.glyph, "lg") }}</div>
+    <div>{{ status(dataset_status.tone, dataset_status.label, size="lg") }}</div>
     <p style="margin:0;font-size:17px;color:var(--ink)">{{ dataset_status.sentence }}</p>
     <p class="small muted" style="margin:0">Passing validation means the software can process
       your files. Whether the data can answer the question is a separate matter, checked
@@ -30,7 +29,7 @@
     <!-- ============ dataset ============ -->
     <section class="panel" aria-labelledby="dataset-title">
       <div class="panel-head"><h2 id="dataset-title" style="font-size:20px">Dataset</h2>
-        <span class="status status-green"><span class="status-glyph" aria-hidden="true">✓</span>Read</span></div>
+        <span class="status status-green">Read</span></div>
       <dl class="kv">
         <dt>Samples</dt>
         <dd><b class="num">{{ summary.n_samples|commafy }}</b></dd>
@@ -60,8 +59,8 @@
           <span class="num">{{ summary.n_group_a }}</span> {{ summary.group_a }} ·
           <span class="num">{{ summary.n_group_b }}</span> {{ summary.group_b }}
           <span aria-hidden="true" style="display:flex;height:8px;border-radius:99px;overflow:hidden;margin-top:8px;background:var(--surface-3)">
-            <span style="width:{{ (100 * summary.n_group_a / total)|round(1) if total else 50 }}%;background:var(--ink-3)"></span>
-            <span style="flex:1;background:var(--purple)"></span>
+            <span style="width:{{ (100 * summary.n_group_a / total)|round(1) if total else 50 }}%;background:var(--peach)"></span>
+            <span style="flex:1;background:var(--ink-3)"></span>
           </span>
         </dd>
         <dt>Rank of the table</dt>
@@ -159,14 +158,14 @@
       <summary>All {{ readiness.checks|length }} checks
         <span class="summary-meta">{{ readiness.counts['ok'] }} fine · {{ readiness.flagged|length }} flagged</span></summary>
       <div class="disclosure-body">
-        <div class="table-wrap">
+        <div class="table-wrap" tabindex="0" role="region" aria-label="All readiness checks, scrollable">
           <table class="data">
             <thead><tr><th scope="col">Check</th><th scope="col">Result</th><th scope="col">Detail</th></tr></thead>
             <tbody>
               {% for check in readiness.checks %}
                 <tr>
                   <th scope="row">{{ check.title }}</th>
-                  <td>{{ status(LEVEL_TONE[check.level], check.label, LEVEL_GLYPH[check.level]) }}</td>
+                  <td>{{ status(LEVEL_TONE[check.level], check.label) }}</td>
                   <td>{{ check.detail }}</td>
                 </tr>
               {% endfor %}
@@ -180,7 +179,7 @@
   {% call next_step("Next: configure the specification space",
                     "See every analytical choice the run will vary, and choose how much of it to run.") %}
     <a class="btn btn-ghost" href="/#start">Upload different files</a>
-    <a class="btn btn-primary btn-lg" href="/configure/{{ token }}">Continue to configuration <span class="arrow" aria-hidden="true">→</span></a>
+    <a class="btn btn-primary btn-lg" href="/configure/{{ token }}">Continue to configuration</a>
   {% endcall %}
 </div>
 {% endblock %}

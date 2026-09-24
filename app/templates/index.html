@@ -19,7 +19,7 @@
         which findings survive all of them, which depend on a particular choice, and which
         choice is responsible.</p>
       <div class="hero-actions">
-        <a class="btn btn-primary btn-lg" href="#start">Start analysis <span class="arrow" aria-hidden="true">→</span></a>
+        <a class="btn btn-primary btn-lg" href="#start">Start analysis</a>
         <a class="btn btn-secondary btn-lg" href="#demos">Try a demo dataset</a>
       </div>
       <ul class="hero-facts">
@@ -41,32 +41,32 @@
         <desc id="figure-svg-desc">Forty analyses of one taxon sorted by effect size. The
           analyses on the left are not significant, and every one of them used the same
           statistical test, shown by the row of marks beneath them.</desc>
-        <text x="0" y="12" font-size="10.5" fill="#585d66" font-family="DM Sans, sans-serif">effect size</text>
-        <line x1="0" y1="96" x2="440" y2="96" stroke="#c5c5bc" stroke-width="1" stroke-dasharray="3 4"/>
-        <text x="440" y="90" font-size="10" fill="#585d66" text-anchor="end" font-family="DM Sans, sans-serif">no difference</text>
+        <text x="0" y="12" font-size="10.5" fill="#735f61" font-family="DM Sans, sans-serif">effect size</text>
+        <line x1="0" y1="96" x2="440" y2="96" stroke="#dcc5b0" stroke-width="1" stroke-dasharray="3 4"/>
+        <text x="440" y="90" font-size="10" fill="#735f61" text-anchor="end" font-family="DM Sans, sans-serif">no difference</text>
         {% for i in range(40) %}
           {% set t = (i - 19.5) / 19.5 %}
           {% set y = 88 - 60 * t * (0.55 + 0.45 * t * t) %}
           {% if i < 16 %}
-            <circle cx="{{ 14 + i * 10.6 }}" cy="{{ y|round(1) }}" r="3.4" fill="#80858d"/>
+            <circle cx="{{ 14 + i * 10.6 }}" cy="{{ y|round(1) }}" r="3.4" fill="#9a8b8c"/>
           {% else %}
-            <circle cx="{{ 14 + i * 10.6 }}" cy="{{ y|round(1) }}" r="3.8" fill="#5936c2"/>
+            <circle cx="{{ 14 + i * 10.6 }}" cy="{{ y|round(1) }}" r="3.8" fill="#D463A1"/>
           {% endif %}
         {% endfor %}
         {% set rows = [("rarefaction", 3), ("transformation", 5), ("statistical test", 0), ("correction", 7)] %}
         {% for name, step in rows %}
           {% set ry = 168 + loop.index0 * 23 %}
-          <text x="0" y="{{ ry - 6 }}" font-size="9.5" fill="#585d66" font-family="DM Sans, sans-serif">{{ name }}</text>
+          <text x="0" y="{{ ry - 6 }}" font-size="9.5" fill="#735f61" font-family="DM Sans, sans-serif">{{ name }}</text>
           {% for i in range(40) %}
             {% if (step == 0 and i < 16) or (step and (i * step) % 11 < 4) %}
               <rect x="{{ 11 + i * 10.6 }}" y="{{ ry }}" width="6" height="6" rx="1.5"
-                    fill="{{ '#1b5ea6' if step == 0 else '#c5c5bc' }}"/>
+                    fill="{{ '#3f87be' if step == 0 else '#dcc5b0' }}"/>
             {% endif %}
           {% endfor %}
         {% endfor %}
       </svg>
       <p class="figure-note"><b>How to read it:</b> each dot is one complete analysis of the
-        same taxon. Purple ones found a significant difference; grey ones did not. The grey
+        same taxon. Pink ones found a significant difference; grey ones did not. The grey
         ones all share one statistical test (the blue marks), so in this made-up example
         that single choice decides the answer.</p>
     </figure>
@@ -238,7 +238,7 @@
 
       <label class="field">
         <span class="label">Taxonomy map <span class="tag-optional">optional</span></span>
-        <span class="hint">Feature ID → lineage. Lets the analysis be repeated at genus
+        <span class="hint">Maps each feature ID to its lineage. Lets the analysis be repeated at genus
           level as well, when your table is finer than genus.</span>
         <input type="file" name="taxonomy" accept=".csv,.tsv,.txt">
       </label>
@@ -251,7 +251,7 @@
       </label>
 
       <button class="btn btn-primary btn-lg" type="submit" style="width:100%">
-        Upload and validate <span class="arrow" aria-hidden="true">→</span></button>
+        Upload and validate</button>
     </form>
 
     <div class="stack">
@@ -265,7 +265,7 @@
             <div class="demo">
               <div><b>{{ demo.title }}</b><div class="demo-shape">{{ demo.shape }}</div></div>
               <a class="btn btn-secondary btn-sm" href="/demo/{{ name }}"
-                 aria-label="Load the demo: {{ demo.title }}">Load <span class="arrow" aria-hidden="true">→</span></a>
+                 aria-label="Load the demo: {{ demo.title }}">Load</a>
               <p>{{ demo.blurb }}</p>
             </div>
           {% endfor %}

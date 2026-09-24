@@ -14,17 +14,17 @@
     const style = getComputedStyle(document.body);
     const pick = (name, fallback) => (style.getPropertyValue(name) || fallback).trim();
     return {
-      ink: pick("--ink", "#15171a"),
-      inkSoft: pick("--ink-2", "#3c4047"),
-      grey: pick("--ink-3", "#585d66"),
-      line: pick("--line", "#deded7"),
-      lineSoft: pick("--line-soft", "#ebebe5"),
-      /* Semantic roles, not hues: significance is analytical output (purple), the
-         declared pipeline is information about the reader's own choice (blue). */
-      significant: pick("--purple", "#5936c2"),
-      nonsignificant: "#80858d",
-      matrix: pick("--ink-3", "#585d66"),
-      declared: pick("--blue", "#1b5ea6"),
+      ink: pick("--ink", "#554345"),
+      inkSoft: pick("--ink-2", "#6b585a"),
+      grey: pick("--ink-3", "#735f61"),
+      line: pick("--line", "#eddccb"),
+      lineSoft: pick("--line-soft", "#f3e8dd"),
+      /* Significance is the headline result, so it takes the page's one accent; the
+         declared pipeline is a reference mark, in cornflower. */
+      significant: pick("--accent", "#D463A1"),
+      nonsignificant: "#9a8b8c",
+      matrix: pick("--ink-3", "#735f61"),
+      declared: pick("--focus", "#3f87be"),
       sans: pick("--sans", "sans-serif"),
       mono: pick("--mono", "monospace")
     };

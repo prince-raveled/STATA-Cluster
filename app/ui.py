@@ -180,16 +180,16 @@ def dataset_status(readiness) -> dict:
     """
     worst = getattr(readiness, "worst", "ok")
     if worst == "serious":
-        return {"key": "review", "label": "Review required", "tone": "red", "glyph": "!",
+        return {"key": "review", "label": "Review required", "tone": "red",
                 "sentence": "The files were read correctly, but the study design will make "
                             "the results hard to interpret. Read the findings below "
                             "before you continue. Nothing here blocks the analysis."}
     if worst == "caution":
-        return {"key": "review", "label": "Review required", "tone": "amber", "glyph": "!",
+        return {"key": "review", "label": "Review required", "tone": "amber",
                 "sentence": "The files were read correctly. Some properties of the data "
                             "will limit what the analysis can conclude; they are listed "
                             "below. Nothing here blocks the analysis."}
-    return {"key": "ready", "label": "Dataset ready", "tone": "green", "glyph": "✓",
+    return {"key": "ready", "label": "Dataset ready", "tone": "green",
             "sentence": "The files were read correctly and nothing about the design "
                         "limits what the analysis can conclude."}
 

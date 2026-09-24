@@ -1,16 +1,15 @@
 {#  Shared interface components. Each one carries its meaning in words as well as in
-    colour: a callout has a title and an icon, a status a label and a glyph. #}
+    colour: a callout always has a title, a status always a label. #}
 
 {% macro callout(tone, title, icon=None, id=None) -%}
 <div class="callout callout-{{ tone }}"{% if id %} id="{{ id }}"{% endif %}>
-  <span class="callout-icon" aria-hidden="true">{{ icon or {"red": "!", "amber": "!", "blue": "i", "green": "✓", "purple": "∑"}.get(tone, "i") }}</span>
   <p class="callout-title">{{ title }}</p>
   <div class="callout-body">{{ caller() }}</div>
 </div>
 {%- endmacro %}
 
-{% macro status(tone, label, glyph="•", size="") -%}
-<span class="status status-{{ tone }}{% if size %} status-{{ size }}{% endif %}"><span class="status-glyph" aria-hidden="true">{{ glyph }}</span>{{ label }}</span>
+{% macro status(tone, label, size="") -%}
+<span class="status status-{{ tone }}{% if size %} status-{{ size }}{% endif %}">{{ label }}</span>
 {%- endmacro %}
 
 {#  The workflow indicator. Steps link backwards only where ui.workflow_steps says
@@ -22,7 +21,7 @@
       {% for step in steps %}
         <li{% if step.state == 'current' %} class="is-current-li" aria-current="step"{% endif %}>
           {% if step.href %}<a class="step is-{{ step.state }}" href="{{ step.href }}">{% else %}<span class="step is-{{ step.state }}{% if step.state == 'upcoming' %} is-locked{% endif %}">{% endif %}
-            <span class="step-index" aria-hidden="true">{% if step.state == 'done' %}✓{% else %}{{ step.number }}{% endif %}</span>
+            <span class="step-index" aria-hidden="true">{{ step.number }}</span>
             <span class="step-text">
               <span class="step-label">{{ step.number }}. {{ step.label }}</span>
               <span class="step-state">{% if step.hint %}{{ step.hint }}{% else %}&nbsp;{% endif %}</span>

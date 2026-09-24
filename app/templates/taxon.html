@@ -10,11 +10,11 @@
 <div class="shell">
 
   <nav class="crumbs" aria-label="Breadcrumb">
-    <a href="/results/{{ token }}#specifications">← All taxa</a>
+    <a href="/results/{{ token }}#specifications">All taxa</a>
     <span>{{ rank_in_table }} of {{ n_taxa }} in the table</span>
     <span class="crumbs-end">
-      {% if neighbours.previous %}<a href="/results/{{ token }}/taxon/{{ neighbours.previous.id }}">← {{ neighbours.previous.label|truncate(26) }}</a>{% endif %}
-      {% if neighbours.next %}<a href="/results/{{ token }}/taxon/{{ neighbours.next.id }}">{{ neighbours.next.label|truncate(26) }} →</a>{% endif %}
+      {% if neighbours.previous %}<a href="/results/{{ token }}/taxon/{{ neighbours.previous.id }}">Previous: {{ neighbours.previous.label|truncate(26) }}</a>{% endif %}
+      {% if neighbours.next %}<a href="/results/{{ token }}/taxon/{{ neighbours.next.id }}">Next: {{ neighbours.next.label|truncate(26) }}</a>{% endif %}
     </span>
   </nav>
 
@@ -280,7 +280,7 @@
 
   {% call next_step("Back to every taxon", "Compare this taxon against the rest of the run.") %}
     {% if neighbours.next %}<a class="btn btn-ghost" href="/results/{{ token }}/taxon/{{ neighbours.next.id }}">Next taxon</a>{% endif %}
-    <a class="btn btn-primary" href="/results/{{ token }}#specifications">All taxa <span class="arrow" aria-hidden="true">→</span></a>
+    <a class="btn btn-primary" href="/results/{{ token }}#specifications">All taxa</a>
   {% endcall %}
 </div>
 {% endblock %}

@@ -12,7 +12,7 @@
      without it the browser keeps the cached stylesheet and the page renders with
      old CSS against new markup. #}
   <link rel="stylesheet" href="/static/css/microverse.css?v={{ ASSETS }}">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2315171a'/><rect x='6' y='18' width='3.5' height='8' rx='1' fill='%238f79e6'/><rect x='12' y='11' width='3.5' height='15' rx='1' fill='%238f79e6'/><rect x='18' y='15' width='3.5' height='11' rx='1' fill='%238f79e6'/><rect x='24' y='6' width='3.5' height='20' rx='1' fill='%23ffffff'/></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23554345'/><rect x='6' y='18' width='3.5' height='8' rx='1' fill='%23EEC7A0'/><rect x='12' y='11' width='3.5' height='15' rx='1' fill='%23EEC7A0'/><rect x='18' y='15' width='3.5' height='11' rx='1' fill='%23EEC7A0'/><rect x='24' y='6' width='3.5' height='20' rx='1' fill='%23D463A1'/></svg>">
   {% block head %}{% endblock %}
 </head>
 <body>
@@ -32,7 +32,7 @@
       <a href="{{ REPOSITORY }}">Source</a>
     </nav>
     {% block header_cta %}
-    <div class="header-cta"><a class="btn btn-primary btn-sm" href="/#start"><span class="cta-long">Start analysis</span><span class="cta-short" aria-hidden="true">Start</span> <span class="arrow" aria-hidden="true">→</span></a></div>
+    <div class="header-cta"><a class="btn btn-primary btn-sm" href="/#start"><span class="cta-long">Start analysis</span><span class="cta-short" aria-hidden="true">Start</span></a></div>
     {% endblock %}
   </div>
 </header>

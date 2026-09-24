@@ -212,14 +212,15 @@ Backward links in the indicator appear only where following them cannot lose or 
 anything: configuration is not linked while a run is in progress. The Method (`/about`)
 and Evidence (`/validation`) pages sit outside the workflow.
 
-Colour is a vocabulary with one meaning per hue: red for what must not be missed
-(invalidity, interpretation limits, errors), blue for information and methodology, green
-for valid or complete, amber for caution, purple for analytical output (tiers,
-specifications, curves), neutral for everything else. The tiers use a violet scale, with
-UNSTABLE in the caution hue. No status is carried by colour alone: every callout has a
-title and an icon, every tier its name. Every text colour clears WCAG AA on the surfaces
-it is used on, and the pages report no axe-core violations (WCAG 2.1 A/AA and best
-practice) at desktop and phone widths.
+Five colours, used with restraint: purplish brown (#554345) for text and structure,
+light peach (#EEC7A0) for the uniform information boxes and for caution, and one accent,
+hot pink (#D463A1), kept for what matters most: the primary action, the headline result,
+ROBUST, significant points in the plots and the must-read interpretation boxes. Neptune
+(#7FB9B9) marks what is complete and cornflower (#6CAEDE) the reference marks in plots.
+No icon or symbol stands in for a word: every status is a label and every box has a
+title. The pale colours are too light to carry text, so text uses deeper shades of the
+same hues; every text colour clears WCAG AA where it is used, and the pages report no
+axe-core violations (WCAG 2.1 A/AA and best practice) at desktop and phone widths.
 
 There is no build step — Jinja2 templates, one stylesheet, HTMX for job polling, Alpine
 for the configure form, Plotly for the curve and Tabulator for the tables. Plot colours

@@ -3,16 +3,16 @@
 {% set percent = 100 if job.status == "done" else [(job.progress * 100)|round(1), 2]|max %}
 {% if job.status == "done" %}
   <div class="row row-between" style="margin-bottom:12px">
-    {{ status('green', 'Complete', '✓', 'lg') }}
+    {{ status('green', 'Complete', size='lg') }}
     <span class="small muted">Finished in {{ job.runtime_seconds|duration }}</span>
   </div>
   <div class="progress" aria-hidden="true"><div class="progress-fill is-done" style="width:100%"></div></div>
   <p style="margin:16px 0 20px;font-size:17px">
     {{ job.n_specs|commafy }} valid specifications analysed. Opening the results&hellip;</p>
-  <a class="btn btn-primary btn-lg" href="/results/{{ token }}">View results <span class="arrow" aria-hidden="true">→</span></a>
+  <a class="btn btn-primary btn-lg" href="/results/{{ token }}">View results</a>
   <script>setTimeout(function () { window.location = "/results/{{ token }}"; }, 700);</script>
 {% elif job.status == "error" %}
-  {{ status('red', 'Stopped', '!', 'lg') }}
+  {{ status('red', 'Stopped', size='lg') }}
   <div style="margin-top:16px">
     {% call callout('red', 'The analysis could not finish') %}
       <p><b>{{ job.error }}</b></p>
@@ -22,7 +22,7 @@
   <ol class="stages" aria-label="Stages">
     {% for stage in stages %}
       <li class="stage is-{{ stage.state }}">
-        <span class="stage-mark" aria-hidden="true">{% if stage.state == 'done' %}✓{% elif stage.state == 'error' %}!{% endif %}</span>
+        <span class="stage-mark" aria-hidden="true"></span>
         <span>{{ stage.label }}{% if stage.state == 'error' %}<span class="visually-hidden"> (stopped here)</span>{% endif %}</span>
         <span class="stage-detail">{% if stage.state == 'error' %}stopped here{% endif %}</span>
       </li>
@@ -33,10 +33,10 @@
     <a class="btn btn-ghost" href="/#start">Start again with different files</a>
   </div>
 {% elif job.status == "uploaded" %}
-  {{ status('blue', 'Not started', 'i', 'lg') }}
+  {{ status('blue', 'Not started', size='lg') }}
   <p style="margin:16px 0 20px;font-size:17px">This dataset has been validated, but no
     analysis has been started for it yet.</p>
-  <a class="btn btn-primary btn-lg" href="/configure/{{ token }}">Configure and run <span class="arrow" aria-hidden="true">→</span></a>
+  <a class="btn btn-primary btn-lg" href="/configure/{{ token }}">Configure and run</a>
 {% else %}
   <div class="progress" role="progressbar" aria-label="Analysis progress"
        aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ (job.progress * 100)|round(0)|int }}">
@@ -51,7 +51,7 @@
   <ol class="stages" aria-label="Stages">
     {% for stage in stages %}
       <li class="stage is-{{ stage.state }}">
-        <span class="stage-mark" aria-hidden="true">{% if stage.state == 'done' %}✓{% endif %}</span>
+        <span class="stage-mark" aria-hidden="true"></span>
         <span>{{ stage.label }}<span class="visually-hidden"> ({{ stage.state }})</span></span>
         <span class="stage-detail">{{ stage.detail }}</span>
       </li>
