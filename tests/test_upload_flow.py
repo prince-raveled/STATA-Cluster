@@ -467,12 +467,16 @@ def test_the_minter_holds_no_rules_of_its_own():
     import re
 
     js = MINTER.read_text(encoding="utf-8")
-    body = js.split("export async function POST")[1]
-    # Comments explain the rules; only executable lines may not restate them.
-    code = " ".join(line for line in body.splitlines()
+    # The whole file, not only the upload handler: the download handler and the
+    # helpers both share it. Comments explain the rules; only executable lines may
+    # not restate them.
+    code = " ".join(line for line in js.splitlines()
                     if not line.strip().startswith("//"))
 
-    numbers = set(re.findall(r"\b\d+\b", code)) - {"400"}   # HTTP status
+    # The HTTP statuses the route answers with are vocabulary, not limits. Named one
+    # by one, so a size or a lifetime that happens to have three digits still fails.
+    statuses = {"400", "403", "404", "409", "500", "502"}
+    numbers = set(re.findall(r"\b\d+\b", code)) - statuses
     assert not numbers, (
         f"the minter contains its own numeric limits {numbers}; every limit must "
         "come from /upload/ticket so there is one source of truth"

@@ -19,6 +19,9 @@ Thumbs.db
 # Vercel CLI scratch state (dev.lock, local link). Never committed.
 .vercel/
 
+# The Blob signing service's dependencies, installed from blob/package-lock.json.
+node_modules/
+
 # setuptools build artefacts, from the host installing this project.
 build/
 *.egg-info/

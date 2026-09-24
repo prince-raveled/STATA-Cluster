@@ -135,8 +135,11 @@
     }).catch(function (error) {
       // A rejection from the store is about this file, so it is worth showing.
       // Anything else -- the CDN blocked, the route missing -- is not, and falls
-      // through to the form.
-      if (error && error.name && String(error.name).indexOf("Blob") === 0) {
+      // through to the form. The SDK's errors are all named plain "Error", so the
+      // name never identified them; the fixed prefix on their message does. Matching
+      // on the name sent every store rejection, including a minting route that could
+      // not mint, quietly down the form path instead.
+      if (error && String(error.message || "").indexOf("Vercel Blob:") === 0) {
         throw { handled: true, payload: { error: error.message, hint: "" } };
       }
       throw error;

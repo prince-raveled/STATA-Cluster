@@ -3,6 +3,9 @@
   "private": true,
   "type": "module",
   "description": "Mints a Vercel Blob upload token so a 64 MB table can reach the store without passing through a function whose request body caps at 4.5 MB. Holds no rules of its own; app/uploads.py decides what may be written.",
+  "scripts": {
+    "test": "node --test"
+  },
   "dependencies": {
     "@vercel/blob": "2.8.0"
   }
