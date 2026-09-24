@@ -91,7 +91,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-          pip install "scikit-bio>=0.7.1" conorm
+          # The version the recorded validation used (SPEC §24.2). 0.7.4 changed
+          # ancombc() to return an ANCOMBCResult, which the comparison does not read.
+          pip install "scikit-bio==0.7.3" conorm
 
       - name: Regenerate the BIOM fixtures with biom-format itself
         run: python tests/reference/make_format_fixtures.py
