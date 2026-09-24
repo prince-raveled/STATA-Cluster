@@ -246,8 +246,10 @@ def demo(name: str):
 
 @router.get("/configure/{token}", response_class=HTMLResponse, include_in_schema=False)
 def configure(request: Request, token: str):
+    # The job first: it is what validates the token, and storage is never handed one
+    # that has not been validated.
     job = db.get_job(token)
-    dataset = db.load_payload(token, "dataset")
+    dataset = db.load_payload(token, "dataset") if job is not None else None
     if job is None or dataset is None:
         raise NotFoundError(
             "That job no longer exists.",

@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import datetime as dt
 import json
-import re
 import secrets
 
 from sqlalchemy import (
@@ -140,7 +139,9 @@ def session():
     return _Session()
 
 
-TOKEN_PATTERN = re.compile(r"^[0-9a-f]{24}$")
+#: One definition, shared with `storage`, which applies it again before any path or
+#: key is built from a token.
+TOKEN_PATTERN = storage.TOKEN_PATTERN
 
 
 def new_token() -> str:

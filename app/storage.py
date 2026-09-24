@@ -5,7 +5,7 @@ pages read them back. On a server with a disk that is just a directory; on Verce
 there is no disk that survives the request, so the same seven objects have to go to
 object storage instead.
 
-Both backends implement the same five operations and nothing else:
+Both backends implement the same operations and nothing else:
 
     put(token, name, data)   store bytes
     get(token, name)         read them back, or None
@@ -19,6 +19,11 @@ rather than a stub. `blob` is selected only by environment variable, and its SDK
 imported inside the backend so that neither local development nor the tests pay for
 a dependency they never call.
 
+Every token and name is checked here, at the one place that turns them into a path
+or a key, rather than trusted from each caller. A token is 24 lowercase hex
+characters and a name is one plain path segment; nothing else reaches a filesystem
+or the store.
+
 Retention (SPEC §16.5) is the database's job; this module only deletes when told.
 """
 from __future__ import annotations
@@ -26,10 +31,31 @@ from __future__ import annotations
 import gzip
 import io
 import pickle
+import re
 import shutil
+from pathlib import Path
 from typing import Protocol
 
 from . import config
+
+#: A job or staging token: what `db.new_token` and `uploads.issue` generate.
+TOKEN_PATTERN = re.compile(r"^[0-9a-f]{24}$")
+#: One path segment: a stored export, a pickled payload, or an upload field.
+_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+
+
+def checked(token: str, name: str | None = None) -> str:
+    """Refuse anything that could address outside one job's own objects.
+
+    Raised rather than answered with "absent": every legitimate caller has already
+    validated the token or generated it, so reaching this with a bad one is a bug,
+    and a bug that builds a path from a URL segment must not fail quietly.
+    """
+    if not TOKEN_PATTERN.match(str(token or "")):
+        raise ValueError(f"not a MicroVerse token: {token!r}")
+    if name is not None and (not _NAME_PATTERN.match(str(name)) or ".." in str(name)):
+        raise ValueError(f"not a storable name: {name!r}")
+    return token
 
 #: Content types for the four exports, so a browser downloading straight from
 #: object storage gets the same headers the app would have sent.
@@ -63,19 +89,28 @@ class Backend(Protocol):
 
 # --- the disk, as it has always been ---------------------------------------
 class LocalBackend:
-    """A directory per token. Unchanged from the original implementation."""
+    """A directory per token, as it has always been.
+
+    Only `put` creates the directory. A read used to create it too, so looking up a
+    token that was never issued left an empty directory behind for every guess.
+    """
 
     name = "local"
 
+    @staticmethod
+    def path(token: str, name: str) -> Path:
+        """Where an object lives. Creates nothing."""
+        return config.JOBS_DIR / checked(token, name) / name
+
     def put(self, token: str, name: str, data: bytes) -> None:
-        (config.job_dir(token) / name).write_bytes(data)
+        (config.job_dir(checked(token, name)) / name).write_bytes(data)
 
     def get(self, token: str, name: str) -> bytes | None:
-        path = config.job_dir(token) / name
+        path = self.path(token, name)
         return path.read_bytes() if path.exists() else None
 
     def purge(self, token: str) -> None:
-        shutil.rmtree(config.JOBS_DIR / token, ignore_errors=True)
+        shutil.rmtree(config.JOBS_DIR / checked(token), ignore_errors=True)
 
     def url(self, token: str, name: str) -> str | None:  # noqa: ARG002
         return None          # the app streams it, as it does today
@@ -112,7 +147,8 @@ class BlobBackend:
         self.prefix = prefix.strip("/")
 
     def _key(self, token: str, name: str) -> str:
-        return f"{self.prefix}/{token}/{name}"
+        return f"{self.prefix}/{checked(token, name)}/{name}"
+
 
     @staticmethod
     def _blob():
@@ -139,7 +175,7 @@ class BlobBackend:
     def purge(self, token: str) -> None:
         blob = self._blob()
         try:
-            listing = blob.list_objects(prefix=f"{self.prefix}/{token}/")
+            listing = blob.list_objects(prefix=f"{self.prefix}/{checked(token)}/")
             keys = [item.pathname for item in listing.blobs]
             if keys:
                 blob.delete(keys)
@@ -212,6 +248,7 @@ def put_bytes(token: str, name: str, data: bytes) -> None:
 
 def get_bytes(token: str, name: str) -> bytes | None:
     return backend().get(token, name)
+
 
 
 def put_text(token: str, name: str, text: str) -> None:
