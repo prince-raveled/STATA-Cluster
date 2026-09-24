@@ -151,11 +151,39 @@ def parse_declared(form: dict):
         return None
 
 
+def request_run(token: str, mode: str) -> None:
+    """Mark a job as asked to run, now. Called by the routes that start a run.
+
+    `started_at` is when the researcher clicked Run, not when a worker got to it: on
+    Vercel a run waits for the queue to deliver it and for a function to start, and
+    the time the page reports must include that wait, because the researcher did.
+    """
+    db.update_job(token, status="running", mode=mode, progress=0.0,
+                  message="Queued", error="", error_hint="", started_at=utcnow())
+
+
+def _requested_at(token: str):
+    """When this run was asked for, or None if nothing recorded it.
+
+    A `started_at` later than the previous run's end was set by `request_run` for this
+    run. One that is not belongs to an earlier run, as when a script calls `execute`
+    directly on a job that has run before, and says nothing about this one.
+    """
+    job = db.get_job(token)
+    if job is None or job.started_at is None:
+        return None
+    if job.finished_at is not None and job.started_at <= job.finished_at:
+        return None
+    return job.started_at
+
+
 def execute(token: str, mode: str, declared=None, covariates=()) -> None:
     """Run the multiverse and persist everything the results pages need.
 
     Runs in Starlette's background threadpool, so it must never raise into the caller.
     """
+    entered = utcnow()
+    requested = _requested_at(token) or entered
     # Wait for a slot rather than piling on. Unbounded concurrency made six
     # simultaneous runs take 63 s each against ~10 s alone, without finishing any of
     # them sooner; bounding it makes latency predictable. Measured in
@@ -181,7 +209,7 @@ def execute(token: str, mode: str, declared=None, covariates=()) -> None:
         )
         return
 
-    db.update_job(token, status="running", started_at=utcnow(),
+    db.update_job(token, status="running", started_at=requested,
                   progress=0.0, message="Starting", mode=mode, error="", error_hint="")
     try:
         dataset = db.load_payload(token, "dataset")
@@ -195,7 +223,9 @@ def execute(token: str, mode: str, declared=None, covariates=()) -> None:
         # Wall-clock per phase, recorded with the result. A run's reported runtime is
         # the engine alone, and on a hosted deployment most of the wait is elsewhere;
         # these say where, without anyone needing access to the host's logs.
-        timings = {}
+        # "starting" is everything between the click and the engine: the queue, a
+        # function starting, a free slot, loading the dataset.
+        timings = {"starting": round(max(0.0, (utcnow() - requested).total_seconds()), 2)}
         clock = time.perf_counter()
 
         def lap(phase: str) -> None:

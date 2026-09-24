@@ -18,7 +18,8 @@
     <span class="chip">{{ MODE_LABELS.get(run.mode, run.mode) }} mode</span>
     <span class="chip">{{ dataset.n_samples }} samples · {{ dataset.n_taxa|commafy }} taxa</span>
     <span class="chip">{{ dataset.group_b }} vs {{ dataset.group_a }}</span>
-    <span class="chip">analysis time {{ run.runtime_seconds|duration }}</span>
+    {% set took = RUN_TIME(job) %}
+    <span class="chip" title="{% for part in took.parts %}{{ part.label|capitalize }}: {{ part.seconds|duration }}{{ '; ' if not loop.last }}{% endfor %}">ran in {{ took.total|duration }} (fitting {{ took.fitting|duration }})</span>
   {% endcall %}
 </div>
 

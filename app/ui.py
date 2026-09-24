@@ -264,6 +264,58 @@ def run_stages(job) -> list:
 
 
 # --------------------------------------------------------------------------
+# How long a run took, as the researcher experienced it.
+# --------------------------------------------------------------------------
+#: The phases `services.execute` records, in the order they happen.
+RUN_PHASES = (
+    ("starting", "starting up"),
+    ("analysis", "fitting every specification"),
+    ("robustness", "robustness labels"),
+    ("attribution", "choice attribution"),
+    ("saving", "saving results and downloads"),
+)
+
+
+def run_time(job) -> dict:
+    """The whole run's wall-clock time, and where it went.
+
+    `runtime_seconds` is the engine fitting every specification, which takes seconds.
+    The run a researcher waits for also attributes variation to the choices, writes
+    every export and, on a hosted deployment, waits for a worker to start. Reporting
+    the fitting time alone as "finished in" told people a two-minute wait took three
+    seconds. The total is from clicking Run to the results being saved, when both
+    times are recorded; otherwise the recorded phases; otherwise the fitting time.
+    """
+    import json
+
+    try:
+        summary = json.loads(getattr(job, "summary_json", "") or "{}")
+    except ValueError:
+        summary = {}
+    timings = summary.get("timings") if isinstance(summary, dict) else None
+    timings = timings if isinstance(timings, dict) else {}
+    parts = [{"key": key, "label": label, "seconds": float(timings[key])}
+             for key, label in RUN_PHASES if key in timings]
+    fitting = float(getattr(job, "runtime_seconds", 0.0) or 0.0)
+
+    recorded = sum(part["seconds"] for part in parts)
+    started, finished = getattr(job, "started_at", None), getattr(job, "finished_at", None)
+    total = (finished - started).total_seconds() if started and finished else 0.0
+    # Phases rounded one by one can overshoot the wall clock by a fraction of a second;
+    # a total well short of them means the two clocks disagree, and the phases win.
+    if total < recorded - 1.0:
+        total = recorded
+    if total <= 0:
+        total = fitting
+
+    # What else the time went on, largest first; the fitting is named on its own.
+    others = sorted((part for part in parts
+                     if part["key"] != "analysis" and part["seconds"] >= 1.0),
+                    key=lambda part: -part["seconds"])
+    return {"total": total, "fitting": fitting, "parts": parts, "others": others}
+
+
+# --------------------------------------------------------------------------
 # The specification space, fork by fork, for the configure page.
 # --------------------------------------------------------------------------
 FORK_QUESTIONS = {

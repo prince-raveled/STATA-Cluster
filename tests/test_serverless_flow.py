@@ -163,8 +163,8 @@ def test_the_worker_finishes_the_run(flow):
     job = flow["job"]
     assert job["status"] == "done", job["error"]
     assert job["n_specs"] > 0
-    assert set(job["summary"]["timings"]) == {"analysis", "robustness", "attribution",
-                                              "saving"}
+    assert set(job["summary"]["timings"]) == {"starting", "analysis", "robustness",
+                                              "attribution", "saving"}
 
 
 def test_the_results_are_readable(flow):

@@ -107,7 +107,7 @@ async def create_job(
         covariates=columns or None,
     )
     token = services.create_job(dataset, abundance.filename)
-    db.update_job(token, status="running", mode=mode, message="Queued")
+    services.request_run(token, mode)
     jobs.dispatch(background, token, mode, None,
                   tuple(columns or dataset.covariate_columns))
     return {

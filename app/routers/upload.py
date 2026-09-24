@@ -293,7 +293,6 @@ async def start_run(request: Request, token: str, background: BackgroundTasks):
         raise NotFoundError("That job no longer exists.",
                            f"Uploads are kept for {config.RETENTION_DAYS} days.")
 
-    db.update_job(token, status="running", mode=mode, progress=0.0,
-                  message="Queued", error="", error_hint="")
+    services.request_run(token, mode)
     jobs.dispatch(background, token, mode, declared, tuple(covariates))
     return RedirectResponse(f"/job/{token}", status_code=303)
