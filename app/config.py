@@ -5,7 +5,8 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = Path(os.environ.get("MICROVERSE_DATA", BASE_DIR / "data"))
+# Blank means unset here too (see _setting below): Path("") is the working directory.
+DATA_DIR = Path((os.environ.get("MICROVERSE_DATA") or "").strip() or BASE_DIR / "data")
 JOBS_DIR = DATA_DIR / "jobs"
 EXAMPLES_DIR = BASE_DIR / "examples"
 def _with_postgres_driver(url: str) -> str:
@@ -28,8 +29,11 @@ def _with_postgres_driver(url: str) -> str:
     return url
 
 
+#: Blank means unset: an empty URL is not a database, and SQLAlchemy's error for it
+#: names neither the setting nor the default it should have fallen back to.
 DATABASE_URL = _with_postgres_driver(
-    os.environ.get("MICROVERSE_DB", f"sqlite:///{(DATA_DIR / 'jobs.sqlite').as_posix()}"))
+    (os.environ.get("MICROVERSE_DB") or "").strip()
+    or f"sqlite:///{(DATA_DIR / 'jobs.sqlite').as_posix()}")
 
 def _setting(name: str, default: str) -> str:
     """Read a setting, treating blank as unset.

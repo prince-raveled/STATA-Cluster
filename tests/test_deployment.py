@@ -422,3 +422,23 @@ def test_sqlite_on_vercel_is_refused_with_the_fix():
         db.check_database_url("sqlite:////var/task/data/jobs.sqlite", on_vercel=True)
     db.check_database_url("postgresql+psycopg://u:p@h/d", on_vercel=True)
     db.check_database_url("sqlite:///data/jobs.sqlite", on_vercel=False)
+
+
+@pytest.mark.parametrize("blank", ["", "   "])
+def test_a_blank_database_setting_means_the_default(monkeypatch, blank):
+    """Blank meant an empty URL, and SQLAlchemy refused it at startup without naming the
+    setting. Unset or blank, the default is SQLite beside the data directory."""
+    monkeypatch.delenv("MICROVERSE_DATA", raising=False)
+    _reload(monkeypatch, {"MICROVERSE_DB": blank})
+    default = f"sqlite:///{(config.DATA_DIR / 'jobs.sqlite').as_posix()}"
+    url = config.DATABASE_URL
+    assert url == default
+
+
+@pytest.mark.parametrize("blank", ["", "   "])
+def test_a_blank_data_directory_means_the_default(monkeypatch, blank):
+    """Path("") is the working directory, so a blank setting quietly moved the job
+    database and every stored result to wherever the process happened to start."""
+    monkeypatch.delenv("MICROVERSE_DB", raising=False)
+    _reload(monkeypatch, {"MICROVERSE_DATA": blank})
+    assert config.DATA_DIR == config.BASE_DIR / "data"
