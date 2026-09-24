@@ -406,3 +406,19 @@ def test_sqlite_and_postgres_get_different_connection_settings():
     postgres = db._engine_options("postgresql+psycopg://u:p@host/db")
     assert "connect_args" not in postgres
     assert postgres["pool_pre_ping"] is True
+
+
+def test_healthz_names_the_interpreter(client):
+    """Vercel chooses the Python version from more than one file and reports its
+    choice only in a build log; the running process is the only reliable witness."""
+    import platform
+
+    assert client.get("/healthz").json()["config"]["python"] == platform.python_version()
+
+
+def test_sqlite_on_vercel_is_refused_with_the_fix():
+    """Left alone, this failed as "unable to open database file" on the first request."""
+    with pytest.raises(RuntimeError, match="MICROVERSE_DB"):
+        db.check_database_url("sqlite:////var/task/data/jobs.sqlite", on_vercel=True)
+    db.check_database_url("postgresql+psycopg://u:p@h/d", on_vercel=True)
+    db.check_database_url("sqlite:///data/jobs.sqlite", on_vercel=False)

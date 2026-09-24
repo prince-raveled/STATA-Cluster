@@ -125,8 +125,27 @@ def create_schema(engine) -> None:
             raise
 
 
+def check_database_url(url: str, on_vercel: bool) -> None:
+    """Refuse the one database choice that cannot work on Vercel, and say why.
+
+    SQLite is the default because a server with a disk should use it. On Vercel it is
+    impossible: the project directory is read-only, and each instance's scratch disk
+    is its own and disappears with it, so a job written by one invocation would be
+    invisible to the next. Left alone, the failure is "unable to open database file"
+    from deep inside SQLAlchemy on the first request, which names neither the setting
+    nor the fix.
+    """
+    if on_vercel and url.startswith("sqlite"):
+        raise RuntimeError(
+            "MICROVERSE_DB is not set, so the job database would be SQLite, which "
+            "cannot work on Vercel: each instance's disk is its own and does not "
+            "outlive it. Set MICROVERSE_DB to a PostgreSQL URL (see .env.example)."
+        )
+
+
 def init() -> None:
     global _engine, _Session
+    check_database_url(config.DATABASE_URL, config.ON_VERCEL)
     config.ensure_directories()
     _engine = create_engine(config.DATABASE_URL, **_engine_options(config.DATABASE_URL))
     create_schema(_engine)

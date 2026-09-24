@@ -4,6 +4,7 @@ SPEC §20: FastAPI, Jinja2 + HTMX + Alpine, SQLite for jobs only, no build step.
 """
 from __future__ import annotations
 
+import platform
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -166,4 +167,7 @@ def healthz():
                 "jobs": config.JOB_BACKEND,
                 "database": config.DATABASE_URL.split("://", 1)[0],
                 "on_vercel": config.ON_VERCEL,
+                # The host picks the interpreter from more than one file, and says
+                # which it chose only in a build log; this is the one that is running.
+                "python": platform.python_version(),
             }}
