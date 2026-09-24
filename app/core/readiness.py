@@ -212,6 +212,18 @@ def _rank_check(dataset) -> list:
         return [Check(key="rank", title="Taxonomy", level=OK,
                       detail="Lineages present, so the analysis can be repeated at "
                              "genus level as well as the level supplied.")]
+    if dataset.table.has_taxonomy:
+        # Lineages were read, but nothing is finer than genus -- including a table that
+        # was just collapsed to genus because it exceeded the taxon limit. Saying no
+        # taxonomy was supplied would tell the researcher to supply what they already did.
+        return [Check(
+            key="rank", title="Already at genus level", level=NOTE,
+            detail=("The table is at genus level or coarser, so the taxonomic-rank "
+                    "choice has only one level and the grid is correspondingly smaller."),
+            advice=("A table at species, ASV or OTU level with lineages would let rank "
+                    "vary too — on published data, rank changed the conclusions more than "
+                    "the choice of statistical test did."),
+        )]
     return [Check(
         key="rank", title="No taxonomy supplied", level=NOTE,
         detail=("Without lineages the taxonomic-rank choice has only one level, so "

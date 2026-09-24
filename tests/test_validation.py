@@ -117,6 +117,33 @@ def test_too_many_taxa_without_taxonomy_is_refused():
     assert "taxonomy" in info.value.message
 
 
+def test_too_many_genus_labelled_rows_are_told_to_filter_not_to_collapse():
+    """2,000 rows named `g__Genus0001`... are already genera: a label, not a lineage.
+
+    The message used to say "collapse to genus yourself", which for this table is
+    impossible -- it is 2,000 distinct genera. What works is keeping the taxa to test.
+    """
+    counts = np.random.default_rng(5).integers(1, 200, size=(2000, 20))
+    taxa = [f"g__DemoGenus{i:04d}" for i in range(1, 2001)]
+    table, metadata = build(counts, ["a"] * 10 + ["b"] * 10, taxa=taxa)
+    with pytest.raises(DatasetError) as info:
+        validate_dataset(table, metadata, "group")
+    assert "2000 taxa, above the 1500 limit" in info.value.message
+    assert info.value.hint.startswith("Keep at most 1500 taxa")
+
+
+def test_too_many_taxa_already_at_genus_say_collapsing_cannot_help():
+    counts = np.random.default_rng(6).integers(1, 200, size=(1600, 20))
+    taxa = [f"G{i:04d}" for i in range(1600)]
+    lineages = {t: ["k__Bacteria", "p__P", "c__C", "o__O", "f__F", f"g__{t}"] for t in taxa}
+    table, metadata = build(counts, ["a"] * 10 + ["b"] * 10, taxa=taxa, lineages=lineages)
+    with pytest.raises(DatasetError) as info:
+        validate_dataset(table, metadata, "group")
+    assert "already at genus level" in info.value.message
+    assert "taxonomy file" not in info.value.hint
+    assert info.value.hint.startswith("Keep at most 1500 taxa")
+
+
 def test_non_integer_values_disable_rarefaction_but_do_not_refuse():
     rng = np.random.default_rng(4)
     counts = rng.random(size=(20, 20))

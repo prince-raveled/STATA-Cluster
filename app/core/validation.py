@@ -319,11 +319,28 @@ def validate_dataset(
                     "to the taxa you intend to test.",
                 )
         else:
+            # Which advice works depends on why the table cannot be collapsed. A table
+            # whose rows are already genera (often labelled only `g__Name`, which is a
+            # name rather than a lineage) cannot be shrunk by collapsing, so telling its
+            # owner to collapse it sends them in a circle.
+            keep = (f"Keep at most {MAX_TAXA} taxa (for example the most prevalent, or "
+                    "the ones you intend to test)")
+            if aligned.can_collapse_to_genus:
+                reason = ""
+                hint = f"{keep}, or collapse the table to genus, then upload it again."
+            elif aligned.has_taxonomy:
+                reason = (" It is already at genus level or coarser, so collapsing to "
+                          "genus cannot reduce it.")
+                hint = f"{keep}, then upload it again."
+            else:
+                reason = (" No taxonomy was found for its rows, so it cannot be collapsed "
+                          "to genus.")
+                hint = (f"{keep}, then upload it again. If the rows are finer than genus, "
+                        "a taxonomy file mapping feature IDs to lineages lets MicroVerse "
+                        "collapse them instead.")
             raise DatasetError(
-                f"The table has {aligned.n_taxa} taxa, above the {MAX_TAXA} limit, and no "
-                "taxonomy was supplied so it cannot be collapsed to genus.",
-                "Collapse to genus yourself, or upload a taxonomy file mapping feature IDs "
-                "to lineages.",
+                f"The table has {aligned.n_taxa} taxa, above the {MAX_TAXA} limit.{reason}",
+                hint,
             )
 
     # --- value-type constraints -------------------------------------------

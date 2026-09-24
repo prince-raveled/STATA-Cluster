@@ -134,6 +134,25 @@ def test_missing_taxonomy_is_a_note_not_a_failure():
     assert "one level" in rank.detail
 
 
+def test_a_table_already_at_genus_is_not_told_to_supply_a_taxonomy():
+    """Lineages that stop at genus were supplied; the check must not ask for them."""
+    report = assess(_dataset(taxonomy=True, n_taxa=40))
+    for check in report.checks:
+        if check.key == "rank" and check.level != OK:
+            assert check.title != "No taxonomy supplied"
+
+
+def test_genus_level_lineages_are_named_as_such(monkeypatch):
+    dataset = _dataset(taxonomy=False, n_taxa=40)
+    genus = {t: ["k__Bacteria", "p__P", "c__C", "o__O", "f__F", f"g__{t}"]
+             for t in dataset.table.taxa}
+    monkeypatch.setattr(dataset.table, "lineages", genus)
+    rank = next(c for c in assess(dataset).checks if c.key == "rank")
+    assert rank.title == "Already at genus level"
+    assert rank.level == NOTE
+    assert "one level" in rank.detail
+
+
 def test_taxonomy_present_is_fine():
     report = assess(_dataset(taxonomy=True, n_taxa=40))
     assert next(c for c in report.checks if c.key == "rank").level == OK
