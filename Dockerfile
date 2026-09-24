@@ -47,6 +47,12 @@ COPY blob/api ./blob/api
 ENV PYTHONPATH=/install/lib/python3.12/site-packages
 RUN python examples/make_examples.py
 
+# The test gate's own tools. requirements-dev.txt keeps them out of requirements.txt,
+# and so out of the lock above, so without this line the gate below has no pytest and
+# the build stops there. They go into the builder's own Python rather than /install,
+# which is the only thing the runtime stage copies, so they never ship.
+RUN pip install --no-cache-dir "pytest==9.1.1" "httpx==0.28.1"
+
 # Fail the build if the engine is wrong, rather than shipping it.
 RUN python -m pytest tests -q --no-header -x
 
