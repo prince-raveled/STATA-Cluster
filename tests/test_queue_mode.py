@@ -83,10 +83,61 @@ def test_two_different_runs_both_arrive(queue_server):
     assert len(drain(queue_server)) == 2
 
 
+def _run_again(finished_at):
+    """What POST /run does to a job that has already run once, then dispatch."""
+    db.update_job(TOKEN, status="running", finished_at=finished_at)
+    jobs.dispatch(None, TOKEN, "quick", None, ())
+
+
+def test_running_a_finished_job_again_is_delivered(queue_server, monkeypatch):
+    """Found in production: the second run of a job was silently dropped.
+
+    Vercel Queues discards a repeated idempotency key for as long as the original
+    message is retained, and `send` still succeeds. With the bare token as the key, a
+    finished job run a second time -- another mode, or a retry after an error -- was
+    never delivered, stayed on "Queued", and its results page redirected there.
+    """
+    import datetime as dt
+
+    monkeypatch.setattr(config, "JOB_BACKEND", "queue")
+    with db.session() as session:
+        session.add(db.Job(token=TOKEN, status="running", mode="quick"))
+        session.commit()
+    try:
+        jobs.dispatch(None, TOKEN, "quick", None, ())
+        drain(queue_server)[0].accept()                     # the first run, consumed
+
+        _run_again(dt.datetime(2026, 9, 24, 8, 0, 0))
+        assert len(drain(queue_server)) == 1, "the second run was dropped as a duplicate"
+    finally:
+        _drop(TOKEN)
+
+
+def test_a_double_submit_of_a_second_run_is_still_one_message(queue_server, monkeypatch):
+    import datetime as dt
+
+    monkeypatch.setattr(config, "JOB_BACKEND", "queue")
+    with db.session() as session:
+        session.add(db.Job(token=TOKEN, status="done", mode="quick",
+                           finished_at=dt.datetime(2026, 9, 24, 8, 0, 0)))
+        session.commit()
+    try:
+        _run_again(dt.datetime(2026, 9, 24, 8, 0, 0))
+        _run_again(dt.datetime(2026, 9, 24, 8, 0, 0))
+        assert len(drain(queue_server)) == 1
+    finally:
+        _drop(TOKEN)
+
+
+def test_a_first_run_keeps_the_bare_token_as_its_key():
+    """Unchanged for every job that has never run: the key is still the token."""
+    assert jobs.run_key("0" * 24) == "0" * 24
+
+
 def test_dispatch_publishes_in_queue_mode_and_never_schedules_locally(monkeypatch):
     sent = {}
     monkeypatch.setattr(config, "JOB_BACKEND", "queue")
-    monkeypatch.setattr(jobs, "_publish", lambda p: sent.update(p))
+    monkeypatch.setattr(jobs, "_publish", lambda p, key=None: sent.update(p))
 
     class Background:
         def __init__(self):
@@ -106,7 +157,7 @@ def test_an_unrecognised_backend_behaves_like_inline(monkeypatch):
     """A typo in the environment must not silently stop running anything."""
     published = []
     monkeypatch.setattr(config, "JOB_BACKEND", "qeueu")
-    monkeypatch.setattr(jobs, "_publish", published.append)
+    monkeypatch.setattr(jobs, "_publish", lambda p, key=None: published.append(p))
 
     class Background:
         def __init__(self):

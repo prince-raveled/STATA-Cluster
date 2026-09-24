@@ -111,7 +111,7 @@ def test_the_default_dispatch_is_the_original_background_task():
 def test_the_queue_backend_publishes_instead_of_scheduling(monkeypatch):
     sent = {}
     monkeypatch.setattr(config, "JOB_BACKEND", "queue")
-    monkeypatch.setattr(jobs, "_publish", lambda payload: sent.update(payload))
+    monkeypatch.setattr(jobs, "_publish", lambda payload, key=None: sent.update(payload))
 
     background = RecordingBackground()
     jobs.dispatch(background, TOKEN, "full", None, ("age", "bmi"))

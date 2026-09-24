@@ -59,14 +59,36 @@ def dispatch(background, token: str, mode: str, declared=None, covariates=()) ->
     `background` is the request's BackgroundTasks, used only by the inline backend.
     """
     if config.JOB_BACKEND == "queue":
-        _publish(_payload(token, mode, declared, covariates))
+        _publish(_payload(token, mode, declared, covariates), key=run_key(token))
         return
     from . import services
     background.add_task(services.execute, token, mode, declared, tuple(covariates or ()))
 
 
-def _publish(payload: dict) -> None:
-    """Send one message, keyed by token so a double submit cannot run twice.
+def run_key(token: str) -> str:
+    """The idempotency key for the run this dispatch starts: one key per run, not per job.
+
+    Vercel Queues drops a message whose key it has already seen for as long as the
+    original message is retained (QUEUE_RETENTION_SECONDS), and the drop is silent:
+    `send` succeeds and nothing is delivered. Keyed by the token alone, running a job a
+    second time -- another mode from the configure page, or a retry after an error --
+    was dropped while the route had already marked the job running, so a finished job
+    sat on "Queued" indefinitely and its results page redirected to that progress page.
+
+    The key is therefore the token qualified by when the job's previous run ended. A
+    double submit happens before that changes, so it still collapses to one message; a
+    genuine re-run comes after it, so it gets a key of its own. A job's first run keeps
+    the bare token, exactly as before.
+    """
+    from . import db
+
+    job = db.get_job(token)
+    finished = job.finished_at if job is not None else None
+    return f"{token}:{finished.isoformat()}" if finished else token
+
+
+def _publish(payload: dict, key: str | None = None) -> None:
+    """Send one message under `key` (default: the token), so a double submit runs once.
 
     The synchronous client is used on purpose: the routes that dispatch are ordinary
     request handlers and there is nothing to overlap this call with. Imported lazily,
@@ -79,8 +101,8 @@ def _publish(payload: dict) -> None:
         payload,
         # The run must still be claimable if the first delivery is lost.
         retention=config.QUEUE_RETENTION_SECONDS,
-        # Re-submitting the same token is a no-op rather than a second run.
-        idempotency_key=payload["token"],
+        # Re-submitting the same run is a no-op rather than a second analysis.
+        idempotency_key=key or payload["token"],
     )
 
 
