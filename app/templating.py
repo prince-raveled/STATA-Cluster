@@ -25,6 +25,7 @@ from .ui import (
     pruning_rules,
     run_stages,
     run_time,
+    skipped_reasons,
     workflow_steps,
 )
 
@@ -95,6 +96,7 @@ templates.env.globals.update(
     WORKFLOW_STEPS=workflow_steps,
     RUN_STAGES=run_stages,
     RUN_TIME=run_time,
+    SKIPPED_REASONS=skipped_reasons,
     PRUNING_RULES=pruning_rules(),
     # Changes whenever the stylesheet or scripts change shape, so a returning visitor
     # never renders new markup against a cached stylesheet. The application version

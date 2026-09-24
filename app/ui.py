@@ -315,6 +315,44 @@ def run_time(job) -> dict:
     return {"total": total, "fitting": fitting, "parts": parts, "others": others}
 
 
+def skipped_reasons(run, summary) -> list:
+    """Why some specifications produced no result, one plain sentence per cause.
+
+    The page used to explain every gap the same way -- subsampling left a group too
+    small -- including in production, where the real cause was PyDESeq2 failing on
+    every matrix. Runs saved before causes were recorded keep that old sentence, which
+    was right for them.
+    """
+    from .core.models import METHOD_LABELS
+
+    missing = int(getattr(summary, "n_specs_skipped", 0) or 0)
+    if not missing:
+        return []
+    causes = getattr(run, "skipped", None) or {}
+    if not causes:
+        return [f"{missing:,} analyses produced no result at all, because subsampling to "
+                "that depth left one group with too few samples to compare."]
+    sentences = []
+    for reason, entry in causes.items():
+        n, matrices = int(entry.get("specs", 0)), int(entry.get("matrices", 0))
+        if not n:
+            continue
+        if reason == "unusable":
+            sentences.append(
+                f"{n:,} analyses produced no result because preprocessing left "
+                f"{matrices:,} of the matrices with too few taxa, or one group with too "
+                "few samples, to compare.")
+        else:
+            label = METHOD_LABELS.get(reason, reason)
+            detail = str(entry.get("detail") or "").strip()
+            sentences.append(
+                f"{label} could not be fitted on {matrices:,} "
+                f"{'matrix' if matrices == 1 else 'matrices'}, so its {n:,} "
+                f"{'analysis' if n == 1 else 'analyses'} produced no result"
+                + (f" (the error was: {detail})" if detail else "") + ".")
+    return sentences
+
+
 # --------------------------------------------------------------------------
 # The specification space, fork by fork, for the configure page.
 # --------------------------------------------------------------------------

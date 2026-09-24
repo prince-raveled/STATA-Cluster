@@ -298,8 +298,16 @@ def verdict_sentence(run, summary: RobustnessSummary) -> str:
         f"{counts['FRAGILE']} FRAGILE and {counts['UNSTABLE']} UNSTABLE"
     ]
     if counts["INSUFFICIENT"]:
-        parts.append(f"{counts['INSUFFICIENT']} could not be tiered (tested in <10 specifications)")
-    sentence = "; ".join(parts) + f", across {summary.n_specs_total:,} valid specifications."
+        # "A further": these are not among the taxa counted above, and reading the clause
+        # as a share of them made the sentence's numbers appear not to add up.
+        n = int(counts["INSUFFICIENT"])
+        parts.append(f"a further {n} {'taxon' if n == 1 else 'taxa'} could not be tiered "
+                     "(tested in fewer than 10 specifications)")
+    skipped = int(getattr(summary, "n_specs_skipped", 0) or 0)
+    across = (f"across the {summary.n_specs_total:,} of {summary.n_specs_total + skipped:,} "
+              "valid specifications that produced a result" if skipped
+              else f"across {summary.n_specs_total:,} valid specifications")
+    sentence = "; ".join(parts) + f", {across}."
 
     if run.declared_spec_id >= 0 and np.isfinite(summary.declared_percentile):
         sentence += (

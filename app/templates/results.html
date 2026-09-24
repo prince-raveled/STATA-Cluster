@@ -14,7 +14,7 @@
 
 <div class="shell">
   {% call page_head("Step 5 · Results", "Results for " ~ job.dataset_name,
-                    "How each taxon held up across " ~ (grid.n_valid|commafy) ~ " valid specifications, and which analytical choices moved it.") %}
+                    "How each taxon held up across " ~ (summary.n_specs_total|commafy) ~ " specifications, and which analytical choices moved it.") %}
     <span class="chip">{{ MODE_LABELS.get(run.mode, run.mode) }} mode</span>
     <span class="chip">{{ dataset.n_samples }} samples · {{ dataset.n_taxa|commafy }} taxa</span>
     <span class="chip">{{ dataset.group_b }} vs {{ dataset.group_a }}</span>
@@ -68,9 +68,9 @@
     </div>
 
     <div class="stats" style="margin-top:var(--space-4)">
-      <div class="stat"><span class="stat-value">{{ grid.n_valid|commafy }}</span>
+      <div class="stat"><span class="stat-value">{{ summary.n_specs_total|commafy }}</span>
         <span class="stat-label">specifications run</span>
-        <span class="stat-note">of {{ grid.n_enumerated|commafy }} enumerated</span></div>
+        <span class="stat-note">{% if summary.n_specs_skipped %}of {{ grid.n_valid|commafy }} valid; {{ summary.n_specs_skipped|commafy }} gave no result{% else %}of {{ grid.n_enumerated|commafy }} enumerated{% endif %}</span></div>
       <div class="stat"><span class="stat-value">{{ summary.table|length|commafy }}</span>
         <span class="stat-label">taxa tested</span>
         <span class="stat-note">in at least one specification</span></div>
@@ -81,13 +81,24 @@
         <span class="stat-label">{{ dfn('model_fit', 'model fits') }}</span>
         <span class="stat-note">on {{ grid.n_matrices|commafy }} preprocessed matrices</span></div>
     </div>
+    {% set gaps = SKIPPED_REASONS(run, summary) %}
+    {% if gaps %}
+      <div style="margin-top:var(--space-4)">
+        {% call callout('amber', (summary.n_specs_skipped|commafy) ~ ' of ' ~ (grid.n_valid|commafy) ~ ' specifications produced no result') %}
+          {% for sentence in gaps %}<p>{{ sentence }}</p>{% endfor %}
+          <p>They are left out of every percentage on this page rather than counted as
+            non-significant, so each rate is out of the {{ summary.n_specs_total|commafy }}
+            that ran.</p>
+        {% endcall %}
+      </div>
+    {% endif %}
 
     <details class="disclosure" style="margin-top:var(--space-4)">
       <summary>New to multiverse results? How to read this page</summary>
       <div class="disclosure-body">
         <div class="grid-2">
           <div><p class="eyebrow" style="margin-bottom:4px">WHAT HAPPENED</p>
-            <p>Your data was analysed <b>{{ grid.n_valid|commafy }} different ways</b>: every
+            <p>Your data was analysed <b>{{ summary.n_specs_total|commafy }} different ways</b>: every
               combination of choices a reasonable researcher could defend.</p></div>
           <div><p class="eyebrow" style="margin-bottom:4px">WHAT TO LOOK AT</p>
             <p>Start with the <b>robustness labels</b> below, then open the
@@ -109,18 +120,18 @@
       <p class="eyebrow">A result, not a failure</p>
       {% if n_detected == 0 %}
         <h3 id="null-title" style="font-size:21px;margin-bottom:10px">Nothing here separates your two groups.</h3>
-        <p>Across all {{ grid.n_valid|commafy }} defensible ways of analysing this table,
+        <p>Across all {{ summary.n_specs_total|commafy }} defensible ways of analysing this table,
           no taxon reached significance in a single one of them. The analysis ran correctly
           and completed — this is what it found.</p>
       {% else %}
         <h3 id="null-title" style="font-size:21px;margin-bottom:10px">No finding here held up.</h3>
         <p>{{ n_detected|commafy }} {{ 'taxon' if n_detected == 1 else 'taxa' }} reached
-          significance somewhere in the {{ grid.n_valid|commafy }} analyses, but not one of
+          significance somewhere in the {{ summary.n_specs_total|commafy }} analyses, but not one of
           them reached <b>ROBUST</b> or <b>CONDITIONAL</b> — every one fell apart when the
           analytical choices changed. The analysis ran correctly and completed; this is what
           it found.</p>
         {% call callout('red', 'Do not read the table below as a shortlist') %}
-          <p>Crossing significance in a handful of analyses out of {{ grid.n_valid|commafy }}
+          <p>Crossing significance in a handful of analyses out of {{ summary.n_specs_total|commafy }}
             is close to what noise alone produces: on a table simulated with no difference
             between the groups at all, 57 of 79 taxa still landed in UNSTABLE. A taxon
             appearing there is not weak evidence of an effect — it is an absence of evidence
@@ -470,12 +481,10 @@
           </details>
         {% endif %}
 
-        {% if summary.n_specs_skipped %}
-          <p class="warn" style="margin-top:12px">
-            {{ summary.n_specs_skipped|commafy }} analyses produced no result at all, because
-            subsampling to that depth left one group with too few samples to compare. They are
-            excluded from every percentage on this page rather than counted as failures.</p>
-        {% endif %}
+        {% for sentence in SKIPPED_REASONS(run, summary) %}
+          <p class="warn" style="margin-top:12px">{{ sentence }} Excluded from every percentage
+            on this page rather than counted as non-significant.</p>
+        {% endfor %}
         {% for note in grid.notes %}<p class="note" style="margin-top:10px">{{ note }}</p>{% endfor %}
 
         <div style="margin-top:var(--space-5)">

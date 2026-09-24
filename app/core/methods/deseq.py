@@ -6,6 +6,7 @@ pruned with a reason the user sees.
 """
 from __future__ import annotations
 
+import contextlib
 import warnings
 
 import numpy as np
@@ -22,9 +23,34 @@ def available() -> bool:
     return True
 
 
+@contextlib.contextmanager
+def _one_process(*_args, **_kwargs):
+    """What PyDESeq2's parallel sections run under here: joblib's sequential backend.
+
+    PyDESeq2 wraps each fit in `parallel_backend("loky", inner_max_num_threads=1)`. Only
+    loky accepts that argument, and loky needs multiprocessing, which a Vercel function
+    does not have (no /dev/shm). joblib then substitutes its threading backend, which
+    refuses the argument, so every PyDESeq2 fit in production raised and Full mode lost
+    those specifications. MicroVerse runs PyDESeq2 on one CPU, so nothing here was ever
+    parallel: sequential is what `n_cpus=1` already meant, and the numbers are the same.
+    """
+    from joblib import parallel_backend
+
+    with parallel_backend("sequential"):
+        yield
+
+
+def _run_in_one_process() -> None:
+    from pydeseq2 import default_inference
+
+    default_inference.parallel_backend = _one_process
+
+
 def run_pydeseq2(matrix, covariate_frame=None, n_cpus: int = 1) -> FitResult:
     from pydeseq2.dds import DeseqDataSet
     from pydeseq2.ds import DeseqStats
+
+    _run_in_one_process()
 
     counts = np.rint(np.asarray(matrix.counts, dtype=float)).astype(int)
     n_taxa = counts.shape[0]

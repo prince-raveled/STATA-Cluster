@@ -41,6 +41,10 @@ class RunResult:
     method_status: dict = field(default_factory=dict)
     failures: list = field(default_factory=list)
     group_labels: tuple = ("A", "B")
+    #: Why specifications produced no result, so the page can say so rather than guess:
+    #: {"unusable": {...}} for matrices too small to test, {method: {...}} for a method
+    #: that raised. Each entry counts specifications and matrices and keeps one error.
+    skipped: dict = field(default_factory=dict)
 
     @property
     def n_specs(self) -> int:
@@ -154,6 +158,12 @@ def run_multiverse(
     eff_h_out: list = []
     eff_n_out: list = []
     failures: list = []
+    skipped: dict = {}
+
+    def skip(reason: str, n_specs: int, detail: str = "") -> None:
+        entry = skipped.setdefault(reason, {"specs": 0, "matrices": 0, "detail": detail})
+        entry["specs"] += n_specs
+        entry["matrices"] += 1
 
     for position, matrix_key in enumerate(matrix_keys):
         rarefaction, seed, rank, prevalence, transform = matrix_key
@@ -163,6 +173,7 @@ def run_multiverse(
                 f"Matrix {matrix_key} left {matrix.n_taxa} taxa and "
                 f"{matrix.n_samples} samples; skipped."
             )
+            skip("unusable", sum(len(info["spec_ids"]) for _, info in fits_by_matrix[matrix_key]))
             continue
 
         global_idx = matrix.taxa_idx + offsets[rank]
@@ -176,6 +187,7 @@ def run_multiverse(
                 fit = run_method(method, matrix, frame, aldex_instances=aldex_instances)
             except Exception as exc:  # a single method failing must not kill the run
                 failures.append(f"{method} failed on matrix {matrix_key}: {exc}")
+                skip(method, len(info["spec_ids"]), f"{type(exc).__name__}: {exc}"[:300])
                 continue
 
             adjusted_cache: dict = {}
@@ -240,4 +252,5 @@ def run_multiverse(
         method_status=status,
         failures=failures,
         group_labels=dataset.group_labels,
+        skipped=skipped,
     )

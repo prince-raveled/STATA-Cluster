@@ -186,6 +186,27 @@ def test_harmonised_effect_correlates_with_pydeseq2_native(dataset):
     assert correlation > 0.9, f"harmonisation is wrong: r={correlation:.3f}"
 
 
+@pytest.mark.skipif(available_methods()["pydeseq2"] != "", reason="pydeseq2 not installed")
+def test_pydeseq2_runs_where_multiprocessing_is_unavailable(matrix, monkeypatch):
+    """Vercel functions have no /dev/shm, so joblib cannot start loky there and quietly
+    substitutes its threading backend -- which refuses the inner_max_num_threads that
+    PyDESeq2 asks for around every fit. In production every PyDESeq2 fit failed that
+    way, and Full mode lost its PyDESeq2 specifications. Reproduced here by taking
+    loky out of joblib's registry, as its availability check does on such a host."""
+    import joblib.parallel as jp
+
+    monkeypatch.delitem(jp.BACKENDS, "loky", raising=False)
+    monkeypatch.setattr(jp, "DEFAULT_BACKEND", "threading")
+    with (pytest.warns(UserWarning),
+          pytest.raises(AssertionError, match="inner_max_num_threads"),
+          jp.parallel_backend("loky", inner_max_num_threads=1)):
+        pass                                     # the conditions really do reproduce it
+
+    fit = run_method("pydeseq2", matrix)
+    assert len(fit.p_raw) == matrix.n_taxa
+    assert np.isfinite(fit.p_raw).all()
+
+
 def test_aldex2_is_reproducible(matrix):
     from app.core.methods.aldex2 import run_aldex2
 
