@@ -11,7 +11,7 @@ pytest.importorskip("httpx", reason="TestClient needs httpx")
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app import config, db  # noqa: E402
+from app import config, db, services  # noqa: E402
 from app.main import app  # noqa: E402
 
 
@@ -244,8 +244,22 @@ def test_specifications_export_covers_every_specification(client, finished):
 # --- job lifecycle -------------------------------------------------------
 def test_job_progress_fragment(client, finished):
     response = client.get(f"/job/{finished}/progress")
-    assert response.status_code == 200
+    assert response.status_code == 286, "a finished run must tell htmx to stop polling"
     assert "results" in response.text
+
+
+def test_progress_keeps_polling_only_while_the_run_is_undecided(client, finished):
+    """286 is htmx's stop-polling status; anything still in progress answers 200."""
+    token = services.create_job(services.load_demo("ibd_genus"), "p.tsv")
+    try:
+        for status, code in (("uploaded", 200), ("running", 200), ("error", 286)):
+            db.update_job(token, status=status, error="it broke" if status == "error" else "")
+            assert client.get(f"/job/{token}/progress").status_code == code, status
+    finally:
+        with db.session() as session:
+            session.delete(session.get(db.Job, token))
+            session.commit()
+    assert client.get(f"/job/{'0' * 24}/progress").status_code == 286
 
 
 def test_finished_job_page_redirects_to_results(client, finished):

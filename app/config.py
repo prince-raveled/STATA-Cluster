@@ -101,6 +101,12 @@ MAX_UPLOAD_BYTES = int(os.environ.get("MICROVERSE_MAX_UPLOAD", str(64 * 1024 * 1
 #: fallback for small files, with headroom for the multipart framing; elsewhere it is
 #: the upload limit itself.
 FORM_UPLOAD_LIMIT_BYTES = 4_000_000 if ON_VERCEL else MAX_UPLOAD_BYTES
+#: The largest stored export the application hands over itself rather than sending the
+#: browser to object storage. Vercel refuses a function response over 4.5 MB, so larger
+#: ones must come from the store; anything smaller comes from here, which also works on
+#: networks that block the store's domain (one campus firewall answers
+#: *.blob.vercel-storage.com with a block page).
+APP_RESPONSE_LIMIT_BYTES = int(os.environ.get("MICROVERSE_APP_RESPONSE_LIMIT", "4000000"))
 
 VERSION = "1.0.0"
 SPEC_VERSION = "2.0 (frozen)"

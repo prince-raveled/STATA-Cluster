@@ -399,3 +399,14 @@ def test_a_blank_data_directory_means_the_default(monkeypatch, blank):
     monkeypatch.delenv("MICROVERSE_DB", raising=False)
     _reload(monkeypatch, {"MICROVERSE_DATA": blank})
     assert config.DATA_DIR == config.BASE_DIR / "data"
+
+
+def test_healthz_names_the_commit_it_was_built_from(client, monkeypatch):
+    """So a preview can be matched to the push it is supposed to be testing."""
+    monkeypatch.setenv("VERCEL_GIT_COMMIT_SHA", "0123456789abcdef0123456789abcdef01234567")
+    monkeypatch.setenv("VERCEL_ENV", "preview")
+    body = client.get("/healthz").json()["config"]
+    assert body["commit"] == "0123456789ab"
+    assert body["environment"] == "preview"
+    monkeypatch.delenv("VERCEL_GIT_COMMIT_SHA")
+    assert client.get("/healthz").json()["config"]["commit"] is None

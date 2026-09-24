@@ -98,17 +98,20 @@ docker run -d -p 8000:8000 -v microverse_data:/data microverse
 | `MICROVERSE_MAX_QUEUED` | `24` | runs allowed to wait for a slot |
 | `MICROVERSE_RATE_REQUESTS` | `20` | uploads/runs per client per window |
 | `MICROVERSE_RATE_WINDOW` | `300` | the window, in seconds |
+| `MICROVERSE_APP_RESPONSE_LIMIT` | `4000000` | stored exports up to this size are served by the app; larger ones by a signed Blob URL (Vercel caps a function response at 4.5 MB) |
 
 ## After deploying
 
-Check `/healthz`. Besides liveness it reports the queue depth and which backends and
-interpreter the process is actually running with — names only, never a credential:
+Check `/healthz`. Besides liveness it reports the queue depth, which backends and
+interpreter the process is actually running with, and on Vercel the commit it was built
+from, so a preview can be matched to its push — names only, never a credential:
 
 ```json
 {"status": "ok", "version": "1.0.0", "queue": {"running": 0, "waiting": 0,
  "max_concurrent": 2, "max_queued": 24},
  "config": {"storage": "blob", "jobs": "queue", "database": "postgresql+psycopg",
-            "on_vercel": true, "python": "3.14.7"}}
+            "on_vercel": true, "python": "3.14.7",
+            "commit": "1329505d107c", "environment": "production"}}
 ```
 
 Then run `tests/reference/load_test.py` against the deployed URL to confirm the host's

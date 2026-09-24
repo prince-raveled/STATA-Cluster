@@ -1,14 +1,18 @@
 {% extends "base.html" %}
 {% from "_ui.html" import stepper, page_head %}
-{% block title %}Running — {{ job.dataset_name }} — MicroVerse{% endblock %}
+{% block title %}{{ 'Run stopped' if job.status == 'error' else 'Running' }} — {{ job.dataset_name }} — MicroVerse{% endblock %}
 {% block header_cta %}{% endblock %}
 {% block head %}<script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.12/htmx.min.js"></script>{% endblock %}
 {% block workflow %}{{ stepper(WORKFLOW_STEPS('run', token, job.status)) }}{% endblock %}
 
 {% block content %}
 <div class="shell shell-narrow">
-  {% call page_head("Step 4 · Run", "Running your analysis.",
-                    "Every valid specification is being fitted. This page updates itself, and you can close it and come back: the link stays valid.") %}
+  {% if job.status == "error" %}
+    {% set heading, lede = "The analysis stopped.", "It could not finish. The reason is below, and your upload is still here: the configure step can start it again." %}
+  {% else %}
+    {% set heading, lede = "Running your analysis.", "Every valid specification is being fitted. This page updates itself, and you can close it and come back: the link stays valid." %}
+  {% endif %}
+  {% call page_head("Step 4 · Run", heading, lede) %}
     <span class="chip">{{ job.dataset_name }}</span>
     <span class="chip">{{ MODE_LABELS.get(job.mode, job.mode) }} mode</span>
   {% endcall %}

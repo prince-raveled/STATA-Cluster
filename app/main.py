@@ -4,6 +4,7 @@ SPEC §20: FastAPI, Jinja2 + HTMX + Alpine, SQLite for jobs only, no build step.
 """
 from __future__ import annotations
 
+import os
 import platform
 from contextlib import asynccontextmanager
 
@@ -50,6 +51,28 @@ app = FastAPI(
     contact={"name": "MicroVerse", "url": config.REPOSITORY},
     license_info={"name": "MIT"},
 )
+
+#: Sent with every response. A results URL carries its job token, which is the only
+#: key to someone's results, so no page may hand it to another site in a Referer
+#: header when a reader follows a citation or the source link; browsers default to
+#: sending the origin only, and this makes that a promise rather than a default. The
+#: rest are the two that cost nothing: no content-type guessing, and no framing of
+#: these pages inside another site.
+SECURITY_HEADERS = {
+    "Referrer-Policy": "same-origin",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Content-Security-Policy": "frame-ancestors 'none'",
+}
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    for name, value in SECURITY_HEADERS.items():
+        response.headers.setdefault(name, value)
+    return response
+
 
 app.mount("/static", StaticFiles(directory=str(config.BASE_DIR / "app" / "static")),
           name="static")
@@ -116,7 +139,8 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
 @app.exception_handler(ParseError)
 async def parse_error_handler(request: Request, exc: ParseError):
     if _wants_json(request.url.path):
-        return JSONResponse(status_code=422, content={"error": str(exc), "hint": ""})
+        return JSONResponse(status_code=422, content={
+            "error": str(exc), "hint": "Check the file format and try again."})
     return templates.TemplateResponse(
         request, "error.html",
         {"message": str(exc), "hint": "Check the file format and try again.",
@@ -178,4 +202,9 @@ def healthz():
                 # The host picks the interpreter from more than one file, and says
                 # which it chose only in a build log; this is the one that is running.
                 "python": platform.python_version(),
+                # Which commit this deployment was built from (Vercel sets it), so a
+                # preview can be matched to the push it is meant to be testing. The
+                # repository is public; a commit hash is not a secret.
+                "commit": os.environ.get("VERCEL_GIT_COMMIT_SHA", "")[:12] or None,
+                "environment": os.environ.get("VERCEL_ENV") or None,
             }}

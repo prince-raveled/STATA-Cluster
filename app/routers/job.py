@@ -22,12 +22,26 @@ def job_page(request: Request, token: str):
     return templates.TemplateResponse(request, "job.html", {"job": job, "token": token})
 
 
+#: htmx swaps a 286 response like any success and then cancels the polling trigger.
+STOP_POLLING = 286
+
+
 @router.get("/job/{token}/progress", response_class=HTMLResponse, include_in_schema=False)
 def job_progress(request: Request, token: str):
-    """HTMX polls this every second; it swaps itself out and stops when the run ends."""
+    """HTMX polls this every second while the run is going, and not after it ends.
+
+    It used to answer 200 forever: a failed run's page asked for its progress every
+    second for as long as it stayed open, and a finished one kept polling while the
+    browser navigated to the results, so a late swap landed in a page being torn down
+    (htmx: "Cannot read properties of null (reading 'insertBefore')"). Once the run has
+    an outcome the answer is final, so it says so with htmx's stop-polling status.
+    """
     job = db.get_job(token)
     if job is None:
-        return HTMLResponse('<p class="error">This job has expired.</p>')
+        return HTMLResponse('<p class="error">This job has expired.</p>',
+                            status_code=STOP_POLLING)
+    final = job.status in ("done", "error")
     return templates.TemplateResponse(
-        request, "_progress.html", {"job": job, "token": token}
+        request, "_progress.html", {"job": job, "token": token},
+        status_code=STOP_POLLING if final else 200,
     )

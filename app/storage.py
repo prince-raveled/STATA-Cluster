@@ -10,6 +10,7 @@ Both backends implement the same operations and nothing else:
     put(token, name, data)   store bytes
     get(token, name)         read them back, or None
     exists(token, name)      whether an object is stored, without reading it
+    size(token, name)        its size in bytes without reading it, or None if absent
     purge(token)             delete everything for one job
     url(token, name)         a link the browser can follow, or None to stream via the app
     authorize(token, name)   where the browser may write one object, and how
@@ -86,6 +87,7 @@ class Backend(Protocol):
     def put(self, token: str, name: str, data: bytes) -> None: ...
     def get(self, token: str, name: str) -> bytes | None: ...
     def exists(self, token: str, name: str) -> bool: ...
+    def size(self, token: str, name: str) -> int | None: ...
     def purge(self, token: str) -> None: ...
     def url(self, token: str, name: str) -> str | None: ...
     def authorize(self, token: str, name: str, size: int) -> dict: ...
@@ -115,6 +117,10 @@ class LocalBackend:
 
     def exists(self, token: str, name: str) -> bool:
         return self.path(token, name).exists()
+
+    def size(self, token: str, name: str) -> int | None:
+        path = self.path(token, name)
+        return path.stat().st_size if path.exists() else None
 
     def purge(self, token: str) -> None:
         shutil.rmtree(config.JOBS_DIR / checked(token), ignore_errors=True)
@@ -185,12 +191,16 @@ class BlobBackend:
         raised, because answering "absent" would turn a broken deployment into a
         stream of "your results have expired" pages.
         """
+        return self.size(token, name) is not None
+
+    def size(self, token: str, name: str) -> int | None:
+        """Bytes stored, from the object's metadata. Only "not found" is None; any
+        other failure is raised, for the reason `exists` gives."""
         blob = self._blob()
         try:
-            blob.head(self._key(token, name))
+            return int(blob.head(self._key(token, name)).size)
         except blob.BlobNotFoundError:
-            return False
-        return True
+            return None
 
     def purge(self, token: str) -> None:
         blob = self._blob()
@@ -312,6 +322,10 @@ def get_object(token: str, name: str):
 
 def purge(token: str) -> None:
     backend().purge(token)
+
+
+def size(token: str, name: str) -> int | None:
+    return backend().size(token, name)
 
 
 def download_url(token: str, name: str) -> str | None:

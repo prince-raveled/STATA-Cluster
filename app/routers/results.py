@@ -246,12 +246,21 @@ def _stored_download(token: str, kind: str):
                                 headers={"Content-Disposition": disposition})
         return None       # a run from before these were stored: rebuilt below, as ever
 
-    if not storage.exists(token, stored):
+    size = storage.size(token, stored)
+    if size is None:
         raise NotFoundError(
             "This export is no longer stored.",
             f"Results are kept for {config.RETENTION_DAYS} days. The robustness table, "
             "specifications and manifest can still be downloaded individually.",
         )
+    if size <= config.APP_RESPONSE_LIMIT_BYTES:
+        # Small enough to fit a function response, so it comes from here: one request
+        # fewer, and it works where a network blocks the store's own domain.
+        data = storage.get_bytes(token, stored)
+        if data is not None:
+            disposition = f'attachment; filename="{_safe_stem(job.dataset_name)}_{filename}"'
+            return Response(content=data, media_type=media_type,
+                            headers={"Content-Disposition": disposition})
     direct = storage.download_url(token, stored)
     if not direct:
         error = DatasetError(

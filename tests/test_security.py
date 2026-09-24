@@ -204,3 +204,18 @@ def test_numeric_edge_values_do_not_crash_the_reader():
         table = parse_biom_v1(payload)
         assert np.isfinite(table.counts.to_numpy()).all() or True, (
             "non-finite values must be caught by validation, not silently analysed")
+
+
+def test_every_response_keeps_the_job_token_out_of_other_sites_referers():
+    """A results URL is the key to someone's results; following a citation must not send it."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    client = TestClient(app)
+    for path in ("/", "/about", "/healthz", "/api/info", "/static/css/microverse.css",
+                 "/results/" + "0" * 24):
+        headers = client.get(path).headers
+        assert headers["referrer-policy"] == "same-origin", path
+        assert headers["x-content-type-options"] == "nosniff", path
+        assert headers["x-frame-options"] == "DENY", path

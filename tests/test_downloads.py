@@ -104,7 +104,23 @@ def blob_run(dataset, tmp_path_factory):
 
 @pytest.fixture
 def blob(blob_run, tmp_path, monkeypatch):
-    """Blob mode, a fresh copy of the finished run's store, and a read-only root."""
+    """Blob mode, a fresh copy of the finished run's store, and a read-only root.
+
+    The exports of this small test run fit in a function response, which the app would
+    now hand over itself; the limit is set to nothing here so these tests keep
+    exercising the path a real 8-60 MB export takes. `small_blob` tests the other one.
+    """
+    root = tmp_path / "var-task"
+    fake = FakeBlob(blob_run.objects)
+    use_blob(monkeypatch, fake, root)
+    monkeypatch.setattr(config, "APP_RESPONSE_LIMIT_BYTES", 0)
+    yield SimpleNamespace(fake=fake, token=blob_run.token, root=root)
+    assert not root.exists(), "a request wrote to the read-only deployment root"
+
+
+@pytest.fixture
+def small_blob(blob_run, tmp_path, monkeypatch):
+    """Blob mode with the real response limit."""
     root = tmp_path / "var-task"
     fake = FakeBlob(blob_run.objects)
     use_blob(monkeypatch, fake, root)
@@ -183,6 +199,31 @@ def test_the_redirect_is_to_a_same_origin_route(client, blob, kind):
     location = client.get(f"/download/{blob.token}/{kind}",
                           follow_redirects=False).headers["location"]
     assert location.startswith("/api/blob-download?")
+
+
+@pytest.mark.parametrize("kind", sorted(LARGE))
+def test_a_stored_export_that_fits_a_response_comes_from_the_app(client, small_blob, kind):
+    """Not through the store's own domain, which some networks block outright: a
+    campus firewall answered every *.blob.vercel-storage.com request with a block page,
+    so every bundle download failed there although the site itself worked."""
+    stored = small_blob.fake.objects[f"microverse/{small_blob.token}/{LARGE[kind]}"]
+    assert len(stored) <= config.APP_RESPONSE_LIMIT_BYTES
+    response = client.get(f"/download/{small_blob.token}/{kind}", follow_redirects=False)
+    assert response.status_code == 200
+    assert response.content == stored, "the download is not the file the run wrote"
+    assert "attachment" in response.headers["content-disposition"]
+
+
+def test_a_stored_export_over_the_response_limit_is_still_signed(client, small_blob, monkeypatch):
+    stored = small_blob.fake.objects[f"microverse/{small_blob.token}/bundle.zip"]
+    monkeypatch.setattr(config, "APP_RESPONSE_LIMIT_BYTES", len(stored) - 1)
+    response = client.get(f"/download/{small_blob.token}/bundle", follow_redirects=False)
+    assert response.status_code == 307
+    assert response.headers["location"].startswith(f"{config.BLOB_DOWNLOAD_HANDLER}?grant=")
+
+
+def test_the_response_limit_leaves_room_under_vercels_cap():
+    assert 0 < config.APP_RESPONSE_LIMIT_BYTES < RESPONSE_CAP
 
 
 @pytest.mark.parametrize("kind", SMALL)

@@ -65,6 +65,9 @@ def flow(synthetic, tmp_path_factory):
     with pytest.MonkeyPatch.context() as mp, embedded_queue_dev_server() as server:
         use_blob(mp, fake, root)
         mp.setattr(config, "JOB_BACKEND", "queue")
+        # This run's exports are small; a real one is 8-60 MB and goes through the
+        # signed-URL path, which is the one this flow exists to exercise end to end.
+        mp.setattr(config, "APP_RESPONSE_LIMIT_BYTES", 0)
         mp.setenv("VERCEL_QUEUE_BASE_URL", server.base_url)
         mp.setenv("VERCEL_QUEUE_TOKEN", "local-token")
         mp.setenv("VERCEL_REGION", "iad1")
