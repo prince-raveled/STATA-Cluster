@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import time
 import traceback
 from functools import lru_cache
 
@@ -191,6 +192,18 @@ def execute(token: str, mode: str, declared=None, covariates=()) -> None:
         def progress(fraction: float, message: str):
             db.update_job(token, progress=fraction, message=message)
 
+        # Wall-clock per phase, recorded with the result. A run's reported runtime is
+        # the engine alone, and on a hosted deployment most of the wait is elsewhere;
+        # these say where, without anyone needing access to the host's logs.
+        timings = {}
+        clock = time.perf_counter()
+
+        def lap(phase: str) -> None:
+            nonlocal clock
+            now = time.perf_counter()
+            timings[phase] = round(now - clock, 2)
+            clock = now
+
         run = run_multiverse(
             dataset,
             mode=mode,
@@ -198,10 +211,14 @@ def execute(token: str, mode: str, declared=None, covariates=()) -> None:
             declared=declared,
             progress=progress,
         )
+        lap("analysis")
         progress(0.95, "Computing robustness tiers")
         summary = compute_robustness(run)
+        lap("robustness")
         progress(0.97, "Attributing variance to the forks")
         attribution = attribute(run)
+        lap("attribution")
+        progress(0.99, "Saving results")
 
         db.save_payload(token, "run", run)
         db.save_payload(token, "summary", summary)
@@ -217,6 +234,7 @@ def execute(token: str, mode: str, declared=None, covariates=()) -> None:
         storage.put_bytes(token, "results_long.csv.gz", long_csv_gz)
         storage.put_bytes(token, "bundle.zip",
                           build_zip(run, summary, attribution, long_csv_gz=long_csv_gz))
+        lap("saving")
 
         db.update_job(
             token, status="done", progress=1.0, message="Complete",
@@ -226,7 +244,8 @@ def execute(token: str, mode: str, declared=None, covariates=()) -> None:
                 {**run.dataset_summary,
                  "verdict": verdict_sentence(run, summary),
                  "tiers": summary.tier_counts,
-                 "grid": manifest["grid"]},
+                 "grid": manifest["grid"],
+                 "timings": timings},
                 default=str,
             ),
         )
