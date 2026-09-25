@@ -13,8 +13,7 @@
   <p class="small muted run-time" style="margin:0 0 20px">Fitting them took
     {{ took.fitting|duration }}{% if took.others %}; the rest of the {{ took.total|duration }}
     went on {% for part in took.others %}{{ part.label }} ({{ part.seconds|duration }}){% if loop.revindex == 2 %} and {% elif not loop.last %}, {% endif %}{% endfor %}{% endif %}.</p>
-  <a class="btn btn-primary btn-lg" href="/results/{{ token }}">View results</a>
-  <script>setTimeout(function () { window.location = "/results/{{ token }}"; }, 700);</script>
+  <a class="btn btn-primary btn-lg" href="/results/{{ token }}" data-auto-open>View results</a>
 {% elif job.status == "error" %}
   {{ status('red', 'Stopped', size='lg') }}
   <div style="margin-top:16px">

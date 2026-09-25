@@ -248,6 +248,29 @@ def test_job_progress_fragment(client, finished):
     assert "results" in response.text
 
 
+def test_the_finished_fragment_carries_no_script_for_htmx_to_recreate(client, finished):
+    """Its redirect used to be an inline script inside the swapped fragment. htmx
+    re-creates such scripts, and when two polls overlapped the second swap removed the
+    first one's script before it ran: "Cannot read properties of null (reading
+    'insertBefore')". The Run page now follows a marked link itself."""
+    fragment = client.get(f"/job/{finished}/progress").text
+    assert "<script" not in fragment
+    assert f'href="/results/{finished}" data-auto-open' in fragment
+
+
+def test_the_run_page_follows_the_link_and_never_overlaps_its_polls(client):
+    token = services.create_job(services.load_demo("ibd_genus"), "p.tsv")
+    try:
+        db.update_job(token, status="running")
+        page = client.get(f"/job/{token}").text
+        assert 'hx-sync="this:drop"' in page
+        assert "a[data-auto-open]" in page and "htmx:afterSwap" in page
+    finally:
+        with db.session() as session:
+            session.delete(session.get(db.Job, token))
+            session.commit()
+
+
 def test_progress_keeps_polling_only_while_the_run_is_undecided(client, finished):
     """286 is htmx's stop-polling status; anything still in progress answers 200."""
     token = services.create_job(services.load_demo("ibd_genus"), "p.tsv")

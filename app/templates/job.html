@@ -20,10 +20,30 @@
   <section class="run-panel" aria-labelledby="progress-title">
     <h2 id="progress-title" class="visually-hidden">Progress</h2>
     <div id="progress" role="status" aria-live="polite"
-         hx-get="/job/{{ token }}/progress" hx-trigger="load, every 1s" hx-swap="innerHTML">
+         hx-get="/job/{{ token }}/progress" hx-trigger="load, every 1s" hx-swap="innerHTML"
+         hx-sync="this:drop">
       {% include "_progress.html" %}
     </div>
   </section>
+  <script>
+    /* When the run finishes, the fragment carries a "View results" link marked
+       data-auto-open; follow it after a moment, so the completion summary can be read.
+       This used to be an inline script inside the fragment, which htmx re-creates on
+       every swap. When two polls overlapped, as throttled timers make them do, the
+       second swap removed the first one's script before it ran: "Cannot read properties
+       of null (reading 'insertBefore')". hx-sync above also stops polls overlapping. */
+    (function () {
+      var region = document.getElementById("progress");
+      function follow() {
+        var link = region.querySelector("a[data-auto-open]");
+        if (!link || region.getAttribute("data-leaving")) return;
+        region.setAttribute("data-leaving", "1");
+        setTimeout(function () { window.location.assign(link.href); }, 900);
+      }
+      document.body.addEventListener("htmx:afterSwap", follow);
+      follow();
+    })();
+  </script>
 
   <section class="section-sm" aria-labelledby="wait-title">
     <h2 id="wait-title" style="font-size:20px;margin-bottom:var(--space-4)">While you wait</h2>
