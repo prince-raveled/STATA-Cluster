@@ -13,10 +13,13 @@ import os
 import pytest
 
 from app.core.evidence import (
+    CROSS_STUDY,
     EMPIRICAL,
     EXPLORATORY,
     GRADE_BLURB,
     GRADE_LABEL,
+    PUBLISHED_STUDY,
+    TIER_CAVEATS,
     TIER_REPLICATION,
     TIER_VALIDATION,
     matrix_rows,
@@ -27,6 +30,7 @@ from app.core.robustness import TIER_ORDER
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RECORD = os.path.join(ROOT, "docs", "tier_validation.json")
+PUBLISHED_RECORD = os.path.join(ROOT, "docs", "published_findings_study.json")
 
 
 def _record():
@@ -135,3 +139,70 @@ def test_the_null_benchmark_is_near_zero():
     null_rate = record["definitions"]["replicated_majority"]["null_rate"]
     assert null_rate is not None, "the null benchmark did not run"
     assert null_rate < 0.05, f"label-permuted data replicated {null_rate:.1%} of the time"
+
+
+# --- the published study, and replication across studies (SPEC §24.8) ----------
+def _published():
+    if not os.path.exists(PUBLISHED_RECORD):
+        pytest.skip(f"{PUBLISHED_RECORD} not present; "
+                    "run tests/reference/published_findings_study.py")
+    with open(PUBLISHED_RECORD, encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def test_reproduction_numbers_match_the_published_study_record():
+    record = _published()
+    cohorts = record["cohorts"]
+    level2 = [c["level2_published_pipeline"] for c in cohorts]
+    level1 = [c["level1_implementation"] for c in cohorts]
+    assert len(cohorts) == PUBLISHED_STUDY["n_cohorts"]
+    assert len(record["refused_by_validation"]) == PUBLISHED_STUDY["n_refused"]
+    assert not record["failures"], record["failures"]
+    assert sum(c["n_control"] + c["n_case"] for c in cohorts) == PUBLISHED_STUDY["n_samples"]
+    assert sum(x["n_sig_paper"] for x in level2) == PUBLISHED_STUDY["paper_significant"]
+    assert sum(x["n_sig_both"] for x in level2) == PUBLISHED_STUDY["recovered"]
+    extra = sum(x["n_sig_matched"] - x["n_sig_both"] for x in level2)
+    assert extra == PUBLISHED_STUDY["extra"]
+    exact = sum(x["n_sig_paper"] == x["n_sig_matched"] == x["n_sig_both"] for x in level2)
+    assert exact == PUBLISHED_STUDY["n_exact"]
+    identical = sum(x["agreement_same_matrix"] == 1.0 for x in level1)
+    assert identical == PUBLISHED_STUDY["same_matrix_identical"]
+    worst = max(x["max_abs_diff_p_vs_scipy_mannwhitney"] for x in level1)
+    assert worst <= PUBLISHED_STUDY["max_p_difference"]
+
+
+def test_shared_response_agreement_matches_the_record():
+    by_tier = _published()["claims"]["s3_direction_by_tier"]
+    for tier, (agree, total) in PUBLISHED_STUDY["shared_response_direction"].items():
+        assert by_tier[tier] == {"n": total, "direction_agrees": agree}, tier
+
+
+def test_cross_study_numbers_match_the_record():
+    record = _published()["replication"]
+    assert record["n_pairs"] == CROSS_STUDY["n_pairs"]
+    assert record["n_genera"] == CROSS_STUDY["n_genera"]
+    groups = record["groups"]
+    for key, name in (("stable", "paper-significant and ROBUST or CONDITIONAL"),
+                      ("shaky", "paper-significant and FRAGILE or UNSTABLE")):
+        quoted, measured = CROSS_STUDY[key], groups[name]
+        assert quoted["n"] == measured["n_pairs"], key
+        assert abs(quoted["rate"] - measured["significant"]["rate"]) < 0.0015, key
+        assert abs(quoted["direction"] - measured["direction"]["rate"]) < 0.0015, key
+        for q, m in zip(quoted["ci"], measured["significant"]["ci95"], strict=True):
+            assert abs(q - m) < 0.0015, key
+    contrast = record["stable_vs_shaky_among_paper_significant"]["significant"]
+    assert abs(CROSS_STUDY["difference"] - contrast["difference"]) < 0.0015
+    for q, m in zip(CROSS_STUDY["difference_ci"], contrast["difference_ci95_cluster_bootstrap"],
+                    strict=True):
+        assert abs(q - m) < 0.0015
+
+
+def test_the_interface_does_not_sell_within_study_replication_as_external():
+    """The tier rates were measured on held-out halves of one study. Every sentence
+    that quotes them must say so, and the caveats must carry the cross-study result."""
+    for tier in TIER_REPLICATION:
+        assert "same study" in tier_sentence(tier), tier
+    assert any("Across independent studies" in caveat for caveat in TIER_CAVEATS)
+    rows = {r["name"]: r for r in matrix_rows()}
+    assert "Across studies" in rows["Robustness tiers"]["empirical"]
+    assert rows["Reproducing a published analysis"]["reference"]

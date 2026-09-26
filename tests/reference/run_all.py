@@ -28,10 +28,10 @@ SKBIO_PYTHON = os.path.join(ROOT, ".venv310", "Scripts", "python.exe")
 STUDY_COHORTS = ["cdi_schubert", "crc_zhao", "ibd_huttenhower", "edd_singh"]
 
 
-def _cohorts_available() -> bool:
+def _cohorts_available(cohorts=None) -> bool:
     """Cached archives are enough — only reach for Zenodo when something is missing."""
     cache = os.path.join(ROOT, "data", "microbiomehd")
-    missing = [c for c in STUDY_COHORTS
+    missing = [c for c in (cohorts or STUDY_COHORTS)
                if not os.path.exists(os.path.join(cache, f"{c}_results.tar.gz"))]
     if not missing:
         return True
@@ -42,6 +42,20 @@ def _cohorts_available() -> bool:
             return True
     except (urllib.error.URLError, TimeoutError, OSError):
         return False
+
+
+def _published_cohorts() -> list:
+    """The cohorts published_findings_study.py analyses, read from its source so the two
+    lists cannot drift, and without importing it (it loads the whole engine)."""
+    import ast
+
+    with open(os.path.join(HERE, "published_findings_study.py"), encoding="utf-8") as handle:
+        tree = ast.parse(handle.read())
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and any(getattr(t, "id", "") == "DISEASES"
+                                                for t in node.targets):
+            return [c for cohorts in ast.literal_eval(node.value).values() for c in cohorts]
+    return []
 
 
 def _rscript_available() -> bool:
@@ -148,6 +162,14 @@ CHECKS = [
         "reason": "needs the MicrobiomeHD cohorts: cached under data/microbiomehd/, "
                   "or network access to Zenodo record 1146764",
         "args": ["--cohorts", ",".join(STUDY_COHORTS)],
+    },
+    {
+        "name": "a published analysis reproduced; replication across studies (SPEC §24.8)",
+        "script": "published_findings_study.py",
+        "python": MAIN_PYTHON,
+        "requires": lambda: _cohorts_available(_published_cohorts()),
+        "reason": "needs the MicrobiomeHD cohorts: cached under data/microbiomehd/, "
+                  "or network access to Zenodo record 1146764",
     },
     {
         "name": "reproduce Tierney et al. (SPEC §23 validation 1)",

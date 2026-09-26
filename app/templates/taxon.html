@@ -254,8 +254,9 @@
           shows up in whether the taxon is called significant, not in this number. Do not
           quote it as a regression coefficient.</li>
         {% if row.robustness_tier in TIER_REPLICATION %}
-          <li>{{ row.robustness_tier|tier_sentence }} That is a rate measured across
-            other people's cohorts, not a prediction about this taxon in your data.</li>
+          <li>{{ row.robustness_tier|tier_sentence }} That is a within-study rate measured
+            on other people's cohorts, not a prediction about this taxon in your data; across
+            independent studies, the labels did not predict replication.</li>
         {% endif %}
       </ul>
     {% endcall %}

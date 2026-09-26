@@ -22,8 +22,8 @@
   <section class="answer" aria-labelledby="headline-title">
     <div>
       <p class="eyebrow eyebrow-purple">The short answer</p>
-      <h2 id="headline-title">The robustness labels predict replication on data they never
-        saw. Most other parts agree with an independent implementation.</h2>
+      <h2 id="headline-title">MicroVerse reproduces a published analysis, and its labels
+        predict replication within a study. Across studies, they did not.</h2>
       <p class="answer-detail">
         Of {{ n_total }} components, {{ n_reference }} have been checked against a separate
         implementation of the same method, {{ n_empirical }} against held-out data, and
@@ -32,6 +32,8 @@
         appears.</p>
       <p class="small" style="margin-top:12px">
         <a href="#tier-experiment">The held-out experiment</a> ·
+        <a href="#published">A published study, reproduced</a> ·
+        <a href="#across">Across studies</a> ·
         <a href="#limits">What it does not establish</a> ·
         <a href="#reproduce">Reproduce every number</a></p>
     </div>
@@ -130,13 +132,91 @@
         {% call callout('red', 'What it does not establish') %}
           <ul>
             {% for caveat in TIER_CAVEATS %}<li>{{ caveat }}</li>{% endfor %}
-            <li>Replication within one study's own samples is an easier test than replication
-              in an independently collected cohort. These halves share protocol, population
-              and sequencing run; a true external replication would not.</li>
+            <li>The two halves share protocol, population and sequencing run, which is why
+              replication within a study is the easier test. <a href="#across">The harder
+              one</a> is below.</li>
             <li>The experiment validates the <i>ordering</i> and the labels' relative meaning.
               It does not license reading a label as a probability for any particular taxon
               in your data.</li>
           </ul>
+        {% endcall %}
+      </div>
+    </div>
+  </section>
+
+  {% set ps = PUBLISHED_STUDY %}
+  {% set xs = CROSS_STUDY %}
+  <section class="section-sm">
+    <div class="split">
+      <div class="panel" id="published">
+        <p class="eyebrow eyebrow-purple" data-spec="24.8">A published study, reproduced</p>
+        <h2 style="font-size:22px">Does it give the paper's answer?</h2>
+        <p class="small" style="margin:10px 0 16px;color:var(--ink-2)">
+          {{ ps.paper }}. Data: {{ ps.data }}. Design: {{ ps.design }}.</p>
+
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Reproduction of the published analysis, scrollable">
+          <table class="data">
+            <tbody>
+              <tr><th scope="row">Cohorts analysed</th>
+                <td class="num">{{ ps.n_cohorts }} <span class="muted">· {{ ps.n_samples|commafy }} samples</span></td></tr>
+              <tr><th scope="row">Genera the paper's pipeline calls significant</th>
+                <td class="num">{{ ps.paper_significant }}</td></tr>
+              <tr><th scope="row">Found by MicroVerse's matching specification</th>
+                <td class="num"><b>{{ ps.recovered }}</b> ({{ (ps.recovered / ps.paper_significant)|percent(1) }})</td></tr>
+              <tr><th scope="row">Found by MicroVerse only</th>
+                <td class="num">{{ ps.extra }}</td></tr>
+              <tr><th scope="row">Cohorts matching genus for genus</th>
+                <td class="num">{{ ps.n_exact }} of {{ ps.n_cohorts }}</td></tr>
+              <tr><th scope="row">The paper's test on MicroVerse's own matrix</th>
+                <td class="num">identical in {{ ps.same_matrix_identical }} of {{ ps.n_cohorts }}</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="small" style="margin-top:16px;color:var(--ink-2)">
+          The few differences sit at q = 0.05 and come from the input, not the statistics:
+          the paper's relative abundances count reads that have no genus; a genus table
+          cannot. One further cohort, with four controls, was refused by MicroVerse's
+          five-per-group minimum. Three cohorts uploaded to this site gave results
+          identical to the local runs.</p>
+        <p class="small" style="margin-top:10px;color:var(--ink-2)">
+          The paper also publishes genera that move with disease across many studies. The
+          direction MicroVerse finds agrees with the paper for
+          {% for name, pair in ps.shared_response_direction.items() -%}
+            {{ (pair[0] / pair[1])|percent(0) }} of {{ name }}{{ ', ' if not loop.last else '' }}{% if loop.revindex == 2 %}and {% endif %}
+          {%- endfor %} calls: the stronger the label, the closer the agreement.</p>
+      </div>
+
+      <div id="across">
+        {% call callout('amber', 'Across studies, the labels did not predict replication') %}
+          <p>The harder test. In each disease, every genus the paper's pipeline called
+            significant in one cohort was checked, with the paper's own pipeline, in every
+            other cohort of that disease: {{ xs.n_pairs|commafy }} observations across
+            {{ xs.n_cohorts }} cohorts. Replicated means {{ xs.definition }}.</p>
+          <div class="table-wrap" tabindex="0" role="region" aria-label="Replication across studies by label, scrollable">
+            <table class="data">
+              <thead>
+                <tr><th scope="col">First-cohort label</th>
+                  <th scope="col" class="num">Replicated<br><span class="muted">95% CI</span></th></tr>
+              </thead>
+              <tbody>
+                {% for group in [xs.stable, xs.shaky] %}
+                  <tr><th scope="row">{{ group.label }}<br>
+                      <span class="muted small">{{ group.n }} findings</span></th>
+                    <td class="num"><b>{{ group.rate|percent(0) }}</b><br>
+                      <span class="muted">{{ group.ci[0]|percent(0) }}–{{ group.ci[1]|percent(0) }}</span></td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <p>No difference ({{ ('%.1f'|format(xs.difference * 100))|replace('-', '−') }} points, 95% CI
+            {{ ('%d'|format((xs.difference_ci[0] * 100)|round|int))|replace('-', '−') }} to
+            +{{ (xs.difference_ci[1] * 100)|round|int }}),
+            and none in direction alone ({{ xs.stable.direction|percent(0) }} against
+            {{ xs.shaky.direction|percent(0) }}). Differences between populations, protocols
+            and sequencing outweigh the analytical choices MicroVerse varies. A label says how
+            far the answer depends on those choices in your data; it is not a forecast for
+            another population.</p>
         {% endcall %}
       </div>
     </div>
@@ -151,6 +231,7 @@
         an install hint when its dependency is missing, never a silent pass.</p>
       <pre class="code" tabindex="0" role="region" aria-label="Commands that regenerate every number, scrollable"><code>.venv/Scripts/python tests/reference/run_all.py          # every reference check
 .venv/Scripts/python tests/reference/tier_validation.py # the label experiment
+.venv/Scripts/python tests/reference/published_findings_study.py # a published study, across studies
 .venv/Scripts/python tests/reference/compare_r.py       # edgeR, ALDEx2, ANCOM-BC
 .venv/Scripts/python -m pytest -q                       # the internal suite</code></pre>
     </div>

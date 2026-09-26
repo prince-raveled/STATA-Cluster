@@ -1655,7 +1655,8 @@ this evidence.
 - **Split-half replication is easier than true external replication.** Both halves share
   protocol, population, sequencing run and batch. A taxon that replicates across an
   independently collected cohort has cleared a higher bar than anything measured here.
-  These numbers are an upper bound on external replicability.
+  These numbers are an upper bound on external replicability. §24.8 measured the gap:
+  across independent cohorts of the same disease the tiers did not predict replication.
 - **It validates the ordering, not a per-taxon probability.** "ROBUST taxa replicated 90%
   of the time in this experiment" is not "this taxon has a 90% chance of replicating".
 
@@ -1685,7 +1686,7 @@ convention ends up quoted as a finding. MicroVerse now keeps them apart in code
 | Grade | Means | Example here |
 |---|---|---|
 | **Internally verified** | tests prove the implementation matches the specification | the harmonised effect of §14 |
-| **Reference-validated** | output agrees with an independent implementation or a published result | TMM against edgeR; Tierney's numbers reproduced |
+| **Reference-validated** | output agrees with an independent implementation or a published result | TMM against edgeR; Tierney's numbers reproduced; Duvallet's genera reproduced (§24.8) |
 | **Empirically validated** | it predicts something on data it has never seen | the §16.2 tiers (§24.6) |
 | **Exploratory** | computed correctly, not yet validated | fork attribution (§17) |
 
@@ -1737,6 +1738,104 @@ squares per Langsrud (2003) because §11's validity pruning makes the fork grid
 unbalanced. There is no external reference implementation for fork attribution and no
 held-out experiment validating it, so `exploratory` is the ceiling available to it, and
 the product says so rather than implying more.
+
+---
+
+## 24.8 A published analysis reproduced, and replication across studies
+
+`tests/reference/published_findings_study.py`; record `docs/published_findings_study.json`.
+
+The studies above ask whether MicroVerse's statistics behave. This one asks what a reader
+of a paper asks: given the paper's own data, does MicroVerse find what the paper found —
+and do its tiers say which of those findings hold up in *another* study?
+
+### Design
+
+- **Source.** Duvallet et al. 2017, *Nat Commun* 8:1784 — MicrobiomeHD (Zenodo 1146764,
+  CC-BY-NC-4.0). The 20 cohorts of the five diseases with three or more cohorts:
+  colorectal cancer (5), *C. difficile* (3), IBD (4), HIV (3), obesity (5).
+- **The paper's pipeline, re-implemented from the authors' own code**
+  (github.com/cduvallet/microbiomeHD: `clean_otu_and_metadata.py`, `util.py`,
+  `get_qvalues.py`): samples with ≤100 reads, OTUs with <10 reads and OTUs in ≤1% of
+  samples removed, in the authors' order; the per-cohort sample conditions of
+  `dataset_info.yaml`; relative abundance; genus collapse discarding OTUs without a genus;
+  Kruskal–Wallis; Benjamini–Hochberg at q < 0.05; `H` and `nonIBD` as controls, all
+  disease labels pooled.
+- **MicroVerse** gets the paper's cleaned samples as a genus count table — what an author
+  would upload — and runs Quick mode. The specification matching the paper: no
+  rarefaction, 0% prevalence filter, TSS, genus, Wilcoxon, BH 0.05.
+- **Two levels:** the paper's test on MicroVerse's own matrix (implementation), and the
+  paper's full pipeline (the published analysis).
+- **Replication across studies:** for every ordered pair of cohorts within a disease, a
+  genus is tiered in the first and scored in the second **with the paper's pipeline, not
+  MicroVerse's**, so the yardstick cannot favour MicroVerse. Two outcomes: significant in
+  the same direction, and direction alone. A genus recurs across pairs, so intervals come
+  from a cluster bootstrap over genera (4,000 draws).
+
+### Result — reproduction
+
+| | |
+|---|---|
+| Cohorts analysed | 19, 2,824 samples; `cdi_youngster` refused — 4 controls, under the §8 five-per-group minimum |
+| Genera the paper's pipeline calls significant | 217 |
+| Found by the matching specification | **214 (98.6%)**, plus 9 the paper's pipeline does not call |
+| Cohorts matching genus for genus | 14 of 19 (6 with nothing significant in either) |
+| The paper's test on MicroVerse's matrix | identical calls in **19 of 19**; p within 3 × 10⁻⁸ (float32 storage) |
+
+The differences sit at the threshold and come from the input, not the statistics: the
+paper's relative abundances divide by every read, including the 10–12% with no genus, and
+a genus table cannot. The largest-cohort examples are `crc_baxter`'s *Anaerostipes*
+(paper q = 0.054, genus table 0.041) and `cdi_schubert`'s *Ruminococcus2* (0.026 against
+0.075).
+
+**Through the live site.** `crc_baxter`, `cdi_schubert` and `ibd_gevers_2014` were
+uploaded through the form on 26 September 2026 (commit 9fd7a02). Every export, the
+manifest fingerprint and the tiers were identical to local runs, and the site found 16 of
+16, 72 of 73 and 14 of 14 of the paper's genera.
+
+### Result — the paper's own claims
+
+- **Shared-response genera.** The paper's Supplementary File 3 labels 24 genera
+  health-associated and 20 disease-associated across diseases. MicroVerse's direction
+  agrees for 4/4 ROBUST, 45/54 CONDITIONAL (83%), 152/215 FRAGILE (71%) and 72/128
+  UNSTABLE (56%) calls. Not independent evidence — the file was derived from these
+  cohorts — but the gradient runs the right way.
+- **Colorectal cancer.** *Fusobacterium*, *Parvimonas*, *Peptostreptococcus* and
+  *Porphyromonas* are enriched in cancer in every cohort large enough to see them. In
+  `crc_baxter` all four are CONDITIONAL (42–74% of specifications); in `crc_zeller` two
+  are CONDITIONAL and two FRAGILE or UNSTABLE. *Enterobacter*, the paper's weakest claim
+  (q = 0.046 in `crc_baxter`), is FRAGILE there: significant in 3.6% of specifications.
+
+### Result — replication across studies
+
+| Label in the first cohort (genera the paper's pipeline calls significant) | Replicated: q < 0.05, same direction | 95% CI | Same direction | n |
+|---|---|---|---|---|
+| ROBUST or CONDITIONAL | 13.3% | 7.1–19.6% | 64.4% | 211 |
+| FRAGILE or UNSTABLE | 13.6% | 7.2–20.2% | 63.6% | 176 |
+| either (the single pipeline) | 13.4% | 8.1–18.6% | 64.1% | 387 |
+
+**No difference:** −0.4 points, 95% CI −7.2 to +6.8. By disease the tiers lean the right
+way for colorectal cancer and obesity, are level for IBD, and lean the wrong way for
+*C. difficile* and HIV — where findings point in opposite directions across studies, as
+the paper itself reports for HIV.
+
+**Conclusion.** Within a study the tiers predict replication (§24.6, AUC 0.785). Across
+studies they do not: differences in population, protocol and sequencing outweigh the
+analytical choices MicroVerse varies. §24.6 called split-half replication an upper bound
+on external replicability; this measures the gap. The interface now says "replicated
+within the same study" beside every rate, the cross-study result is the first caveat
+wherever a ROBUST call is shown, and `tests/test_evidence.py` fails if any number quoted
+drifts from the record.
+
+### Limits
+
+- 16S, genus level, one processing pipeline (MicrobiomeHD's), Quick mode. ROBUST is
+  almost never assigned in these cohorts (5 pairs), so the contrast is in practice
+  CONDITIONAL against FRAGILE and UNSTABLE.
+- Many validation cohorts are small and several find nothing at all, which caps
+  replication for every label alike.
+- The same genus recurs across cohort pairs. The cluster bootstrap accounts for that; a
+  naive Fisher test would not.
 
 ---
 

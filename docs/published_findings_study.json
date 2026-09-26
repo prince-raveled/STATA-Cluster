@@ -1,0 +1,1413 @@
+{
+  "source": "MicrobiomeHD, Duvallet et al. 2017, Nat Commun 8:1784; Zenodo 1146764 (CC-BY-NC-4.0)",
+  "paper_pipeline": "re-implemented from github.com/cduvallet/microbiomeHD (clean_otu_and_metadata.py, util.py, get_qvalues.py)",
+  "matched_specification": {
+    "rarefaction": "none",
+    "prev_filter": 0.0,
+    "transform": "tss",
+    "method": "wilcoxon",
+    "fdr_method": "bh",
+    "fdr_threshold": 0.05
+  },
+  "mode": "quick",
+  "cohorts": [
+    {
+      "cohort": "crc_baxter",
+      "cases": [
+        "CRC"
+      ],
+      "condition": null,
+      "n_control": 172,
+      "n_case": 120,
+      "n_specifications": 1596,
+      "runtime_seconds": 1.0,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 6,
+        "FRAGILE": 44,
+        "UNSTABLE": 50,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 63
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.9767208142850166e-08,
+        "n_sig_kruskal_same_matrix": 17,
+        "n_sig_microverse": 17,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 163,
+        "n_genera_microverse": 163,
+        "n_common": 163,
+        "n_sig_paper": 16,
+        "n_sig_matched": 17,
+        "n_sig_both": 16,
+        "jaccard": 0.9411764705882353,
+        "agreement": 0.9938650306748467,
+        "direction_agreement_on_shared": 1.0,
+        "spearman_p": 0.9929062292174685
+      },
+      "paper_significant_by_tier": {
+        "FRAGILE": 11,
+        "CONDITIONAL": 5
+      },
+      "disease": "CRC"
+    },
+    {
+      "cohort": "crc_zeller",
+      "cases": [
+        "CRC"
+      ],
+      "condition": null,
+      "n_control": 75,
+      "n_case": 41,
+      "n_specifications": 1596,
+      "runtime_seconds": 0.8,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 6,
+        "FRAGILE": 101,
+        "UNSTABLE": 30,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 56
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.95140263339988e-08,
+        "n_sig_kruskal_same_matrix": 11,
+        "n_sig_microverse": 11,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 193,
+        "n_genera_microverse": 193,
+        "n_common": 193,
+        "n_sig_paper": 11,
+        "n_sig_matched": 11,
+        "n_sig_both": 11,
+        "jaccard": 1.0,
+        "agreement": 1.0,
+        "direction_agreement_on_shared": 1.0,
+        "spearman_p": 0.9960375669535203
+      },
+      "paper_significant_by_tier": {
+        "CONDITIONAL": 5,
+        "FRAGILE": 4,
+        "UNSTABLE": 2
+      },
+      "disease": "CRC"
+    },
+    {
+      "cohort": "crc_zhao",
+      "cases": [
+        "CRC"
+      ],
+      "condition": null,
+      "n_control": 54,
+      "n_case": 44,
+      "n_specifications": 156,
+      "runtime_seconds": 0.1,
+      "tiers": {
+        "ROBUST": 1,
+        "CONDITIONAL": 8,
+        "FRAGILE": 9,
+        "UNSTABLE": 0,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 26
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.6918822282340216e-08,
+        "n_sig_kruskal_same_matrix": 10,
+        "n_sig_microverse": 10,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 44,
+        "n_genera_microverse": 44,
+        "n_common": 44,
+        "n_sig_paper": 10,
+        "n_sig_matched": 10,
+        "n_sig_both": 10,
+        "jaccard": 1.0,
+        "agreement": 1.0,
+        "direction_agreement_on_shared": 1.0,
+        "spearman_p": 0.9957716701902747
+      },
+      "paper_significant_by_tier": {
+        "CONDITIONAL": 8,
+        "FRAGILE": 1,
+        "ROBUST": 1
+      },
+      "disease": "CRC"
+    },
+    {
+      "cohort": "crc_xiang",
+      "cases": [
+        "CRC"
+      ],
+      "condition": null,
+      "n_control": 22,
+      "n_case": 21,
+      "n_specifications": 876,
+      "runtime_seconds": 0.3,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 0,
+        "FRAGILE": 1,
+        "UNSTABLE": 20,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 45
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.7459282292419118e-08,
+        "n_sig_kruskal_same_matrix": 0,
+        "n_sig_microverse": 0,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 66,
+        "n_genera_microverse": 66,
+        "n_common": 66,
+        "n_sig_paper": 0,
+        "n_sig_matched": 0,
+        "n_sig_both": 0,
+        "jaccard": 0.0,
+        "agreement": 1.0,
+        "direction_agreement_on_shared": NaN,
+        "spearman_p": 0.9908028938540332
+      },
+      "paper_significant_by_tier": {},
+      "disease": "CRC"
+    },
+    {
+      "cohort": "crc_zackular",
+      "cases": [
+        "CRC"
+      ],
+      "condition": null,
+      "n_control": 30,
+      "n_case": 30,
+      "n_specifications": 1596,
+      "runtime_seconds": 0.6,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 0,
+        "FRAGILE": 1,
+        "UNSTABLE": 15,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 146
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.9615599750343335e-08,
+        "n_sig_kruskal_same_matrix": 1,
+        "n_sig_microverse": 1,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 165,
+        "n_genera_microverse": 162,
+        "n_common": 162,
+        "n_sig_paper": 1,
+        "n_sig_matched": 1,
+        "n_sig_both": 1,
+        "jaccard": 1.0,
+        "agreement": 1.0,
+        "direction_agreement_on_shared": 1.0,
+        "spearman_p": 0.9833245487928574
+      },
+      "paper_significant_by_tier": {
+        "FRAGILE": 1
+      },
+      "disease": "CRC"
+    },
+    {
+      "cohort": "cdi_schubert",
+      "cases": [
+        "CDI"
+      ],
+      "condition": null,
+      "n_control": 154,
+      "n_case": 93,
+      "n_specifications": 1236,
+      "runtime_seconds": 0.5,
+      "tiers": {
+        "ROBUST": 4,
+        "CONDITIONAL": 49,
+        "FRAGILE": 39,
+        "UNSTABLE": 28,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 0
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.7459827300901907e-08,
+        "n_sig_kruskal_same_matrix": 72,
+        "n_sig_microverse": 72,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 120,
+        "n_genera_microverse": 120,
+        "n_common": 120,
+        "n_sig_paper": 73,
+        "n_sig_matched": 72,
+        "n_sig_both": 72,
+        "jaccard": 0.9863013698630136,
+        "agreement": 0.9916666666666667,
+        "direction_agreement_on_shared": 0.9722222222222222,
+        "spearman_p": 0.9990120344292414
+      },
+      "paper_significant_by_tier": {
+        "CONDITIONAL": 45,
+        "UNSTABLE": 13,
+        "FRAGILE": 11,
+        "ROBUST": 4
+      },
+      "disease": "CDI"
+    },
+    {
+      "cohort": "cdi_vincent_v3v5",
+      "cases": [
+        "CDI"
+      ],
+      "condition": null,
+      "n_control": 25,
+      "n_case": 25,
+      "n_specifications": 1596,
+      "runtime_seconds": 0.5,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 3,
+        "FRAGILE": 61,
+        "UNSTABLE": 25,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 9
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.9611106899807282e-08,
+        "n_sig_kruskal_same_matrix": 13,
+        "n_sig_microverse": 13,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 98,
+        "n_genera_microverse": 98,
+        "n_common": 98,
+        "n_sig_paper": 10,
+        "n_sig_matched": 13,
+        "n_sig_both": 10,
+        "jaccard": 0.7692307692307693,
+        "agreement": 0.9693877551020408,
+        "direction_agreement_on_shared": 1.0,
+        "spearman_p": 0.9916898213920323
+      },
+      "paper_significant_by_tier": {
+        "FRAGILE": 5,
+        "CONDITIONAL": 3,
+        "UNSTABLE": 2
+      },
+      "disease": "CDI"
+    },
+    {
+      "cohort": "ibd_gevers_2014",
+      "cases": [
+        "CD"
+      ],
+      "condition": [
+        "sample_location",
+        [
+          "stool"
+        ]
+      ],
+      "n_control": 16,
+      "n_case": 146,
+      "n_specifications": 1596,
+      "runtime_seconds": 0.7,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 3,
+        "FRAGILE": 88,
+        "UNSTABLE": 39,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 5
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.9444451654647708e-08,
+        "n_sig_kruskal_same_matrix": 14,
+        "n_sig_microverse": 14,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 135,
+        "n_genera_microverse": 135,
+        "n_common": 135,
+        "n_sig_paper": 14,
+        "n_sig_matched": 14,
+        "n_sig_both": 14,
+        "jaccard": 1.0,
+        "agreement": 1.0,
+        "direction_agreement_on_shared": 0.9285714285714286,
+        "spearman_p": 0.9996535791132602
+      },
+      "paper_significant_by_tier": {
+        "FRAGILE": 8,
+        "UNSTABLE": 4,
+        "CONDITIONAL": 2
+      },
+      "disease": "IBD"
+    },
+    {
+      "cohort": "ibd_huttenhower",
+      "cases": [
+        "CD",
+        "UC"
+      ],
+      "condition": [
+        "SampleType",
+        [
+          "stool"
+        ]
+      ],
+      "n_control": 18,
+      "n_case": 108,
+      "n_specifications": 876,
+      "runtime_seconds": 0.4,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 2,
+        "FRAGILE": 55,
+        "UNSTABLE": 11,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 3
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.343542016003397e-08,
+        "n_sig_kruskal_same_matrix": 5,
+        "n_sig_microverse": 5,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 71,
+        "n_genera_microverse": 71,
+        "n_common": 71,
+        "n_sig_paper": 5,
+        "n_sig_matched": 5,
+        "n_sig_both": 5,
+        "jaccard": 1.0,
+        "agreement": 1.0,
+        "direction_agreement_on_shared": 1.0,
+        "spearman_p": 0.9948684409116064
+      },
+      "paper_significant_by_tier": {
+        "FRAGILE": 3,
+        "CONDITIONAL": 2
+      },
+      "disease": "IBD"
+    },
+    {
+      "cohort": "ibd_alm",
+      "cases": [
+        "CD",
+        "UC"
+      ],
+      "condition": null,
+      "n_control": 24,
+      "n_case": 66,
+      "n_specifications": 1236,
+      "runtime_seconds": 0.3,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 9,
+        "FRAGILE": 53,
+        "UNSTABLE": 9,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 5
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.7872634089654014e-08,
+        "n_sig_kruskal_same_matrix": 13,
+        "n_sig_microverse": 13,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 76,
+        "n_genera_microverse": 76,
+        "n_common": 76,
+        "n_sig_paper": 13,
+        "n_sig_matched": 13,
+        "n_sig_both": 13,
+        "jaccard": 1.0,
+        "agreement": 1.0,
+        "direction_agreement_on_shared": 1.0,
+        "spearman_p": 0.9984754743012341
+      },
+      "paper_significant_by_tier": {
+        "CONDITIONAL": 8,
+        "FRAGILE": 5
+      },
+      "disease": "IBD"
+    },
+    {
+      "cohort": "ibd_engstrand_maxee",
+      "cases": [
+        "CD",
+        "UC"
+      ],
+      "condition": [
+        "SampleType",
+        [
+          "stool"
+        ]
+      ],
+      "n_control": 35,
+      "n_case": 45,
+      "n_specifications": 876,
+      "runtime_seconds": 0.3,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 0,
+        "FRAGILE": 7,
+        "UNSTABLE": 18,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 37
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.502622142852573e-08,
+        "n_sig_kruskal_same_matrix": 0,
+        "n_sig_microverse": 0,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 62,
+        "n_genera_microverse": 62,
+        "n_common": 62,
+        "n_sig_paper": 0,
+        "n_sig_matched": 0,
+        "n_sig_both": 0,
+        "jaccard": 0.0,
+        "agreement": 1.0,
+        "direction_agreement_on_shared": NaN,
+        "spearman_p": 0.9889041424479833
+      },
+      "paper_significant_by_tier": {},
+      "disease": "IBD"
+    },
+    {
+      "cohort": "hiv_dinh",
+      "cases": [
+        "HIV"
+      ],
+      "condition": null,
+      "n_control": 15,
+      "n_case": 21,
+      "n_specifications": 1596,
+      "runtime_seconds": 0.3,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 0,
+        "FRAGILE": 0,
+        "UNSTABLE": 1,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 56
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.862196912811754e-08,
+        "n_sig_kruskal_same_matrix": 0,
+        "n_sig_microverse": 0,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 57,
+        "n_genera_microverse": 57,
+        "n_common": 57,
+        "n_sig_paper": 0,
+        "n_sig_matched": 0,
+        "n_sig_both": 0,
+        "jaccard": 0.0,
+        "agreement": 1.0,
+        "direction_agreement_on_shared": NaN,
+        "spearman_p": 0.9854147084562278
+      },
+      "paper_significant_by_tier": {},
+      "disease": "HIV"
+    },
+    {
+      "cohort": "hiv_lozupone",
+      "cases": [
+        "HIV"
+      ],
+      "condition": [
+        "time_point",
+        [
+          "1"
+        ]
+      ],
+      "n_control": 13,
+      "n_case": 23,
+      "n_specifications": 1596,
+      "runtime_seconds": 0.3,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 17,
+        "FRAGILE": 33,
+        "UNSTABLE": 7,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 47
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.9472777995920296e-08,
+        "n_sig_kruskal_same_matrix": 18,
+        "n_sig_microverse": 18,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 104,
+        "n_genera_microverse": 104,
+        "n_common": 104,
+        "n_sig_paper": 17,
+        "n_sig_matched": 18,
+        "n_sig_both": 17,
+        "jaccard": 0.9444444444444444,
+        "agreement": 0.9903846153846154,
+        "direction_agreement_on_shared": 1.0,
+        "spearman_p": 0.9956418584453434
+      },
+      "paper_significant_by_tier": {
+        "CONDITIONAL": 15,
+        "FRAGILE": 2
+      },
+      "disease": "HIV"
+    },
+    {
+      "cohort": "hiv_noguerajulian",
+      "cases": [
+        "HIV"
+      ],
+      "condition": [
+        "cohort",
+        [
+          "BCN0",
+          "STK"
+        ]
+      ],
+      "n_control": 34,
+      "n_case": 205,
+      "n_specifications": 1596,
+      "runtime_seconds": 0.9,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 3,
+        "FRAGILE": 83,
+        "UNSTABLE": 50,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 3
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.9462590922513243e-08,
+        "n_sig_kruskal_same_matrix": 17,
+        "n_sig_microverse": 17,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 139,
+        "n_genera_microverse": 139,
+        "n_common": 139,
+        "n_sig_paper": 17,
+        "n_sig_matched": 17,
+        "n_sig_both": 17,
+        "jaccard": 1.0,
+        "agreement": 1.0,
+        "direction_agreement_on_shared": 1.0,
+        "spearman_p": 0.9925744537532181
+      },
+      "paper_significant_by_tier": {
+        "FRAGILE": 12,
+        "CONDITIONAL": 3,
+        "UNSTABLE": 2
+      },
+      "disease": "HIV"
+    },
+    {
+      "cohort": "ob_goodrich",
+      "cases": [
+        "OB"
+      ],
+      "condition": [
+        "n_sample",
+        [
+          "0"
+        ]
+      ],
+      "n_control": 428,
+      "n_case": 185,
+      "n_specifications": 1596,
+      "runtime_seconds": 1.9,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 8,
+        "FRAGILE": 99,
+        "UNSTABLE": 37,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 14
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.969455625834172e-08,
+        "n_sig_kruskal_same_matrix": 14,
+        "n_sig_microverse": 14,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 158,
+        "n_genera_microverse": 158,
+        "n_common": 158,
+        "n_sig_paper": 12,
+        "n_sig_matched": 14,
+        "n_sig_both": 10,
+        "jaccard": 0.625,
+        "agreement": 0.9620253164556962,
+        "direction_agreement_on_shared": 0.9,
+        "spearman_p": 0.8922263177350579
+      },
+      "paper_significant_by_tier": {
+        "CONDITIONAL": 5,
+        "FRAGILE": 5,
+        "UNSTABLE": 2
+      },
+      "disease": "OB"
+    },
+    {
+      "cohort": "ob_ross",
+      "cases": [
+        "OB"
+      ],
+      "condition": null,
+      "n_control": 26,
+      "n_case": 37,
+      "n_specifications": 1596,
+      "runtime_seconds": 0.4,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 0,
+        "FRAGILE": 2,
+        "UNSTABLE": 29,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 61
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.7738982555369773e-08,
+        "n_sig_kruskal_same_matrix": 0,
+        "n_sig_microverse": 0,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 92,
+        "n_genera_microverse": 92,
+        "n_common": 92,
+        "n_sig_paper": 0,
+        "n_sig_matched": 0,
+        "n_sig_both": 0,
+        "jaccard": 0.0,
+        "agreement": 1.0,
+        "direction_agreement_on_shared": NaN,
+        "spearman_p": 0.9817961633392203
+      },
+      "paper_significant_by_tier": {},
+      "disease": "OB"
+    },
+    {
+      "cohort": "ob_zupancic",
+      "cases": [
+        "OB"
+      ],
+      "condition": [
+        "visit_number",
+        [
+          "1"
+        ]
+      ],
+      "n_control": 96,
+      "n_case": 101,
+      "n_specifications": 1236,
+      "runtime_seconds": 0.5,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 0,
+        "FRAGILE": 3,
+        "UNSTABLE": 16,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 29
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.9679695146000995e-08,
+        "n_sig_kruskal_same_matrix": 0,
+        "n_sig_microverse": 0,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 48,
+        "n_genera_microverse": 48,
+        "n_common": 48,
+        "n_sig_paper": 0,
+        "n_sig_matched": 0,
+        "n_sig_both": 0,
+        "jaccard": 0.0,
+        "agreement": 1.0,
+        "direction_agreement_on_shared": NaN,
+        "spearman_p": 0.9977203647416413
+      },
+      "paper_significant_by_tier": {},
+      "disease": "OB"
+    },
+    {
+      "cohort": "ob_escobar",
+      "cases": [
+        "OB"
+      ],
+      "condition": null,
+      "n_control": 10,
+      "n_case": 10,
+      "n_specifications": 876,
+      "runtime_seconds": 0.2,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 0,
+        "FRAGILE": 5,
+        "UNSTABLE": 3,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 35
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.6840519140591823e-08,
+        "n_sig_kruskal_same_matrix": 0,
+        "n_sig_microverse": 0,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 43,
+        "n_genera_microverse": 43,
+        "n_common": 43,
+        "n_sig_paper": 0,
+        "n_sig_matched": 0,
+        "n_sig_both": 0,
+        "jaccard": 0.0,
+        "agreement": 1.0,
+        "direction_agreement_on_shared": NaN,
+        "spearman_p": 0.9568633403447544
+      },
+      "paper_significant_by_tier": {},
+      "disease": "OB"
+    },
+    {
+      "cohort": "ob_gordon_2008_v2",
+      "cases": [
+        "OB"
+      ],
+      "condition": null,
+      "n_control": 61,
+      "n_case": 195,
+      "n_specifications": 1596,
+      "runtime_seconds": 0.7,
+      "tiers": {
+        "ROBUST": 0,
+        "CONDITIONAL": 7,
+        "FRAGILE": 31,
+        "UNSTABLE": 33,
+        "INSUFFICIENT": 0,
+        "NOT DETECTED": 9
+      },
+      "level1_implementation": {
+        "max_abs_diff_p_vs_scipy_mannwhitney": 2.3913301117062247e-08,
+        "n_sig_kruskal_same_matrix": 18,
+        "n_sig_microverse": 18,
+        "agreement_same_matrix": 1.0
+      },
+      "level2_published_pipeline": {
+        "n_genera_paper": 80,
+        "n_genera_microverse": 80,
+        "n_common": 80,
+        "n_sig_paper": 18,
+        "n_sig_matched": 18,
+        "n_sig_both": 18,
+        "jaccard": 1.0,
+        "agreement": 1.0,
+        "direction_agreement_on_shared": 1.0,
+        "spearman_p": 0.9951709506897803
+      },
+      "paper_significant_by_tier": {
+        "CONDITIONAL": 7,
+        "FRAGILE": 6,
+        "UNSTABLE": 5
+      },
+      "disease": "OB"
+    }
+  ],
+  "refused_by_validation": [
+    {
+      "cohort": "cdi_youngster",
+      "reason": "Group sizes are a_control=4 and b_case=19; MicroVerse needs at least 5 samples in each group."
+    }
+  ],
+  "failures": [],
+  "claims": {
+    "s3_labelled_genera": {
+      "health": 24,
+      "disease": 20
+    },
+    "s3_pairs_evaluated": 618,
+    "s3_direction_by_tier": {
+      "ROBUST": {
+        "n": 4,
+        "direction_agrees": 4
+      },
+      "CONDITIONAL": {
+        "n": 54,
+        "direction_agrees": 45
+      },
+      "FRAGILE": {
+        "n": 215,
+        "direction_agrees": 152
+      },
+      "UNSTABLE": {
+        "n": 128,
+        "direction_agrees": 72
+      }
+    },
+    "s3_paper_significant_pairs": 97,
+    "s3_paper_significant_direction_agrees": 85,
+    "crc_named_genera": [
+      {
+        "cohort": "crc_baxter",
+        "genus": "Enterobacter",
+        "tier": "FRAGILE",
+        "frac_significant": 0.036,
+        "median_effect_sign": 1,
+        "paper_q": 0.0464172269711114
+      },
+      {
+        "cohort": "crc_xiang",
+        "genus": "Enterobacter",
+        "tier": "UNSTABLE",
+        "frac_significant": 0.0,
+        "median_effect_sign": -1,
+        "paper_q": 1.0
+      },
+      {
+        "cohort": "crc_zackular",
+        "genus": "Enterobacter",
+        "tier": "NOT DETECTED",
+        "frac_significant": 0.0,
+        "median_effect_sign": 1,
+        "paper_q": 0.8813690356805043
+      },
+      {
+        "cohort": "crc_zeller",
+        "genus": "Enterobacter",
+        "tier": "NOT DETECTED",
+        "frac_significant": 0.0,
+        "median_effect_sign": 1,
+        "paper_q": 0.6368251326367815
+      },
+      {
+        "cohort": "crc_zhao",
+        "genus": "Enterobacter",
+        "tier": "CONDITIONAL",
+        "frac_significant": 0.53,
+        "median_effect_sign": 1,
+        "paper_q": 0.006933881076069576
+      },
+      {
+        "cohort": "crc_baxter",
+        "genus": "Fusobacterium",
+        "tier": "CONDITIONAL",
+        "frac_significant": 0.424,
+        "median_effect_sign": 1,
+        "paper_q": 1.2858642641636677e-05
+      },
+      {
+        "cohort": "crc_xiang",
+        "genus": "Fusobacterium",
+        "tier": "UNSTABLE",
+        "frac_significant": 0.0,
+        "median_effect_sign": 1,
+        "paper_q": 0.9541764889231144
+      },
+      {
+        "cohort": "crc_zackular",
+        "genus": "Fusobacterium",
+        "tier": "FRAGILE",
+        "frac_significant": 0.048,
+        "median_effect_sign": 1,
+        "paper_q": 0.01101043269865642
+      },
+      {
+        "cohort": "crc_zeller",
+        "genus": "Fusobacterium",
+        "tier": "CONDITIONAL",
+        "frac_significant": 0.403,
+        "median_effect_sign": 1,
+        "paper_q": 8.081441451219848e-05
+      },
+      {
+        "cohort": "crc_zhao",
+        "genus": "Fusobacterium",
+        "tier": "NOT DETECTED",
+        "frac_significant": 0.0,
+        "median_effect_sign": -1,
+        "paper_q": 0.704577612093987
+      },
+      {
+        "cohort": "crc_baxter",
+        "genus": "Parvimonas",
+        "tier": "CONDITIONAL",
+        "frac_significant": 0.63,
+        "median_effect_sign": 1,
+        "paper_q": 4.924875944188147e-08
+      },
+      {
+        "cohort": "crc_xiang",
+        "genus": "Parvimonas",
+        "tier": "UNSTABLE",
+        "frac_significant": 0.0,
+        "median_effect_sign": 1,
+        "paper_q": 0.6604832271035623
+      },
+      {
+        "cohort": "crc_zackular",
+        "genus": "Parvimonas",
+        "tier": "NOT DETECTED",
+        "frac_significant": 0.0,
+        "median_effect_sign": 1,
+        "paper_q": 0.7820028907502158
+      },
+      {
+        "cohort": "crc_zeller",
+        "genus": "Parvimonas",
+        "tier": "UNSTABLE",
+        "frac_significant": 0.346,
+        "median_effect_sign": 1,
+        "paper_q": 0.010706924962454477
+      },
+      {
+        "cohort": "crc_baxter",
+        "genus": "Peptostreptococcus",
+        "tier": "CONDITIONAL",
+        "frac_significant": 0.713,
+        "median_effect_sign": 1,
+        "paper_q": 6.379968110829997e-08
+      },
+      {
+        "cohort": "crc_xiang",
+        "genus": "Peptostreptococcus",
+        "tier": "NOT DETECTED",
+        "frac_significant": 0.0,
+        "median_effect_sign": -1,
+        "paper_q": 0.6604832271035623
+      },
+      {
+        "cohort": "crc_zackular",
+        "genus": "Peptostreptococcus",
+        "tier": "NOT DETECTED",
+        "frac_significant": 0.0,
+        "median_effect_sign": 1,
+        "paper_q": 0.7820028907502158
+      },
+      {
+        "cohort": "crc_zeller",
+        "genus": "Peptostreptococcus",
+        "tier": "CONDITIONAL",
+        "frac_significant": 0.432,
+        "median_effect_sign": 1,
+        "paper_q": 8.081441451219848e-05
+      },
+      {
+        "cohort": "crc_zhao",
+        "genus": "Peptostreptococcus",
+        "tier": "CONDITIONAL",
+        "frac_significant": 0.692,
+        "median_effect_sign": 1,
+        "paper_q": 0.0005961992076565335
+      },
+      {
+        "cohort": "crc_baxter",
+        "genus": "Porphyromonas",
+        "tier": "CONDITIONAL",
+        "frac_significant": 0.738,
+        "median_effect_sign": 1,
+        "paper_q": 4.924875944188147e-08
+      },
+      {
+        "cohort": "crc_xiang",
+        "genus": "Porphyromonas",
+        "tier": "UNSTABLE",
+        "frac_significant": 0.0,
+        "median_effect_sign": 1,
+        "paper_q": 0.8301855246044754
+      },
+      {
+        "cohort": "crc_zackular",
+        "genus": "Porphyromonas",
+        "tier": "NOT DETECTED",
+        "frac_significant": 0.0,
+        "median_effect_sign": 1,
+        "paper_q": 0.7820028907502158
+      },
+      {
+        "cohort": "crc_zeller",
+        "genus": "Porphyromonas",
+        "tier": "FRAGILE",
+        "frac_significant": 0.297,
+        "median_effect_sign": 1,
+        "paper_q": 0.013458438969182633
+      },
+      {
+        "cohort": "crc_zhao",
+        "genus": "Porphyromonas",
+        "tier": "FRAGILE",
+        "frac_significant": 0.282,
+        "median_effect_sign": 1,
+        "paper_q": 0.02620426125621895
+      }
+    ]
+  },
+  "replication": {
+    "n_pairs": 3688,
+    "n_genera": 181,
+    "n_bootstrap": 4000,
+    "definitions": {
+      "significant": "q < 0.05 under the paper's pipeline in another cohort of the same disease, same direction",
+      "direction": "the other cohort's effect has the same sign, significant or not"
+    },
+    "groups": {
+      "all genera: ROBUST": {
+        "n_pairs": 5,
+        "significant": {
+          "n_pairs": 5,
+          "rate": 0.2,
+          "ci95": [
+            0.0,
+            0.6667
+          ]
+        },
+        "direction": {
+          "n_pairs": 5,
+          "rate": 0.6,
+          "ci95": [
+            0.0,
+            1.0
+          ]
+        }
+      },
+      "all genera: CONDITIONAL": {
+        "n_pairs": 231,
+        "significant": {
+          "n_pairs": 231,
+          "rate": 0.1212,
+          "ci95": [
+            0.0632,
+            0.1801
+          ]
+        },
+        "direction": {
+          "n_pairs": 231,
+          "rate": 0.6494,
+          "ci95": [
+            0.5773,
+            0.7127
+          ]
+        }
+      },
+      "all genera: FRAGILE": {
+        "n_pairs": 1120,
+        "significant": {
+          "n_pairs": 1120,
+          "rate": 0.0705,
+          "ci95": [
+            0.0526,
+            0.0883
+          ]
+        },
+        "direction": {
+          "n_pairs": 1120,
+          "rate": 0.5714,
+          "ci95": [
+            0.534,
+            0.6074
+          ]
+        }
+      },
+      "all genera: UNSTABLE": {
+        "n_pairs": 773,
+        "significant": {
+          "n_pairs": 773,
+          "rate": 0.0763,
+          "ci95": [
+            0.0534,
+            0.1018
+          ]
+        },
+        "direction": {
+          "n_pairs": 773,
+          "rate": 0.5446,
+          "ci95": [
+            0.5019,
+            0.5879
+          ]
+        }
+      },
+      "all genera: NOT DETECTED": {
+        "n_pairs": 1557,
+        "significant": {
+          "n_pairs": 1557,
+          "rate": 0.0559,
+          "ci95": [
+            0.0391,
+            0.0735
+          ]
+        },
+        "direction": {
+          "n_pairs": 1557,
+          "rate": 0.5331,
+          "ci95": [
+            0.5016,
+            0.5647
+          ]
+        }
+      },
+      "paper-significant (what a single-pipeline paper reports)": {
+        "n_pairs": 387,
+        "significant": {
+          "n_pairs": 387,
+          "rate": 0.1344,
+          "ci95": [
+            0.0807,
+            0.1863
+          ]
+        },
+        "direction": {
+          "n_pairs": 387,
+          "rate": 0.6408,
+          "ci95": [
+            0.5827,
+            0.6943
+          ]
+        }
+      },
+      "paper-significant and ROBUST or CONDITIONAL": {
+        "n_pairs": 211,
+        "significant": {
+          "n_pairs": 211,
+          "rate": 0.1327,
+          "ci95": [
+            0.0708,
+            0.1956
+          ]
+        },
+        "direction": {
+          "n_pairs": 211,
+          "rate": 0.6445,
+          "ci95": [
+            0.5728,
+            0.7114
+          ]
+        }
+      },
+      "paper-significant and FRAGILE or UNSTABLE": {
+        "n_pairs": 176,
+        "significant": {
+          "n_pairs": 176,
+          "rate": 0.1364,
+          "ci95": [
+            0.0719,
+            0.2023
+          ]
+        },
+        "direction": {
+          "n_pairs": 176,
+          "rate": 0.6364,
+          "ci95": [
+            0.554,
+            0.718
+          ]
+        }
+      },
+      "paper-significant and ROBUST": {
+        "n_pairs": 5,
+        "significant": {
+          "n_pairs": 5,
+          "rate": 0.2,
+          "ci95": [
+            0.0,
+            0.6667
+          ]
+        },
+        "direction": {
+          "n_pairs": 5,
+          "rate": 0.6,
+          "ci95": [
+            0.0,
+            1.0
+          ]
+        }
+      },
+      "paper-significant and CONDITIONAL": {
+        "n_pairs": 206,
+        "significant": {
+          "n_pairs": 206,
+          "rate": 0.1311,
+          "ci95": [
+            0.0679,
+            0.1934
+          ]
+        },
+        "direction": {
+          "n_pairs": 206,
+          "rate": 0.6456,
+          "ci95": [
+            0.5739,
+            0.7123
+          ]
+        }
+      },
+      "paper-significant and FRAGILE": {
+        "n_pairs": 132,
+        "significant": {
+          "n_pairs": 132,
+          "rate": 0.1515,
+          "ci95": [
+            0.0696,
+            0.2353
+          ]
+        },
+        "direction": {
+          "n_pairs": 132,
+          "rate": 0.6515,
+          "ci95": [
+            0.5398,
+            0.7551
+          ]
+        }
+      },
+      "paper-significant and UNSTABLE": {
+        "n_pairs": 44,
+        "significant": {
+          "n_pairs": 44,
+          "rate": 0.0909,
+          "ci95": [
+            0.0,
+            0.225
+          ]
+        },
+        "direction": {
+          "n_pairs": 44,
+          "rate": 0.5909,
+          "ci95": [
+            0.4545,
+            0.7407
+          ]
+        }
+      }
+    },
+    "stable_vs_shaky_among_paper_significant": {
+      "significant": {
+        "table_stable_then_shaky_[replicated, not]": [
+          [
+            28,
+            183
+          ],
+          [
+            24,
+            152
+          ]
+        ],
+        "difference": -0.0037,
+        "difference_ci95_cluster_bootstrap": [
+          -0.0717,
+          0.0683
+        ],
+        "fisher_odds_ratio": 0.969,
+        "fisher_p_naive": 1.0,
+        "bootstrap_share_of_draws_with_difference_le_0": 0.5487
+      },
+      "direction": {
+        "table_stable_then_shaky_[replicated, not]": [
+          [
+            136,
+            75
+          ],
+          [
+            112,
+            64
+          ]
+        ],
+        "difference": 0.0082,
+        "difference_ci95_cluster_bootstrap": [
+          -0.0929,
+          0.1128
+        ],
+        "fisher_odds_ratio": 1.036,
+        "fisher_p_naive": 0.915374574982226,
+        "bootstrap_share_of_draws_with_difference_le_0": 0.4275
+      }
+    },
+    "per_disease": {
+      "CRC": {
+        "paper-significant and ROBUST or CONDITIONAL": {
+          "n": 65,
+          "significant": 0.2154,
+          "direction": 0.7231
+        },
+        "paper-significant and FRAGILE or UNSTABLE": {
+          "n": 52,
+          "significant": 0.1538,
+          "direction": 0.6346
+        }
+      },
+      "CDI": {
+        "paper-significant and ROBUST or CONDITIONAL": {
+          "n": 42,
+          "significant": 0.119,
+          "direction": 0.5714
+        },
+        "paper-significant and FRAGILE or UNSTABLE": {
+          "n": 21,
+          "significant": 0.2381,
+          "direction": 0.619
+        }
+      },
+      "IBD": {
+        "paper-significant and ROBUST or CONDITIONAL": {
+          "n": 34,
+          "significant": 0.1765,
+          "direction": 0.7941
+        },
+        "paper-significant and FRAGILE or UNSTABLE": {
+          "n": 38,
+          "significant": 0.2105,
+          "direction": 0.7632
+        }
+      },
+      "HIV": {
+        "paper-significant and ROBUST or CONDITIONAL": {
+          "n": 31,
+          "significant": 0.0,
+          "direction": 0.2581
+        },
+        "paper-significant and FRAGILE or UNSTABLE": {
+          "n": 14,
+          "significant": 0.0,
+          "direction": 0.3571
+        }
+      },
+      "OB": {
+        "paper-significant and ROBUST or CONDITIONAL": {
+          "n": 39,
+          "significant": 0.0769,
+          "direction": 0.7692
+        },
+        "paper-significant and FRAGILE or UNSTABLE": {
+          "n": 51,
+          "significant": 0.0588,
+          "direction": 0.6275
+        }
+      }
+    }
+  }
+}

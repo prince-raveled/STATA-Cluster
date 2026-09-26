@@ -247,7 +247,12 @@
         <h3>Are the labels meaningful?</h3>
         <p class="small" style="margin-top:8px;color:var(--ink-2)">They were tested against
           held-out halves of published cohorts: the label assigned on one half predicts
-          replication on the other (AUC {{ TIER_VALIDATION.auc }}).
+          replication on the other (AUC {{ TIER_VALIDATION.auc }}). Across independent
+          studies of the same disease it did not ({{ CROSS_STUDY.stable.rate|percent(0) }}
+          against {{ CROSS_STUDY.shaky.rate|percent(0) }}), so a label describes these data,
+          not another population. On a published study's own data, MicroVerse finds
+          {{ PUBLISHED_STUDY.recovered }} of the {{ PUBLISHED_STUDY.paper_significant }}
+          genera the paper did.
           <a href="/validation">The full evidence</a>.</p>
       </div>
     </div>

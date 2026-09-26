@@ -188,7 +188,7 @@
           <span class="tier-card-name">{{ 'ROBUST TO ANALYTICAL CHOICE' if name == 'ROBUST' else TIER_HEADLINES[name] }}</span>
           <span class="tier-card-rule">{{ t.blurb|capitalize }}.</span>
           <span class="tier-card-evidence">
-            {% if ev %}<b>{{ ev.rate|percent(0) }}</b> replicated on held-out data
+            {% if ev %}<b>{{ ev.rate|percent(0) }}</b> replicated within the same study
               ({{ ev.ci[0]|percent(0) }}–{{ ev.ci[1]|percent(0) }})
             {% else %}no replication claim{% endif %}
           </span>
@@ -200,7 +200,7 @@
       <summary>Why these labels mean something
         <span class="summary-meta"><span class="grade-chip grade-empirical">{{ GRADE_LABEL['empirical'] }}</span></span></summary>
       <div class="disclosure-body">
-        <p>These are not conventions. The labels were tested against data they had never seen:
+        <p>These are not conventions. The labels were tested against samples they had never seen:
           {{ TIER_VALIDATION.n_splits }} discovery/validation splits of
           {{ TIER_VALIDATION.n_cohorts }} published cohorts,
           {{ TIER_VALIDATION.n_observations|commafy }} taxon observations. A taxon's label

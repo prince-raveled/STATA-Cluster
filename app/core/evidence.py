@@ -78,10 +78,64 @@ TIER_REPLICATION = {
                      "share": 0.689},
 }
 
+# ---------------------------------------------------------------------------
+# A published analysis reproduced, and replication across studies —
+# tests/reference/published_findings_study.py (SPEC §24.8)
+# ---------------------------------------------------------------------------
+#: Provenance of the numbers below. Regenerate with:
+#:     .venv/Scripts/python tests/reference/published_findings_study.py
+PUBLISHED_STUDY = {
+    "experiment": "tests/reference/published_findings_study.py",
+    "record": "docs/published_findings_study.json",
+    "paper": "Duvallet C et al., Meta-analysis of gut microbiome studies identifies "
+             "disease-specific and shared responses, Nat Commun 2017;8:1784",
+    "data": "MicrobiomeHD (Zenodo 1146764, CC-BY-NC-4.0): 16S case-control cohorts in "
+            "colorectal cancer, C. difficile infection, IBD, HIV and obesity",
+    "design": "the paper's pipeline re-implemented from the authors' own code, compared "
+              "with the MicroVerse specification that matches it",
+    "n_cohorts": 19,
+    "n_refused": 1,          # 4 controls, under the 5-per-group minimum: refused, correctly
+    "n_samples": 2824,
+    "paper_significant": 217,
+    "recovered": 214,
+    "extra": 9,
+    "n_exact": 14,
+    "same_matrix_identical": 19,
+    "max_p_difference": 3e-8,
+    #: The paper's shared-response genera (its Supplementary File 3): (agree, total) on
+    #: direction, by the MicroVerse label.
+    "shared_response_direction": {
+        "ROBUST": (4, 4), "CONDITIONAL": (45, 54), "FRAGILE": (152, 215), "UNSTABLE": (72, 128),
+    },
+}
+
+#: The same record's external test. A genus the paper's pipeline calls significant in one
+#: cohort is checked, with the paper's own pipeline, in every other cohort of the disease.
+CROSS_STUDY = {
+    "n_cohorts": 19,
+    "n_pairs": 3688,
+    "n_genera": 181,
+    "definition": "significant (q < 0.05) under the paper's pipeline in another cohort of "
+                  "the same disease, in the same direction",
+    "stable": {"label": "ROBUST or CONDITIONAL", "n": 211, "rate": 0.133,
+               "ci": (0.071, 0.196), "direction": 0.644},
+    "shaky": {"label": "FRAGILE or UNSTABLE", "n": 176, "rate": 0.136,
+              "ci": (0.072, 0.202), "direction": 0.636},
+    "difference": -0.004,
+    "difference_ci": (-0.072, 0.068),
+}
+
 #: Stated wherever a ROBUST call is displayed. The rate is real and the ordering survives
 #: dropping any single cohort, but the rate itself rests on few cohorts and must not be
-#: quoted as a precise probability.
+#: quoted as a precise probability — and it is a within-study rate.
 TIER_CAVEATS = [
+    "These rates are replication within a study, on held-out samples of the same cohort. "
+    f"Across independent studies of the same disease ({CROSS_STUDY['n_cohorts']} published "
+    "cohorts), the labels did not predict which findings replicated: "
+    f"{CROSS_STUDY['stable']['rate']:.0%} of ROBUST or CONDITIONAL findings against "
+    f"{CROSS_STUDY['shaky']['rate']:.0%} of FRAGILE or UNSTABLE ones. A label says how far "
+    "the answer depends on analytical choices in these data, not whether it will hold in "
+    "another population.",
     "ROBUST is rare: it was assigned to 0.5% of taxon observations, in 5 of 25 cohorts. "
     "The tier is conservative by construction — it says little, and what it says held "
     "up 9 times in 10.",
@@ -107,8 +161,8 @@ def tier_sentence(tier: str) -> str:
     if not facts:
         return ""
     low, high = facts["ci"]
-    return (f"In held-out validation on {TIER_VALIDATION['n_cohorts']} published "
-            f"cohorts, {facts['rate']:.0%} of {tier} taxa replicated "
+    return (f"On held-out samples of the same study, across {TIER_VALIDATION['n_cohorts']} "
+            f"published cohorts, {facts['rate']:.0%} of {tier} taxa replicated "
             f"(95% CI {low:.0%}–{high:.0%}, n = {facts['n']}).")
 
 
@@ -160,13 +214,36 @@ VALIDATION_MATRIX = [
         internal="tests/test_worked_example.py encodes the specification's own worked "
                  "example; adversarial tests cover every threshold boundary.",
         reference="",
-        empirical="Held-out replication on 25 published cohorts, 75 discovery/"
-                  "validation splits, 12,564 taxon observations: ROBUST 90%, "
+        empirical="Within a study — held-out halves of 25 published cohorts, 75 "
+                  "discovery/validation splits, 12,564 taxon observations: ROBUST 90%, "
                   "CONDITIONAL 51%, FRAGILE 12%, UNSTABLE 2%. AUC 0.785, risk ratio "
-                  "7.4, label-permuted null 0.7%.",
-        note="The strongest evidence in the system. Ordering survives dropping any "
-             "single cohort; the ROBUST rate itself rests on 5 cohorts.",
-        sources=["tests/reference/tier_validation.py", "docs/tier_validation.json"],
+                  "7.4, label-permuted null 0.7%. Across studies — 19 independent "
+                  "cohorts of five diseases: no difference, 13% against 14%.",
+        note="The strongest evidence in the system, and bounded: the labels predict "
+             "replication in more samples from the same study, not in another "
+             "population. Ordering survives dropping any single cohort; the ROBUST "
+             "rate itself rests on 5 cohorts.",
+        sources=["tests/reference/tier_validation.py", "docs/tier_validation.json",
+                 "tests/reference/published_findings_study.py"],
+    ),
+    Component(
+        name="Reproducing a published analysis",
+        grade=REFERENCE,
+        internal="The paper's pipeline re-implemented from the authors' code: its sample "
+                 "and OTU filters, genus collapsing, Kruskal-Wallis and Benjamini-Hochberg.",
+        reference="Duvallet et al. 2017 (MicrobiomeHD), 19 cohorts, 2,824 samples: the "
+                  "matching specification recovers 214 of the 217 genera the paper's "
+                  "pipeline finds significant, exactly in 14 cohorts. The paper's test "
+                  "on MicroVerse's own matrix gives identical calls in all 19 (p within "
+                  "3e-8).",
+        empirical="",
+        note="The 3 missed and 9 extra genera sit at q = 0.05 and come from the "
+             "relative-abundance denominator — the paper keeps reads with no genus, a "
+             "genus table does not — not from the statistics. Three of the cohorts, "
+             "uploaded to the live site on 26 September 2026, gave results identical to "
+             "the local runs.",
+        sources=["tests/reference/published_findings_study.py",
+                 "docs/published_findings_study.json"],
     ),
     Component(
         name="Choice attribution",
@@ -187,11 +264,20 @@ VALIDATION_MATRIX = [
         grade=EMPIRICAL,
         internal="",
         reference="",
-        empirical="The tier validation above is itself the replication experiment: "
-                  "discovery and validation halves are disjoint samples, and the "
-                  "held-out scoring never sees the discovery tier.",
-        note="Two independent definitions of replication agree (AUC 0.785 and 0.773).",
-        sources=["tests/reference/tier_validation.py"],
+        empirical="Within a study, the tier validation above is the replication "
+                  "experiment: discovery and validation halves are disjoint samples, and "
+                  "the held-out scoring never sees the discovery tier. Across studies, "
+                  "3,688 cohort-pair observations in 19 published cohorts: findings the "
+                  "paper's pipeline calls significant replicated in another cohort of the "
+                  "same disease 13% of the time whether MicroVerse labelled them ROBUST or "
+                  "CONDITIONAL or FRAGILE or UNSTABLE (difference -0.4 points, 95% CI -7 "
+                  "to +7).",
+        note="Two independent definitions of replication agree within a study (AUC 0.785 "
+             "and 0.773). Across studies neither significance nor direction differed by "
+             "label: differences between populations and protocols outweigh the "
+             "analytical choices MicroVerse varies.",
+        sources=["tests/reference/tier_validation.py",
+                 "tests/reference/published_findings_study.py"],
     ),
     Component(
         name="Preprocessing",

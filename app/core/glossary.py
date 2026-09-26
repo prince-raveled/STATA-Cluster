@@ -174,7 +174,9 @@ TERMS: dict[str, dict] = {
                 "direction) down to NOT DETECTED (no analysis found it). The tiers are "
                 "not just a convention: they were tested on 25 published datasets by "
                 "assigning them on half the samples and checking replication on the "
-                "held-out half. ROBUST taxa replicated 90% of the time, FRAGILE 12%.",
+                "held-out half. ROBUST taxa replicated 90% of the time, FRAGILE 12%. That "
+                "is replication within a study: across independent studies of the same "
+                "disease, the tiers did not predict which findings replicated.",
         "spec": "16.2",
     },
     "attribution": {

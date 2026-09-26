@@ -103,8 +103,9 @@ agreeing on the direction of its effect. The first rule that matches wins
 | NOT DETECTED | never significant |
 
 A tier measures how much the conclusion depends on analytical choice, not whether an
-effect is real or large. How often each tier replicated on held-out data is on the
-`/validation` page and in SPEC §24.6.
+effect is real or large. How often each tier replicated on held-out samples of the same
+study is on the `/validation` page and in SPEC §24.6 — and across independent studies of
+the same disease, the tiers did not predict replication (SPEC §24.8).
 
 ## Design constraints that are not negotiable
 
@@ -396,7 +397,8 @@ r > 0.9).
 
 ## Validation against published results (§23)
 
-All five of the spec's validation experiments now run.
+All five of the spec's validation experiments now run, and a sixth reproduces a published
+paper finding by finding.
 
 | # | Experiment | Status |
 |---|---|---|
@@ -405,6 +407,7 @@ All five of the spec's validation experiments now run.
 | 3 | **Reproduce Pelto et al.** — elementary methods give tighter specification distributions | **done** on their own 60 curated cohorts and their own split halves — and the answer is *partly*: true of the prevalence-filter fork, reversed on the rarefaction fork, and null on split-half replicability once detection is equalised. SPEC §24.5 |
 | 4 | **Simulated ground truth** | `tests/test_worked_example.py` and `examples/make_examples.py` — spiked taxa land ROBUST, nulls do not |
 | 5 | **Compute benchmark** | `tests/reference/benchmark.py`, curve in `docs/benchmark.json` |
+| 6 | **Reproduce a published analysis, then replicate across studies** — Duvallet et al. 2017 (MicrobiomeHD), 19 cohorts, 5 diseases | **done** — the specification matching the paper's pipeline finds **214 of the 217** genera it reported significant (exactly, in 14 cohorts; the paper's test on MicroVerse's matrix is identical in all 19). Across independent cohorts of the same disease, the tiers **did not** predict replication: 13% vs 14%. SPEC §24.8 |
 
 Reproducing 1 and 3 needs R, which is now installed alongside Bioconductor:
 
@@ -420,7 +423,20 @@ Rscript tests/reference/pelto_export.R data/pelto/data_171023.rds data/pelto/exp
 ```
 
 Both are registered in `tests/reference/run_all.py` and report SKIPPED with install
-instructions when R or the cached cohorts are absent.
+instructions when R or the cached cohorts are absent. Validation 6 needs only Python and
+fetches its cohorts from Zenodo on first run:
+
+```bash
+.venv/Scripts/python tests/reference/published_findings_study.py
+```
+
+**Validation 6 found the limit of the tiers.** On held-out halves of one study, ROBUST
+replicates 90% of the time and FRAGILE 12% (SPEC §24.6). Across *independent* studies of
+the same disease, findings the paper's pipeline called significant replicated 13% of the
+time whether MicroVerse labelled them ROBUST/CONDITIONAL or FRAGILE/UNSTABLE (difference
+−0.4 points, 95% CI −7 to +7). Population, protocol and sequencing differences between
+studies outweigh the analytical choices MicroVerse varies, so a tier describes how far an
+answer depends on those choices in *these* data — not whether it will hold elsewhere.
 
 **Validation 3 exposed something about how replicability gets measured.** On Pelto's own
 split halves, a call-conditioned replication rate rates the elementary methods far

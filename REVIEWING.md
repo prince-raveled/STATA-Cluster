@@ -135,7 +135,9 @@ rather than 90% — the ordering survives, the rate does not. The confidence int
 
 **Split-half is not external replication.** Both halves share protocol, population,
 batch and sequencing run. The measured replication rates are an upper bound on what
-independent collection would give.
+independent collection would give — and SPEC §24.8 measured the gap: across 19
+independent MicrobiomeHD cohorts of the same diseases, findings labelled ROBUST or
+CONDITIONAL replicated no more often than FRAGILE or UNSTABLE ones (13% against 14%).
 
 ---
 
@@ -147,7 +149,7 @@ Four kinds of evidence, deliberately kept apart in `app/core/evidence.py` and re
 | | Meaning | Where it applies |
 |---|---|---|
 | **Internal** | Implementation matches the specification. Says nothing about whether the specification is a good idea. | Harmonised effect; tier implementation |
-| **Reference** | Agrees with an independent implementation or a published result. | TMM (identical to edgeR), ALDEx2, ANCOM-BC, CLR, parsers, Tierney reproduction |
+| **Reference** | Agrees with an independent implementation or a published result. | TMM (identical to edgeR), ALDEx2, ANCOM-BC, CLR, parsers, Tierney reproduction, Duvallet reproduction (214 of 217 genera, SPEC §24.8) |
 
 Reference validation covers **estimates**, not **calibration**. Until 2026-09-11 nothing
 compared a p-value distribution against anything; an estimate can agree with R at
@@ -162,7 +164,9 @@ The empirical result, in full: 25 published cohorts, 75 stratified discovery/val
 splits, 12,564 taxon observations. Tiers assigned on the discovery half, replication
 scored blind on the held-out half. ROBUST 90% (CI 60–93), CONDITIONAL 51%, FRAGILE 12%,
 UNSTABLE 2%. AUC 0.785. Label-permuted null 0.7%. Two independent definitions of
-replication agree (AUC 0.785 and 0.773).
+replication agree (AUC 0.785 and 0.773). That grade is **within a study**: across
+independent studies the tiers did not predict replication (SPEC §24.8), and the interface
+says so beside every rate.
 
 Reference validation found four shipped bugs, two of which shift results by a *constant*
 and were therefore invisible to every correlation-based check that existed:
@@ -236,9 +240,13 @@ Not a list of future work — these are things that are currently true.
 
 Concretely, the findings that would falsify parts of this:
 
-- **Tier validation.** If ROBUST's advantage over CONDITIONAL disappears on cohorts
-  outside Pelto's collection, or if the ordering fails under a third definition of
-  replication, the empirical grade for the tiers should be withdrawn.
+- **Tier validation.** If ROBUST's advantage over CONDITIONAL disappears on split halves
+  of cohorts outside Pelto's collection, or if the ordering fails under a third definition
+  of replication, the empirical grade for the tiers should be withdrawn.
+- **Replication across studies has already failed** (SPEC §24.8), which is why the
+  empirical grade is scoped to replication within a study. Anyone quoting a tier as
+  evidence that a finding will generalise to another population is claiming something
+  this project has tested and not found.
 - **Harmonised effect.** If a reviewer shows a case where its covariate-invariance
   produces a materially misleading curve that the interface does not warn about, that
   is a design fault, not a documentation gap.

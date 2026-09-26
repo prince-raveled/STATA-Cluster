@@ -6,8 +6,10 @@ from fastapi.templating import Jinja2Templates
 
 from . import config
 from .core.evidence import (
+    CROSS_STUDY,
     GRADE_BLURB,
     GRADE_LABEL,
+    PUBLISHED_STUDY,
     TIER_CAVEATS,
     TIER_REPLICATION,
     TIER_VALIDATION,
@@ -106,6 +108,8 @@ templates.env.globals.update(
     TIER_REPLICATION=TIER_REPLICATION,
     TIER_VALIDATION=TIER_VALIDATION,
     TIER_CAVEATS=TIER_CAVEATS,
+    PUBLISHED_STUDY=PUBLISHED_STUDY,
+    CROSS_STUDY=CROSS_STUDY,
     GRADE_LABEL=GRADE_LABEL,
     GRADE_BLURB=GRADE_BLURB,
     VALIDATION_MATRIX=matrix_rows(),

@@ -14,7 +14,14 @@ import zipfile
 import numpy as np
 import pandas as pd
 
-from .evidence import TIER_CAVEATS, TIER_REPLICATION, TIER_VALIDATION, matrix_rows
+from .evidence import (
+    CROSS_STUDY,
+    PUBLISHED_STUDY,
+    TIER_CAVEATS,
+    TIER_REPLICATION,
+    TIER_VALIDATION,
+    matrix_rows,
+)
 from .models import FORK_LABELS, METHOD_LABELS, METHOD_SHORT, ordinal
 from .robustness import TIERS, locate_declared
 
@@ -507,6 +514,8 @@ def run_manifest(run, summary, attribution=None) -> dict:
         },
         "tier_experiment": TIER_VALIDATION,
         "tier_caveats": list(TIER_CAVEATS),
+        "published_study": PUBLISHED_STUDY,
+        "cross_study_replication": CROSS_STUDY,
     }
     return manifest
 
