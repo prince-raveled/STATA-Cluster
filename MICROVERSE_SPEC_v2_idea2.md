@@ -933,9 +933,8 @@ now sits out that one fit instead of failing it. The run manifest records the es
 (`seeds.pydeseq2_size_factors`) and the methods paragraph states it.
 `tests/test_methods.py` pins the estimator and reproduces the collapse on a synthetic
 sparse null table (86% of features significant under the old default, 0% now).
-**Numbers measured before this change:** the PyDESeq2 rows of §24.5 (Pelto) were produced
-with the old size factors and have not been regenerated; they need re-running before
-they are quoted.
+**Numbers measured before this change** — the PyDESeq2 rows of §24.5 (Pelto) — were
+regenerated on 2026-09-27; §24.5 gives the new figures and says what moved.
 
 ## 24.2 Validation record — what has been proved, and what has not
 
@@ -1178,6 +1177,14 @@ Tierney et al. needed Harvard's O2 cluster for 6,035,110 models over one fork.
 Reproduce with `tests/reference/real_data_study.py`; the per-cohort record is
 `docs/real_data_study.json`. Nothing is committed from MicrobiomeHD itself — the
 archive is downloaded on demand into a git-ignored cache.
+
+The archives were packed on a Mac, and three carry AppleDouble twins (`._name.metadata
+.txt`) listed before the real file: `cdi_youngster`, `hiv_lozupone`,
+`hiv_noguerajulian`. The loader took the first file with a matching suffix, so it would
+have read the twin for those three; none is among the 17 cohorts here, and every one of
+the 17 reads exactly the same files with the corrected loader (checked), so this record
+stands. `tests/reference/microbiomehd.py` now reads only regular files and skips the
+twins; `tests/test_real_formats.py` covers it.
 
 ### The headline comparison
 
@@ -1439,9 +1446,13 @@ on the two quantities it names, the engine reproduces them.
 > 10.5281/zenodo.15047338). Check elementary methods show tighter specification
 > distributions in your framework too." — SPEC §23.3
 
-**Stale for PyDESeq2.** Every PyDESeq2 figure in this section was measured before §24.1 G8
-changed its size factors to poscounts. The elementary-method and other sophisticated
-rows are unaffected; the PyDESeq2 rows need re-running before they are quoted.
+**Regenerated after §24.1 G8.** Both records were re-run on 2026-09-27, once PyDESeq2
+used poscounts size factors. Every elementary-method and ALDEx2 figure came out identical.
+ANCOM-BC's whole-cohort figures moved as well, in all 60 cohorts: that record had been
+produced by an earlier ANCOM-BC implementation, and was never re-run after it changed
+(the split record, produced later, reproduces exactly under the current code). The figures
+below are the regenerated ones. No conclusion changed; the prevalence-filter difference
+grew (p = 0.010 to 0.0017) and the split-half null sharpened (p = 0.39 to 0.88).
 
 Pelto et al. ("Elementary methods provide more replicable results in microbial
 differential abundance analysis", arXiv:2404.02691) compared 14 DA methods over 61
@@ -1453,7 +1464,7 @@ Their curated data ships inside the Zenodo archive as a plain `save()` image: ea
 cohort is `list(meta, counts)`, no Bioconductor classes, so `pelto_export.R` reads it
 with base R. **60 of their 61 whole cohorts run here** — 31 16S and 29 shotgun; the
 61st, `cdi_youngster`, is refused by §8 for having 4 control samples. 45,165
-specifications, 2.7 hours.
+specifications, 17 minutes (2.7 hours before §24.1 G8).
 
 ### The comparison has to be matched, or it measures the wrong thing
 
@@ -1485,9 +1496,9 @@ the p-value, and the call that follows from it.
 | ttest | elementary | **0.0000** | 0.343 |
 | linear | elementary | **0.0000** | 0.313 |
 | logistic | elementary | **0.0000** | 0.448 |
-| ancombc | sophisticated | 0.0722 | 0.589 |
+| ancombc | sophisticated | 0.1307 | 0.591 |
 | aldex2 | sophisticated | 0.0223 | 0.421 |
-| pydeseq2 | sophisticated | 0.0141 | 0.515 |
+| pydeseq2 | sophisticated | 0.0206 | 0.617 |
 
 The zeros are exact, on all 60 cohorts, and they are a mechanism rather than a
 measurement: with the transform fixed at raw, a Wilcoxon, t-test, linear or logistic
@@ -1503,8 +1514,8 @@ and it is not a property anyone measured: it is a property of what the estimator
 The *calls* are a real measurement, because the prevalence filter changes the
 multiple-testing burden even when it cannot change a raw p-value. Elementary methods
 are more stable there too, though modestly and with overlap — **42.0% of detected taxa
-have an unstable call versus 50.8%** (Wilcoxon signed-rank over 60 paired cohorts,
-**p = 0.010**, elementary lower in 58% of cohorts). Wilcoxon at 0.577 is less stable
+have an unstable call versus 54.3%** (Wilcoxon signed-rank over 60 paired cohorts,
+**p = 0.0017**, elementary lower in 62% of cohorts). Wilcoxon at 0.577 is less stable
 than ALDEx2 at 0.421, so this is a tendency between families, not a rule about members.
 
 ### A2 — on the rarefaction fork, the ordering reverses
@@ -1538,7 +1549,7 @@ runs on the same halves they used: **24 study/iteration pairs, 12 16S and 12 sho
 over 8 studies at 3 random splits each**, each half analysed on the A1 sub-grid and a
 taxon "called" when it is significant in most specifications.
 
-| Method | Family | Top-20 overlap | Same direction | Replication rate (FDR) | Pairs it was computable on | Median taxa called per half |
+| Method | Family | Top-20 overlap | Same direction | Replication rate (FDR) | Pairs it was computable on | Median taxa called in the discovery half |
 |---|---|---|---|---|---|---|
 | wilcoxon | elementary | 0.340 | 0.872 | 0.747 | 10/24 | 0 |
 | ttest | elementary | 0.300 | 0.899 | 0.720 | 6/24 | 0 |
@@ -1546,23 +1557,25 @@ taxon "called" when it is significant in most specifications.
 | logistic | elementary | 0.389 | 0.864 | 0.872 | 8/24 | 0 |
 | ancombc | sophisticated | 0.290 | 0.826 | 0.355 | 15/24 | 2 |
 | aldex2 | sophisticated | 0.357 | 0.885 | 0.665 | 8/24 | 0 |
-| pydeseq2 | sophisticated | 0.315 | 0.733 | 0.287 | 22/24 | 26 |
+| pydeseq2 | sophisticated | 0.341 | 0.818 | 0.286 | 23/24 | 19 |
 
 Read the last two columns before the fourth. **The FDR-based replication rate says
-elementary methods win overwhelmingly — 0.774 against 0.436 — and that comparison is not
+elementary methods win overwhelmingly — 0.774 against 0.435 — and that comparison is not
 sound.** At these half-sizes the median elementary method calls *nothing at all* in a
 half, so its rate is defined only on the 6 to 10 pairs where it happened to call
-something: its easiest pairs. PyDESeq2 calls 26 taxa per half and is therefore scored on
-22 of 24 pairs, including every hard one. A method that calls two taxa and reproduces
+something: its easiest pairs. PyDESeq2 calls a median of 19 taxa in the discovery half
+and is therefore scored on 23 of 24 pairs, including every hard one. A method that calls two taxa and reproduces
 both scores 1.00; a method that calls twenty and reproduces nine scores 0.45. The first
 is not more replicable, it is quieter.
 
 The threshold-free measure scores every method on every pair over the same taxa, and it
-finds **no difference**: top-20 overlap **0.326 elementary against 0.321 sophisticated,
-Wilcoxon signed-rank p = 0.39** over 24 paired splits. Direction agreement among the
-shared top taxa is marginally better for the elementary family (0.870 against 0.815) and
+finds **no difference**: top-20 overlap **0.326 elementary against 0.329 sophisticated,
+Wilcoxon signed-rank p = 0.88** over 24 paired splits. Direction agreement among the
+shared top taxa is marginally better for the elementary family (0.870 against 0.843) and
 the effect rank correlation marginally better for the sophisticated one (0.443 against
-0.473). None of it separates them.
+0.477). None of it separates them. `pelto_study.py` asserts that finding (paired
+Wilcoxon, p >= 0.05) rather than the sign of the gap, which means nothing at this size: it
+was +0.005 before §24.1 G8 and -0.003 after.
 
 The honest summary of B is therefore: **in this framework, on their splits, elementary
 methods do not replicate better once the comparison is made at equal detection.** Their
@@ -1580,10 +1593,10 @@ too." Partly, and with a sign that depends on the fork:
 | | Result |
 |---|---|
 | Prevalence-filter fork, raw p-values | Elementary methods are **exactly invariant**; every compositional method moves. A mechanism, not a measurement. |
-| Prevalence-filter fork, calls after FDR | Elementary methods more stable: **42.0% vs 50.8%** unstable calls, p = 0.010. |
+| Prevalence-filter fork, calls after FDR | Elementary methods more stable: **42.0% vs 54.3%** unstable calls, p = 0.0017. |
 | Rarefaction fork | **Reversed** — ALDEx2 is tighter than all four elementary methods, 0.097 vs 0.206, p = 2.3e-11. |
-| Split-half replicability, equal detection | **No difference** — 0.326 vs 0.321, p = 0.39. |
-| Split-half replicability, FDR-conditioned | Elementary far ahead (0.774 vs 0.436), but confounded by detection. |
+| Split-half replicability, equal detection | **No difference** — 0.326 vs 0.329, p = 0.88. |
+| Split-half replicability, FDR-conditioned | Elementary far ahead (0.774 vs 0.435), but confounded by detection. |
 
 Two of the five support Pelto, one reverses, two are null or unsound. Reporting only the
 first row would reproduce their headline; reporting all five is what the framework is
@@ -1601,7 +1614,8 @@ for.
   three, mapped onto §10, not their full panel.
 - The whole-cohort analysis (A) and the split analysis (B) were run separately —
   `docs/pelto_study.json` and `docs/pelto_splits.json` — because A over all 60 cohorts
-  takes 2.7 hours, dominated by PyDESeq2 failing to converge on large shotgun tables.
+  took 2.7 hours, dominated by PyDESeq2 failing to converge on large shotgun tables. With
+  poscounts size factors (§24.1 G8) it takes 17 minutes.
 
 ---
 

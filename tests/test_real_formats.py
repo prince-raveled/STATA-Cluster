@@ -164,3 +164,24 @@ def test_lineages_survive_the_round_trip(expected):
     assert depths, "no lineages were read"
     assert max(depths) >= 5, "expected at least genus-level lineages"
     assert table.input_rank in {"family", "genus", "species"}
+
+
+def test_microbiomehd_loader_skips_appledouble_twins():
+    """MicrobiomeHD's archives were packed on a Mac: `._name.metadata.txt` sits beside
+    `name.metadata.txt` and ends in the same suffix. The loader must read the real file
+    even when the twin is listed first, as it is in cdi_youngster's archive."""
+    import io
+    import tarfile
+
+    from tests.reference.microbiomehd import _read_member
+
+    buffer = io.BytesIO()
+    with tarfile.open(fileobj=buffer, mode="w:gz") as archive:
+        for name, payload in (("cohort/._cohort.metadata.txt", b"\x00\x05\x16\x07Mac OS X"),
+                              ("cohort/cohort.metadata.txt", b"#SampleID\tDiseaseState\n")):
+            info = tarfile.TarInfo(name)
+            info.size = len(payload)
+            archive.addfile(info, io.BytesIO(payload))
+    buffer.seek(0)
+    with tarfile.open(fileobj=buffer, mode="r:gz") as archive:
+        assert _read_member(archive, "metadata.txt") == b"#SampleID\tDiseaseState\n"

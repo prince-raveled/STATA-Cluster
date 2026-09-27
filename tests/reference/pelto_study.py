@@ -324,11 +324,15 @@ def _group_means(pooled: dict, group) -> float:
     return float(np.mean([np.mean(v) for v in present])) if present else float("nan")
 
 
-def _paired_test(records: list, block: str, key: str) -> tuple:
-    """Elementary vs sophisticated, paired within cohort — cohorts differ wildly."""
+def _paired_test(records: list, block, key: str) -> tuple:
+    """Elementary vs sophisticated, paired within cohort — cohorts differ wildly.
+
+    `block` names the part of each record that holds "methods"; None means the record
+    itself, as in a split pair.
+    """
     left, right = [], []
     for rec in records:
-        methods = ((rec.get(block) or {}).get("methods") or {})
+        methods = (((rec.get(block) if block else rec) or {}).get("methods") or {})
         e = [methods[m][key] for m in ELEMENTARY
              if m in methods and np.isfinite(methods[m].get(key, np.nan))]
         s = [methods[m][key] for m in SOPHISTICATED
@@ -493,18 +497,20 @@ def main() -> int:
                        ", ".join(f"{m} {n}/{len(splits)}"
                                  for m, n in sorted(spread.items())))
 
-        overlap = {m: [] for m in ELEMENTARY + SOPHISTICATED}
-        for rec in splits:
-            for m, got in rec["methods"].items():
-                if m in overlap and np.isfinite(got.get("top_overlap", np.nan)):
-                    overlap[m].append(got["top_overlap"])
-        overlap = {m: v for m, v in overlap.items() if v}
-        elem = _group_means(overlap, ELEMENTARY)
-        soph = _group_means(overlap, SOPHISTICATED)
-        if np.isfinite(elem) and np.isfinite(soph):
-            check("elementary methods replicate better across halves", elem > soph,
-                  f"top-20 overlap {elem:.3f} vs {soph:.3f} over {len(splits)} pairs "
-                  f"(every method scored on every pair)")
+        # Pelto's claim is that the elementary methods replicate better. Scored at equal
+        # detection the two families do not separate here (SPEC §24.5), and the sign of
+        # the gap is noise: +0.005 before PyDESeq2's size-factor fix (§24.1 G8), -0.003
+        # after. So the check asserts the documented finding, paired within split, and
+        # fails if either family pulls clearly ahead.
+        elem, soph, n_paired, p_value = _paired_test(splits, None, "top_overlap")
+        if np.isfinite(p_value):
+            check("the two families replicate alike across halves at equal detection",
+                  p_value >= 0.05,
+                  f"top-20 overlap {elem:.3f} vs {soph:.3f} over {n_paired} pairs, "
+                  f"Wilcoxon signed-rank p = {p_value:.2g} (every method scored on every pair)")
+        else:
+            report("elementary vs sophisticated replication",
+                   f"only {n_paired} split pairs had both groups; not tested")
 
     payload = {
         "source": "Pelto et al., arXiv:2404.02691; Zenodo 10.5281/zenodo.15047338",

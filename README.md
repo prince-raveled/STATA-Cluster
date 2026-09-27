@@ -442,12 +442,12 @@ answer depends on those choices in *these* data — not whether it will hold els
 
 **Validation 3 exposed something about how replicability gets measured.** On Pelto's own
 split halves, a call-conditioned replication rate rates the elementary methods far
-higher (0.774 vs 0.436) — but at these half-sizes the median elementary method calls
+higher (0.774 vs 0.435) — but at these half-sizes the median elementary method calls
 *nothing* in a half, so it is scored only on the pairs where it happened to find
-something, while PyDESeq2 calls 26 taxa (measured before its size-factor fix, SPEC
-§24.1 G8, and not yet re-run) and is scored on nearly all of them. Compared at
-equal detection — the overlap of each method's top 20 taxa between halves, scored on
-every pair — the two families are indistinguishable: **0.326 vs 0.321, p = 0.39**.
+something, while PyDESeq2 calls a median of 19 taxa and is scored on nearly all of them.
+Compared at equal detection — the overlap of each method's top 20 taxa between halves,
+scored on every pair — the two families are indistinguishable: **0.326 vs 0.329,
+p = 0.88** (re-run after the PyDESeq2 size-factor fix, SPEC §24.1 G8).
 
 **Validation 1 exposed something about the design worth knowing.** SPEC §14 harmonises
 the effect size on purpose: significance comes from the method, the effect from one

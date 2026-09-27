@@ -88,8 +88,16 @@ def download(cohort: str) -> str:
 
 
 def _read_member(archive: tarfile.TarFile, suffix: str) -> bytes:
+    """The one regular file whose name ends in `suffix`.
+
+    The archives were packed on a Mac, and several carry AppleDouble twins —
+    `._cdi_youngster.metadata.txt` beside `cdi_youngster.metadata.txt` — that end in the
+    same suffix but hold resource-fork bytes. Taking the first match read the twin
+    whenever it came first, and the cohort failed with no DiseaseState column.
+    """
     for member in archive.getmembers():
-        if member.name.endswith(suffix):
+        if (member.isfile() and member.name.endswith(suffix)
+                and not os.path.basename(member.name).startswith("._")):
             return archive.extractfile(member).read()
     raise KeyError(f"no member ending in {suffix!r}")
 

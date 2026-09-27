@@ -24,7 +24,7 @@
       "n_case": 59,
       "n_control": 44,
       "n_specifications": 792,
-      "runtime_seconds": 12.07,
+      "runtime_seconds": 6.84,
       "matched_all_methods": {
         "n_taxa_matched": 77,
         "methods": {
@@ -84,11 +84,11 @@
           },
           "pydeseq2": {
             "n_specs_per_taxon": 12,
-            "median_sd_neglog10p": 0.000667209884154171,
-            "median_cv_effect_native": 9.573279385222122e-05,
-            "mean_frac_significant": 0.004329004329004329,
-            "mean_sign_consistency": 1.0,
-            "frac_taxa_detected": 0.012987012987012988,
+            "median_sd_neglog10p": 0.007749922898455879,
+            "median_cv_effect_native": 0.015322553925216198,
+            "mean_frac_significant": 0.023809523809523805,
+            "mean_sign_consistency": 0.9967532467532467,
+            "frac_taxa_detected": 0.06493506493506493,
             "frac_detected_unstable": 1.0
           }
         }
@@ -154,7 +154,7 @@
       "n_case": 14,
       "n_control": 18,
       "n_specifications": 252,
-      "runtime_seconds": 62.62,
+      "runtime_seconds": 2.59,
       "matched_all_methods": {
         "n_taxa_matched": 45,
         "methods": {
@@ -214,12 +214,12 @@
           },
           "pydeseq2": {
             "n_specs_per_taxon": 12,
-            "median_sd_neglog10p": 0.03839016159105412,
-            "median_cv_effect_native": 0.062424950301647186,
-            "mean_frac_significant": 0.04814814814814815,
-            "mean_sign_consistency": 0.9888888888888889,
-            "frac_taxa_detected": 0.08888888888888889,
-            "frac_detected_unstable": 0.75
+            "median_sd_neglog10p": 0.015025568121628094,
+            "median_cv_effect_native": 0.01879415102303028,
+            "mean_frac_significant": 0.024074074074074074,
+            "mean_sign_consistency": 0.9944444444444445,
+            "frac_taxa_detected": 0.044444444444444446,
+            "frac_detected_unstable": 1.0
           }
         }
       },
@@ -356,15 +356,15 @@
         },
         "pydeseq2": {
           "n_taxa": 129,
-          "n_called_a": 17,
-          "n_called_b": 14,
+          "n_called_a": 15,
+          "n_called_b": 10,
           "top_k": 20,
-          "top_overlap": 0.2,
-          "top_same_sign": 0.75,
-          "effect_spearman": 0.08616274870549578,
-          "evidence_spearman": 0.10373143016380984,
-          "replication_rate": 0.058823529411764705,
-          "called_jaccard": 0.03333333333333333
+          "top_overlap": 0.3,
+          "top_same_sign": 0.8333333333333334,
+          "effect_spearman": 0.2646581149350336,
+          "evidence_spearman": 0.1343722702521963,
+          "replication_rate": 0.2,
+          "called_jaccard": 0.14285714285714285
         }
       }
     },
@@ -448,14 +448,14 @@
         },
         "pydeseq2": {
           "n_taxa": 71,
-          "n_called_a": 0,
-          "n_called_b": 2,
+          "n_called_a": 1,
+          "n_called_b": 0,
           "top_k": 14,
-          "top_overlap": 0.21428571428571427,
-          "top_same_sign": 0.0,
-          "effect_spearman": -0.14356136820925552,
-          "evidence_spearman": 0.06140174379610998,
-          "replication_rate": NaN,
+          "top_overlap": 0.35714285714285715,
+          "top_same_sign": 0.6,
+          "effect_spearman": -0.01720321931589537,
+          "evidence_spearman": 0.11113346747149562,
+          "replication_rate": 0.0,
           "called_jaccard": 0.0
         }
       }
@@ -540,15 +540,15 @@
         },
         "pydeseq2": {
           "n_taxa": 122,
-          "n_called_a": 13,
-          "n_called_b": 13,
+          "n_called_a": 18,
+          "n_called_b": 12,
           "top_k": 20,
           "top_overlap": 0.4,
           "top_same_sign": 0.375,
-          "effect_spearman": -0.14517978534814616,
-          "evidence_spearman": 0.05442300514188922,
-          "replication_rate": 0.15384615384615385,
-          "called_jaccard": 0.1
+          "effect_spearman": -0.0508411845165752,
+          "evidence_spearman": 0.14912643052840358,
+          "replication_rate": 0.1111111111111111,
+          "called_jaccard": 0.08333333333333333
         }
       }
     },
@@ -633,14 +633,14 @@
         "pydeseq2": {
           "n_taxa": 66,
           "n_called_a": 0,
-          "n_called_b": 1,
+          "n_called_b": 0,
           "top_k": 13,
-          "top_overlap": 0.15384615384615385,
-          "top_same_sign": 0.5,
-          "effect_spearman": -0.09600250495772886,
-          "evidence_spearman": 0.16058866506627703,
+          "top_overlap": 0.3076923076923077,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.011585429495877259,
+          "evidence_spearman": 0.3047907316564033,
           "replication_rate": NaN,
-          "called_jaccard": 0.0
+          "called_jaccard": NaN
         }
       }
     },
@@ -725,14 +725,14 @@
         "pydeseq2": {
           "n_taxa": 131,
           "n_called_a": 20,
-          "n_called_b": 13,
+          "n_called_b": 12,
           "top_k": 20,
-          "top_overlap": 0.35,
-          "top_same_sign": 0.7142857142857143,
-          "effect_spearman": 0.2011637528538949,
-          "evidence_spearman": 0.019679569735479498,
-          "replication_rate": 0.2,
-          "called_jaccard": 0.14814814814814814
+          "top_overlap": 0.25,
+          "top_same_sign": 0.6,
+          "effect_spearman": 0.17901607753521026,
+          "evidence_spearman": 0.14528833194498247,
+          "replication_rate": 0.1,
+          "called_jaccard": 0.07142857142857142
         }
       }
     },
@@ -817,12 +817,12 @@
         "pydeseq2": {
           "n_taxa": 67,
           "n_called_a": 2,
-          "n_called_b": 2,
+          "n_called_b": 3,
           "top_k": 13,
-          "top_overlap": 0.3076923076923077,
-          "top_same_sign": 0.25,
-          "effect_spearman": -0.030209913001835748,
-          "evidence_spearman": 0.04094500758240882,
+          "top_overlap": 0.15384615384615385,
+          "top_same_sign": 0.0,
+          "effect_spearman": -0.11896400351185253,
+          "evidence_spearman": 0.09310399872296275,
           "replication_rate": 0.0,
           "called_jaccard": 0.0
         }
@@ -908,15 +908,15 @@
         },
         "pydeseq2": {
           "n_taxa": 223,
-          "n_called_a": 60,
-          "n_called_b": 26,
+          "n_called_a": 20,
+          "n_called_b": 12,
           "top_k": 20,
-          "top_overlap": 0.1,
-          "top_same_sign": 1.0,
-          "effect_spearman": 0.35330241356026104,
-          "evidence_spearman": -0.07203780494139239,
-          "replication_rate": 0.13333333333333333,
-          "called_jaccard": 0.10256410256410256
+          "top_overlap": 0.35,
+          "top_same_sign": 0.7142857142857143,
+          "effect_spearman": 0.4183756947209862,
+          "evidence_spearman": 0.1902853766643004,
+          "replication_rate": 0.15,
+          "called_jaccard": 0.10714285714285714
         }
       }
     },
@@ -1000,15 +1000,15 @@
         },
         "pydeseq2": {
           "n_taxa": 78,
-          "n_called_a": 41,
-          "n_called_b": 48,
+          "n_called_a": 39,
+          "n_called_b": 47,
           "top_k": 15,
-          "top_overlap": 0.6666666666666666,
+          "top_overlap": 0.6,
           "top_same_sign": 1.0,
-          "effect_spearman": 0.8605698099368985,
-          "evidence_spearman": 0.6440015680522009,
-          "replication_rate": 0.8292682926829268,
-          "called_jaccard": 0.6181818181818182
+          "effect_spearman": 0.8515661553636237,
+          "evidence_spearman": 0.6520441583732722,
+          "replication_rate": 0.8205128205128205,
+          "called_jaccard": 0.5925925925925926
         }
       }
     },
@@ -1092,15 +1092,15 @@
         },
         "pydeseq2": {
           "n_taxa": 222,
-          "n_called_a": 32,
-          "n_called_b": 19,
+          "n_called_a": 11,
+          "n_called_b": 16,
           "top_k": 20,
-          "top_overlap": 0.2,
-          "top_same_sign": 0.75,
-          "effect_spearman": 0.32593060158346365,
-          "evidence_spearman": 0.18247123206236898,
-          "replication_rate": 0.15625,
-          "called_jaccard": 0.1111111111111111
+          "top_overlap": 0.3,
+          "top_same_sign": 0.8333333333333334,
+          "effect_spearman": 0.3933306315263583,
+          "evidence_spearman": 0.21852883868183265,
+          "replication_rate": 0.18181818181818182,
+          "called_jaccard": 0.08333333333333333
         }
       }
     },
@@ -1184,15 +1184,15 @@
         },
         "pydeseq2": {
           "n_taxa": 79,
-          "n_called_a": 45,
-          "n_called_b": 37,
+          "n_called_a": 46,
+          "n_called_b": 44,
           "top_k": 15,
-          "top_overlap": 0.7333333333333333,
+          "top_overlap": 0.6666666666666666,
           "top_same_sign": 1.0,
-          "effect_spearman": 0.9031645569620254,
-          "evidence_spearman": 0.7114410905550147,
-          "replication_rate": 0.6666666666666666,
-          "called_jaccard": 0.5769230769230769
+          "effect_spearman": 0.8937195715676729,
+          "evidence_spearman": 0.7142648490749757,
+          "replication_rate": 0.782608695652174,
+          "called_jaccard": 0.6666666666666666
         }
       }
     },
@@ -1276,15 +1276,15 @@
         },
         "pydeseq2": {
           "n_taxa": 221,
-          "n_called_a": 49,
-          "n_called_b": 54,
+          "n_called_a": 20,
+          "n_called_b": 11,
           "top_k": 20,
-          "top_overlap": 0.15,
-          "top_same_sign": 0.6666666666666666,
-          "effect_spearman": 0.46430231136113487,
-          "evidence_spearman": 0.029477358889123593,
-          "replication_rate": 0.20408163265306123,
-          "called_jaccard": 0.1111111111111111
+          "top_overlap": 0.25,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.3607213136624901,
+          "evidence_spearman": 0.10059368294662412,
+          "replication_rate": 0.2,
+          "called_jaccard": 0.14814814814814814
         }
       }
     },
@@ -1368,15 +1368,15 @@
         },
         "pydeseq2": {
           "n_taxa": 77,
-          "n_called_a": 35,
-          "n_called_b": 41,
+          "n_called_a": 40,
+          "n_called_b": 46,
           "top_k": 15,
-          "top_overlap": 0.8,
+          "top_overlap": 0.6666666666666666,
           "top_same_sign": 1.0,
-          "effect_spearman": 0.9145065460854933,
-          "evidence_spearman": 0.7302434407697566,
-          "replication_rate": 0.8571428571428571,
-          "called_jaccard": 0.6521739130434783
+          "effect_spearman": 0.8795940901204059,
+          "evidence_spearman": 0.7211209842788789,
+          "replication_rate": 0.8,
+          "called_jaccard": 0.5925925925925926
         }
       }
     },
@@ -1460,13 +1460,13 @@
         },
         "pydeseq2": {
           "n_taxa": 211,
-          "n_called_a": 5,
-          "n_called_b": 13,
+          "n_called_a": 6,
+          "n_called_b": 11,
           "top_k": 20,
-          "top_overlap": 0.05,
-          "top_same_sign": 0.0,
-          "effect_spearman": -0.033386134566497624,
-          "evidence_spearman": -0.046453162325468506,
+          "top_overlap": 0.2,
+          "top_same_sign": 0.5,
+          "effect_spearman": -0.026303956260139753,
+          "evidence_spearman": -0.05670341462168343,
           "replication_rate": 0.0,
           "called_jaccard": 0.0
         }
@@ -1552,15 +1552,15 @@
         },
         "pydeseq2": {
           "n_taxa": 78,
-          "n_called_a": 59,
-          "n_called_b": 45,
+          "n_called_a": 37,
+          "n_called_b": 46,
           "top_k": 15,
-          "top_overlap": 0.6666666666666666,
+          "top_overlap": 0.6,
           "top_same_sign": 1.0,
-          "effect_spearman": 0.89994815311271,
-          "evidence_spearman": 0.7972659388230697,
-          "replication_rate": 0.7288135593220338,
-          "called_jaccard": 0.7049180327868853
+          "effect_spearman": 0.7387169792233081,
+          "evidence_spearman": 0.5276875023710466,
+          "replication_rate": 0.7027027027027027,
+          "called_jaccard": 0.4642857142857143
         }
       }
     },
@@ -1644,13 +1644,13 @@
         },
         "pydeseq2": {
           "n_taxa": 205,
-          "n_called_a": 3,
-          "n_called_b": 3,
+          "n_called_a": 2,
+          "n_called_b": 6,
           "top_k": 20,
-          "top_overlap": 0.05,
-          "top_same_sign": 1.0,
-          "effect_spearman": 0.11657589391427894,
-          "evidence_spearman": 0.001207672270897466,
+          "top_overlap": 0.2,
+          "top_same_sign": 0.5,
+          "effect_spearman": 0.09137774930005153,
+          "evidence_spearman": 0.01477204663537212,
           "replication_rate": 0.0,
           "called_jaccard": 0.0
         }
@@ -1737,14 +1737,14 @@
         "pydeseq2": {
           "n_taxa": 75,
           "n_called_a": 39,
-          "n_called_b": 55,
+          "n_called_b": 37,
           "top_k": 15,
-          "top_overlap": 0.6666666666666666,
+          "top_overlap": 0.4666666666666667,
           "top_same_sign": 1.0,
-          "effect_spearman": 0.8532005689900427,
-          "evidence_spearman": 0.6860792628455882,
-          "replication_rate": 0.8461538461538461,
-          "called_jaccard": 0.55
+          "effect_spearman": 0.8111237553342816,
+          "evidence_spearman": 0.5578662873399716,
+          "replication_rate": 0.6410256410256411,
+          "called_jaccard": 0.49019607843137253
         }
       }
     },
@@ -1828,13 +1828,13 @@
         },
         "pydeseq2": {
           "n_taxa": 213,
-          "n_called_a": 9,
-          "n_called_b": 10,
+          "n_called_a": 5,
+          "n_called_b": 6,
           "top_k": 20,
-          "top_overlap": 0.05,
-          "top_same_sign": 0.0,
-          "effect_spearman": 0.005918423608127339,
-          "evidence_spearman": 0.016578048614662687,
+          "top_overlap": 0.15,
+          "top_same_sign": 0.6666666666666666,
+          "effect_spearman": 0.25228305115475075,
+          "evidence_spearman": 0.03165723311833618,
           "replication_rate": 0.0,
           "called_jaccard": 0.0
         }
@@ -1920,15 +1920,15 @@
         },
         "pydeseq2": {
           "n_taxa": 77,
-          "n_called_a": 56,
-          "n_called_b": 41,
+          "n_called_a": 43,
+          "n_called_b": 39,
           "top_k": 15,
-          "top_overlap": 0.6,
+          "top_overlap": 0.6666666666666666,
           "top_same_sign": 1.0,
-          "effect_spearman": 0.8256217466743783,
-          "evidence_spearman": 0.5655040059011006,
-          "replication_rate": 0.6071428571428571,
-          "called_jaccard": 0.5396825396825397
+          "effect_spearman": 0.7883958147116041,
+          "evidence_spearman": 0.5256848414743152,
+          "replication_rate": 0.6511627906976745,
+          "called_jaccard": 0.5185185185185185
         }
       }
     },
@@ -2012,15 +2012,15 @@
         },
         "pydeseq2": {
           "n_taxa": 134,
-          "n_called_a": 46,
-          "n_called_b": 31,
+          "n_called_a": 68,
+          "n_called_b": 35,
           "top_k": 20,
-          "top_overlap": 0.05,
+          "top_overlap": 0.25,
           "top_same_sign": 1.0,
-          "effect_spearman": 0.34830901670748243,
-          "evidence_spearman": 0.06823036226187956,
-          "replication_rate": 0.2391304347826087,
-          "called_jaccard": 0.16666666666666666
+          "effect_spearman": 0.36344638143444186,
+          "evidence_spearman": 0.18166061920971585,
+          "replication_rate": 0.25,
+          "called_jaccard": 0.19767441860465115
         }
       }
     },
@@ -2104,15 +2104,15 @@
         },
         "pydeseq2": {
           "n_taxa": 95,
-          "n_called_a": 10,
-          "n_called_b": 5,
+          "n_called_a": 3,
+          "n_called_b": 11,
           "top_k": 19,
           "top_overlap": 0.21052631578947367,
           "top_same_sign": 1.0,
-          "effect_spearman": 0.6559770436730123,
-          "evidence_spearman": 0.08777995520716685,
-          "replication_rate": 0.1,
-          "called_jaccard": 0.07142857142857142
+          "effect_spearman": 0.4572928331466965,
+          "evidence_spearman": 0.05097984322508398,
+          "replication_rate": 0.0,
+          "called_jaccard": 0.0
         }
       }
     },
@@ -2196,15 +2196,15 @@
         },
         "pydeseq2": {
           "n_taxa": 137,
-          "n_called_a": 35,
-          "n_called_b": 22,
+          "n_called_a": 53,
+          "n_called_b": 47,
           "top_k": 20,
-          "top_overlap": 0.2,
+          "top_overlap": 0.05,
           "top_same_sign": 1.0,
-          "effect_spearman": 0.34609501429893424,
-          "evidence_spearman": 0.18307446748931244,
-          "replication_rate": 0.17142857142857143,
-          "called_jaccard": 0.11764705882352941
+          "effect_spearman": 0.3654675453170795,
+          "evidence_spearman": 0.12431160975974012,
+          "replication_rate": 0.3584905660377358,
+          "called_jaccard": 0.2345679012345679
         }
       }
     },
@@ -2288,13 +2288,13 @@
         },
         "pydeseq2": {
           "n_taxa": 97,
-          "n_called_a": 11,
+          "n_called_a": 1,
           "n_called_b": 1,
           "top_k": 19,
           "top_overlap": 0.3157894736842105,
-          "top_same_sign": 0.8333333333333334,
-          "effect_spearman": 0.5271013044393015,
-          "evidence_spearman": -0.058962760361876705,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.4608334319963959,
+          "evidence_spearman": -0.018330769131202053,
           "replication_rate": 0.0,
           "called_jaccard": 0.0
         }
@@ -2380,15 +2380,15 @@
         },
         "pydeseq2": {
           "n_taxa": 133,
-          "n_called_a": 34,
-          "n_called_b": 21,
+          "n_called_a": 45,
+          "n_called_b": 39,
           "top_k": 20,
-          "top_overlap": 0.2,
+          "top_overlap": 0.3,
           "top_same_sign": 1.0,
-          "effect_spearman": 0.35427612450393275,
-          "evidence_spearman": 0.1700196896583385,
-          "replication_rate": 0.29411764705882354,
-          "called_jaccard": 0.2222222222222222
+          "effect_spearman": 0.47136388039830873,
+          "evidence_spearman": 0.27041433776245677,
+          "replication_rate": 0.37777777777777777,
+          "called_jaccard": 0.2537313432835821
         }
       }
     },
@@ -2472,15 +2472,15 @@
         },
         "pydeseq2": {
           "n_taxa": 89,
-          "n_called_a": 17,
-          "n_called_b": 6,
+          "n_called_a": 4,
+          "n_called_b": 5,
           "top_k": 17,
-          "top_overlap": 0.23529411764705882,
-          "top_same_sign": 0.75,
-          "effect_spearman": 0.390721824991488,
-          "evidence_spearman": 0.21075927817500853,
-          "replication_rate": 0.058823529411764705,
-          "called_jaccard": 0.045454545454545456
+          "top_overlap": 0.17647058823529413,
+          "top_same_sign": 1.0,
+          "effect_spearman": 0.36853932584269666,
+          "evidence_spearman": -0.05391556009533539,
+          "replication_rate": 0.25,
+          "called_jaccard": 0.125
         }
       }
     }
