@@ -16,12 +16,14 @@ import pandas as pd
 
 from .evidence import (
     CROSS_STUDY,
+    NEARING_STUDY,
     PUBLISHED_STUDY,
     TIER_CAVEATS,
     TIER_REPLICATION,
     TIER_VALIDATION,
     matrix_rows,
 )
+from .methods.deseq import SIZE_FACTORS
 from .models import FORK_LABELS, METHOD_LABELS, METHOD_SHORT, ordinal
 from .robustness import TIERS, locate_declared
 
@@ -200,6 +202,12 @@ def methods_paragraph(run, summary, attribution=None) -> str:
         "between groups, so that results from methods returning incompatible statistics "
         "could be placed on a common axis."
     )
+    if any(s.method == "pydeseq2" for s in run.specs):
+        lines.append(
+            "PyDESeq2 used DESeq2's poscounts size factors, the estimator for tables in "
+            "which every feature has zeros, and its raw Wald p-values entered the same "
+            "FDR correction as every other method."
+        )
     lines.append(
         f"Taxa were tiered by robustness: {counts['ROBUST']} ROBUST (FDR-significant in "
         f"at least 80% of the specifications in which they were testable, with at least "
@@ -444,6 +452,7 @@ def run_manifest(run, summary, attribution=None) -> dict:
             "rarefaction_seeds": sorted(
                 {int(s.rare_seed) for s in run.specs if s.rare_seed is not None}),
             "aldex2_instances": getattr(run, "aldex_instances", None),
+            "pydeseq2_size_factors": SIZE_FACTORS,
             "note": "Every stochastic step is seeded. Re-running the same input with "
                     "the same mode reproduces the same numbers; rarefaction seeds are "
                     "specification identity, not nuisance.",
@@ -516,6 +525,7 @@ def run_manifest(run, summary, attribution=None) -> dict:
         "tier_caveats": list(TIER_CAVEATS),
         "published_study": PUBLISHED_STUDY,
         "cross_study_replication": CROSS_STUDY,
+        "method_benchmark": NEARING_STUDY,
     }
     return manifest
 

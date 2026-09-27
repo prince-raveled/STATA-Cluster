@@ -149,7 +149,7 @@ Four kinds of evidence, deliberately kept apart in `app/core/evidence.py` and re
 | | Meaning | Where it applies |
 |---|---|---|
 | **Internal** | Implementation matches the specification. Says nothing about whether the specification is a good idea. | Harmonised effect; tier implementation |
-| **Reference** | Agrees with an independent implementation or a published result. | TMM (identical to edgeR), ALDEx2, ANCOM-BC, CLR, parsers, Tierney reproduction, Duvallet reproduction (214 of 217 genera, SPEC §24.8) |
+| **Reference** | Agrees with an independent implementation or a published result. | TMM (identical to edgeR), ALDEx2, ANCOM-BC, CLR, parsers, Tierney reproduction, Duvallet reproduction (214 of 217 genera, SPEC §24.8), the methods against Nearing et al.'s published counts (SPEC §24.9) |
 
 Reference validation covers **estimates**, not **calibration**. Until 2026-09-11 nothing
 compared a p-value distribution against anything; an estimate can agree with R at
@@ -173,6 +173,10 @@ and were therefore invisible to every correlation-based check that existed:
 ALDEx2 working in log2 rather than natural log, its `diff.btw` being a median of paired
 differences rather than a difference of medians, ANCOM-BC's bias E-M being a
 homoscedastic approximation, and its standard error wrongly including the bias variance.
+Checking the methods against a published benchmark (SPEC §24.9) found a fifth, and the
+worst: PyDESeq2's default size factors silently fell back to an iterative fit that
+collapsed on real tables, making every one of 1,318 ASVs significant where R's DESeq2
+found 80. PyDESeq2 now uses DESeq2's poscounts estimator (SPEC §24.1 G8).
 
 ---
 

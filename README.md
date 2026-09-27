@@ -397,8 +397,8 @@ r > 0.9).
 
 ## Validation against published results (§23)
 
-All five of the spec's validation experiments now run, and a sixth reproduces a published
-paper finding by finding.
+All five of the spec's validation experiments now run; a sixth reproduces a published
+paper finding by finding, and a seventh checks the methods against a published benchmark.
 
 | # | Experiment | Status |
 |---|---|---|
@@ -408,6 +408,7 @@ paper finding by finding.
 | 4 | **Simulated ground truth** | `tests/test_worked_example.py` and `examples/make_examples.py` — spiked taxa land ROBUST, nulls do not |
 | 5 | **Compute benchmark** | `tests/reference/benchmark.py`, curve in `docs/benchmark.json` |
 | 6 | **Reproduce a published analysis, then replicate across studies** — Duvallet et al. 2017 (MicrobiomeHD), 19 cohorts, 5 diseases | **done** — the specification matching the paper's pipeline finds **214 of the 217** genera it reported significant (exactly, in 14 cohorts; the paper's test on MicroVerse's matrix is identical in all 19). Across independent cohorts of the same disease, the tiers **did not** predict replication: 13% vs 14%. SPEC §24.8 |
+| 7 | **The methods on a published benchmark** — Nearing et al. 2022, 24 of its datasets, 117 comparisons | **done** — MicroVerse gives the paper's exact count of significant ASVs for rarefied Wilcoxon (10/10), rarefied t-test (10/10) and Wilcoxon on the paper's CLR (33/33); ALDEx2 19/33 and DESeq2 11/31, differing where MicroVerse differs by design. It also found that **PyDESeq2's default size factors collapsed**, making every feature significant on one dataset; fixed (poscounts). SPEC §24.9 |
 
 Reproducing 1 and 3 needs R, which is now installed alongside Bioconductor:
 
@@ -423,11 +424,12 @@ Rscript tests/reference/pelto_export.R data/pelto/data_171023.rds data/pelto/exp
 ```
 
 Both are registered in `tests/reference/run_all.py` and report SKIPPED with install
-instructions when R or the cached cohorts are absent. Validation 6 needs only Python and
-fetches its cohorts from Zenodo on first run:
+instructions when R or the cached cohorts are absent. Validations 6 and 7 need only
+Python and fetch their data on first run (Zenodo and figshare):
 
 ```bash
 .venv/Scripts/python tests/reference/published_findings_study.py
+.venv/Scripts/python tests/reference/nearing_study.py      # validation 7; fetches 253 MB
 ```
 
 **Validation 6 found the limit of the tiers.** On held-out halves of one study, ROBUST
@@ -442,7 +444,8 @@ answer depends on those choices in *these* data — not whether it will hold els
 split halves, a call-conditioned replication rate rates the elementary methods far
 higher (0.774 vs 0.436) — but at these half-sizes the median elementary method calls
 *nothing* in a half, so it is scored only on the pairs where it happened to find
-something, while PyDESeq2 calls 26 taxa and is scored on nearly all of them. Compared at
+something, while PyDESeq2 calls 26 taxa (measured before its size-factor fix, SPEC
+§24.1 G8, and not yet re-run) and is scored on nearly all of them. Compared at
 equal detection — the overlap of each method's top 20 taxa between halves, scored on
 every pair — the two families are indistinguishable: **0.326 vs 0.321, p = 0.39**.
 

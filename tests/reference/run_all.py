@@ -58,6 +58,19 @@ def _published_cohorts() -> list:
     return []
 
 
+def _nearing_available() -> bool:
+    """The Nearing archive cached, or figshare reachable to fetch it (253 MB)."""
+    if os.path.exists(os.path.join(ROOT, "data", "nearing", "DA_COMPARE_DATA_21_03_08.tar.gz")):
+        return True
+    try:
+        request = urllib.request.Request("https://api.figshare.com/v2/articles/14531724",
+                                         headers={"User-Agent": "microverse"})
+        with urllib.request.urlopen(request, timeout=30):
+            return True
+    except (urllib.error.URLError, TimeoutError, OSError):
+        return False
+
+
 def _rscript_available() -> bool:
     """The R reference packages, not just R: a bare R install proves nothing here."""
     sys.path.insert(0, HERE)
@@ -170,6 +183,14 @@ CHECKS = [
         "requires": lambda: _cohorts_available(_published_cohorts()),
         "reason": "needs the MicrobiomeHD cohorts: cached under data/microbiomehd/, "
                   "or network access to Zenodo record 1146764",
+    },
+    {
+        "name": "the methods on a published benchmark, Nearing et al. (SPEC §24.9)",
+        "script": "nearing_study.py",
+        "python": MAIN_PYTHON,
+        "requires": _nearing_available,
+        "reason": "needs Nearing et al.'s archive: cached under data/nearing/, or network "
+                  "access to figshare article 14531724",
     },
     {
         "name": "reproduce Tierney et al. (SPEC §23 validation 1)",

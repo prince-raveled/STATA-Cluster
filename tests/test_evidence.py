@@ -18,6 +18,7 @@ from app.core.evidence import (
     EXPLORATORY,
     GRADE_BLURB,
     GRADE_LABEL,
+    NEARING_STUDY,
     PUBLISHED_STUDY,
     TIER_CAVEATS,
     TIER_REPLICATION,
@@ -31,6 +32,7 @@ from app.core.robustness import TIER_ORDER
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RECORD = os.path.join(ROOT, "docs", "tier_validation.json")
 PUBLISHED_RECORD = os.path.join(ROOT, "docs", "published_findings_study.json")
+NEARING_RECORD = os.path.join(ROOT, "docs", "nearing_study.json")
 
 
 def _record():
@@ -206,3 +208,63 @@ def test_the_interface_does_not_sell_within_study_replication_as_external():
     rows = {r["name"]: r for r in matrix_rows()}
     assert "Across studies" in rows["Robustness tiers"]["empirical"]
     assert rows["Reproducing a published analysis"]["reference"]
+
+
+# --- the methods against a published benchmark (SPEC §24.9) ----------------------
+def _nearing_rows():
+    if not os.path.exists(NEARING_RECORD):
+        pytest.skip(f"{NEARING_RECORD} not present; run tests/reference/nearing_study.py")
+    with open(NEARING_RECORD, encoding="utf-8") as handle:
+        return json.load(handle)["rows"]
+
+
+#: The interface's method names -> the record's, and which count is compared.
+_NEARING_COUNTS = {
+    "Wilcoxon (rarefied)": ("Wilcoxon (rare)", "microverse"),
+    "Welch's t-test (rarefied)": ("t-test (rare)", "microverse"),
+    "Wilcoxon (CLR)": ("Wilcoxon (CLR)", "microverse_test_on_paper_clr"),
+    "ALDEx2": ("ALDEx2", "microverse"),
+    "DESeq2": ("DESeq2", "microverse"),
+}
+
+
+def _same(rows, method, column):
+    chosen = [r for r in rows if r["method"] == method]
+    return sum(r[column] == r["published"] for r in chosen), len(chosen)
+
+
+def test_benchmark_numbers_match_the_record():
+    rows = _nearing_rows()
+    assert len(rows) == NEARING_STUDY["n_comparisons"]
+    assert len({r["dataset"] for r in rows}) == NEARING_STUDY["n_datasets"]
+    rebuilt = sum(r["input_features"] == r["paper_features"] for r in rows)
+    assert (rebuilt, len(rows)) == NEARING_STUDY["inputs_rebuilt"]
+    for entry in NEARING_STUDY["methods"]:
+        method, column = _NEARING_COUNTS[entry["paper"]]
+        assert _same(rows, method, column) == entry["same_count"], entry["paper"]
+    assert _same(rows, "Wilcoxon (CLR)", "microverse") == NEARING_STUDY["own_clr_same_count"]
+
+
+def test_benchmark_method_order_matches_the_record():
+    import pandas as pd
+    from scipy import stats
+
+    frame = pd.DataFrame(_nearing_rows())
+    exact = total = 0
+    for _, sub in frame.groupby("variant"):
+        published = sub.pivot(index="dataset", columns="method", values="published")
+        mine = sub.pivot(index="dataset", columns="method", values="microverse")
+        for dataset in published.dropna().index.intersection(mine.dropna().index):
+            if published.loc[dataset].nunique() > 1 and mine.loc[dataset].nunique() > 1:
+                total += 1
+                rho = stats.spearmanr(published.loc[dataset], mine.loc[dataset]).statistic
+                exact += bool(abs(rho - 1.0) < 1e-9)
+    assert (exact, total) == NEARING_STUDY["method_order_exact"]
+
+
+def test_the_exact_methods_really_are_exact():
+    """The two rarefied tests, and Wilcoxon given the paper's CLR, share everything with
+    the paper's analysis but the code. Anything short of every dataset is a defect."""
+    for entry in NEARING_STUDY["methods"][:3]:
+        agree, total = entry["same_count"]
+        assert agree == total, entry["paper"]

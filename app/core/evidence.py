@@ -125,6 +125,48 @@ CROSS_STUDY = {
     "difference_ci": (-0.072, 0.068),
 }
 
+# ---------------------------------------------------------------------------
+# The methods against a published benchmark — tests/reference/nearing_study.py
+# (SPEC §24.9)
+# ---------------------------------------------------------------------------
+#: Nearing et al. published, for 38 datasets and 14 methods, how many ASVs each method
+#: called significant; five of those methods are MicroVerse's. `same_count` is (datasets
+#: where MicroVerse gives the paper's exact count, datasets compared).
+NEARING_STUDY = {
+    "experiment": "tests/reference/nearing_study.py",
+    "record": "docs/nearing_study.json",
+    "paper": "Nearing JT et al., Microbiome differential abundance methods produce "
+             "different results across 38 datasets, Nat Commun 2022;13:342",
+    "data": "the paper's datasets (figshare 14531724, CC BY 4.0) and its published count "
+            "of significant ASVs for every dataset and method",
+    "n_datasets": 24,
+    "n_comparisons": 117,
+    "inputs_rebuilt": (117, 117),       # tables with exactly the paper's feature count
+    "methods": [
+        {"paper": "Wilcoxon (rarefied)", "same_count": (10, 10),
+         "note": "Identical: same table, same test, same correction"},
+        {"paper": "Welch's t-test (rarefied)", "same_count": (10, 10),
+         "note": "Identical"},
+        {"paper": "Wilcoxon (CLR)", "same_count": (33, 33),
+         "note": "Identical given the paper's CLR (counts + 1); with MicroVerse's own "
+                 "zero replacement, 20 of 33"},
+        {"paper": "ALDEx2", "same_count": (19, 33),
+         "note": "MicroVerse's version is more conservative: it takes the larger of the "
+                 "Wilcoxon and Welch expected p-values"},
+        {"paper": "DESeq2", "same_count": (11, 31),
+         "note": "Counts close but lower: MicroVerse applies one FDR correction to every "
+                 "method and skips DESeq2's independent filtering"},
+    ],
+    "own_clr_same_count": (20, 33),
+    #: Datasets where the five methods fall in exactly the paper's order, of those
+    #: where more than one method found anything; median rank correlation 1.0.
+    "method_order_exact": (14, 19),
+    "method_order_median_spearman": 1.0,
+    #: Through the live site, on the paper's own rarefied tables (26 September 2026):
+    #: Chemerin 533 and 365, edd_singh 340 and 18 — the paper's numbers.
+    "website_same_count": (4, 4),
+}
+
 #: Stated wherever a ROBUST call is displayed. The rate is real and the ordering survives
 #: dropping any single cohort, but the rate itself rests on few cohorts and must not be
 #: quoted as a precise probability — and it is a within-study rate.
@@ -191,9 +233,28 @@ VALIDATION_MATRIX = [
                   "scikit-bio for CLR and multiplicative replacement.",
         empirical="",
         note="Four engine defects were found this way, two of which shift results by a "
-             "constant and so are invisible to correlations.",
+             "constant and so are invisible to correlations. A fifth, found against the "
+             "published benchmark below, was the worst: PyDESeq2's default size factors "
+             "collapsed on real tables and made every feature significant.",
         sources=["tests/reference/compare_r.py",
                  "tests/reference/compare_scikit_bio.py"],
+    ),
+    Component(
+        name="Methods on a published benchmark",
+        grade=REFERENCE,
+        internal="The paper's inputs are rebuilt from its archive and scripts; all 117 "
+                 "tables have exactly the paper's feature count.",
+        reference="Nearing et al. 2022, 24 of its datasets, 117 comparisons: MicroVerse "
+                  "gives the paper's exact count of significant ASVs for rarefied Wilcoxon "
+                  "(10 of 10), rarefied t-test (10 of 10) and, given the paper's CLR, "
+                  "Wilcoxon on CLR (33 of 33). ALDEx2 matches in 19 of 33 and DESeq2 in 11 "
+                  "of 31, and in 14 of 19 datasets the methods fall in exactly the paper's order.",
+        empirical="",
+        note="ALDEx2 and DESeq2 differ where MicroVerse differs by design: a more "
+             "conservative ALDEx2 p-value, and one FDR correction for every method in "
+             "place of DESeq2's independent filtering. Through the live site the paper's "
+             "own tables gave the paper's numbers, 4 of 4.",
+        sources=["tests/reference/nearing_study.py", "docs/nearing_study.json"],
     ),
     Component(
         name="Comparable effect size",

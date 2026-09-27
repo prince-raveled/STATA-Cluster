@@ -34,6 +34,7 @@
         <a href="#tier-experiment">The held-out experiment</a> ·
         <a href="#published">A published study, reproduced</a> ·
         <a href="#across">Across studies</a> ·
+        <a href="#benchmark">The methods on a published benchmark</a> ·
         <a href="#limits">What it does not establish</a> ·
         <a href="#reproduce">Reproduce every number</a></p>
     </div>
@@ -222,6 +223,42 @@
     </div>
   </section>
 
+  {% set ns = NEARING_STUDY %}
+  <section class="section-sm">
+    <div class="panel" id="benchmark">
+      <p class="eyebrow eyebrow-purple" data-spec="24.9">The methods, against a published benchmark</p>
+      <h2 style="font-size:22px">Does each method give the paper's count?</h2>
+      <p class="small" style="margin:10px 0 16px;color:var(--ink-2)">
+        {{ ns.paper }}. Data: {{ ns.data }}. {{ ns.n_comparisons }} comparisons on
+        {{ ns.n_datasets }} of its datasets; every input rebuilt from the authors' archive and
+        scripts has exactly the paper's feature count
+        ({{ ns.inputs_rebuilt[0] }} of {{ ns.inputs_rebuilt[1] }}).</p>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Methods against the published benchmark, scrollable">
+        <table class="data">
+          <thead>
+            <tr><th scope="col">Method</th>
+              <th scope="col" class="num">Same count<br><span class="muted">datasets</span></th></tr>
+          </thead>
+          <tbody>
+            {% for m in ns.methods %}
+              <tr><th scope="row">{{ m.paper }}<br>
+                  <span class="muted small" style="font-weight:400">{{ m.note }}.</span></th>
+                <td class="num" style="white-space:nowrap"><b>{{ m.same_count[0] }}</b> of {{ m.same_count[1] }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="small" style="margin-top:16px;color:var(--ink-2)">
+        The paper's own rarefied tables, uploaded to this site, gave the paper's numbers
+        ({{ ns.website_same_count[0] }} of {{ ns.website_same_count[1] }}). In
+        {{ ns.method_order_exact[0] }} of {{ ns.method_order_exact[1] }} datasets the methods
+        fall in exactly the paper's order. The comparison also found a real defect:
+        PyDESeq2's default size factors collapsed on these tables and made every feature
+        significant in one of them; it now uses DESeq2's poscounts estimator, the one the
+        paper used.</p>
+    </div>
+  </section>
+
   <section id="reproduce" aria-labelledby="reproduce-title">
     <div class="panel">
       <p class="eyebrow">Reproducing all of it</p>
@@ -232,6 +269,7 @@
       <pre class="code" tabindex="0" role="region" aria-label="Commands that regenerate every number, scrollable"><code>.venv/Scripts/python tests/reference/run_all.py          # every reference check
 .venv/Scripts/python tests/reference/tier_validation.py # the label experiment
 .venv/Scripts/python tests/reference/published_findings_study.py # a published study, across studies
+.venv/Scripts/python tests/reference/nearing_study.py   # the methods on a published benchmark
 .venv/Scripts/python tests/reference/compare_r.py       # edgeR, ALDEx2, ANCOM-BC
 .venv/Scripts/python -m pytest -q                       # the internal suite</code></pre>
     </div>

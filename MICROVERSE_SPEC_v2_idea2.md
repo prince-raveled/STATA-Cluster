@@ -917,6 +917,26 @@ emit a lock containing a pre-release or anything needing a compiler, and CI fail
 lock is stale. Hashes are deliberately omitted: a `--require-hashes` lock names one
 platform's wheels and would break `docker build` on arm64.
 
+**G8 — PyDESeq2's default size factors collapse on microbiome tables.**
+PyDESeq2 defaults to median-of-ratios, which needs a feature with no zeros to take a
+geometric mean over. A microbiome table has a zero in every feature, so PyDESeq2 silently
+switched to its iterative size-factor fit on essentially every input — and that fit can
+collapse. Found by §24.9 on Nearing et al.'s `edd_singh` (203 samples, library sizes
+2,006–10,538): size factors from 1.2 × 10⁻¹⁰ to 3.7 × 10³, median |log2FC| 14.3 with every
+sign the same, and **all 1,318 ASVs significant**, where R's DESeq2 as the paper ran it
+found 80. `app/core/methods/deseq.py` now asks for DESeq2's **poscounts** estimator — the
+one DESeq2's documentation, phyloseq and that paper use for such tables, and closed-form,
+so there is nothing to converge. The same table then gives size factors 0.32–2.82 and 61
+significant ASVs (raw p, the run's own BH); with DESeq2's independent filtering, 77.
+A sample left with no reads by a prevalence filter has no poscounts size factor, so it
+now sits out that one fit instead of failing it. The run manifest records the estimator
+(`seeds.pydeseq2_size_factors`) and the methods paragraph states it.
+`tests/test_methods.py` pins the estimator and reproduces the collapse on a synthetic
+sparse null table (86% of features significant under the old default, 0% now).
+**Numbers measured before this change:** the PyDESeq2 rows of §24.5 (Pelto) were produced
+with the old size factors and have not been regenerated; they need re-running before
+they are quoted.
+
 ## 24.2 Validation record — what has been proved, and what has not
 
 Everything below was run on this build. `tests/reference/run_all.py` re-runs all of it
@@ -1419,6 +1439,10 @@ on the two quantities it names, the engine reproduces them.
 > 10.5281/zenodo.15047338). Check elementary methods show tighter specification
 > distributions in your framework too." — SPEC §23.3
 
+**Stale for PyDESeq2.** Every PyDESeq2 figure in this section was measured before §24.1 G8
+changed its size factors to poscounts. The elementary-method and other sophisticated
+rows are unaffected; the PyDESeq2 rows need re-running before they are quoted.
+
 Pelto et al. ("Elementary methods provide more replicable results in microbial
 differential abundance analysis", arXiv:2404.02691) compared 14 DA methods over 61
 curated case-control cohorts and split each eligible study in half five times to measure
@@ -1836,6 +1860,75 @@ drifts from the record.
   replication for every label alike.
 - The same genus recurs across cohort pairs. The cluster bootstrap accounts for that; a
   naive Fisher test would not.
+
+---
+
+## 24.9 The methods on a published benchmark — Nearing et al. 2022
+
+`tests/reference/nearing_study.py`; record `docs/nearing_study.json`.
+
+Nearing et al. (*Nat Commun* 2022;13:342) — the paper fork 5 exists because of — ran 14
+differential abundance methods on 38 public 16S datasets and published, for every dataset
+and method, how many ASVs came out significant (their Figure 1A unfiltered, 1B after a 10%
+prevalence filter). Five of those methods are MicroVerse's. §24.8 validated one
+specification against a paper; this validates the methods themselves against one.
+
+### Design
+
+- **Inputs rebuilt exactly** from the authors' figshare archive (14531724, CC BY 4.0) and
+  their scripts: `Filter_samples_of_non_rare_table.R` for the unfiltered run, which uses
+  the rarefied tables shipped in the archive; `Filter_samples_and_features.R` for the
+  filtered run — its feature filter and depth-based sample exclusion are deterministic;
+  its rarefaction is R's RNG and is not reproduced, so the two rarefied methods are
+  compared on the unfiltered run only. **All 117 tables have exactly the paper's feature
+  count.**
+- **Scope:** MicroVerse takes up to 1,500 features, so 24 of the 38 datasets (10
+  unfiltered, 23 filtered). DESeq2 is skipped above 500 samples (two tables): PyDESeq2 on
+  one CPU did not finish in 30 minutes on Office's 836. `hiv_lozupone` filtered keeps 3
+  controls and is refused by §8's five-per-group minimum.
+- **Matching:** each paper method is run through MicroVerse's own implementation on the
+  matching matrix — rarefied Wilcoxon and t-test on the paper's rarefied table; Wilcoxon
+  on MicroVerse's CLR; ALDEx2 with 128 instances, the paper's `mc.samples`; PyDESeq2 —
+  and counted at BH 0.05, as the paper counted.
+
+### Result
+
+| The paper's method | MicroVerse gives the paper's exact count | Why any differ |
+|---|---|---|
+| Wilcoxon (rarefied) | **10 of 10** datasets | — identical |
+| t-test (rarefied) | **10 of 10** | — identical |
+| Wilcoxon (CLR), given the paper's CLR | **33 of 33** | — identical |
+| Wilcoxon (CLR), MicroVerse's own CLR | 20 of 33 | the paper adds 1 to every count; MicroVerse replaces zeros multiplicatively |
+| ALDEx2 | 19 of 33; rank correlation of counts 1.0 unfiltered, 0.92 filtered | MicroVerse takes the larger of the Wilcoxon and Welch expected p-values, then one BH; R reports the mean of per-instance BH values |
+| DESeq2 | 11 of 31; rank correlation 0.80 and 0.98 | MicroVerse applies its FDR fork to the raw p-values of every method, without DESeq2's independent filtering. PyDESeq2 run with the paper's own settings (poscounts, DESeq2's `padj`) is within 0.3–0.8 percentage points of R on average |
+
+The paper's central finding is how far methods disagree. In 14 of the 19 datasets where
+more than one method found anything, MicroVerse ranks the five methods in exactly the
+paper's order (median rank correlation 1.0).
+
+**Through the live site.** The paper's rarefied tables for Chemerin and edd_singh were
+uploaded through the form on 26 September 2026: 533 and 365, 340 and 18 significant ASVs
+for Wilcoxon and the t-test — the paper's numbers — and every check of
+`verify_run.py` passed (fingerprint, identical tiers, scipy recomputation).
+
+### The defect it found
+
+Before this study PyDESeq2 had never been compared with R's DESeq2. On `edd_singh` it
+called **every one of 1,318 ASVs significant**; the paper's DESeq2 found 80. PyDESeq2's
+default size factors cannot take a geometric mean over a zero, every microbiome feature
+has one, and the iterative fit it silently switches to collapsed: size factors from
+10⁻¹⁰ to 10³ for libraries within 5× of each other. §24.1 G8 records the fix (poscounts).
+Every DESeq2 number above is after it.
+
+### Limits
+
+- 16S and ASV level only, one processing pipeline (the paper's), and the 24 datasets small
+  enough for MicroVerse's ceiling — the largest, most feature-rich tables are not tested.
+- Counts are compared, not taxa: the paper publishes how many ASVs each method called,
+  not which, so two equal counts could in principle be different sets. For the three
+  exact rows that cannot happen — identical tables through identical tests.
+- The rarefied methods are compared only where the paper's rarefied tables exist
+  (unfiltered run); MicroVerse's own rarefaction draws are not the paper's.
 
 ---
 

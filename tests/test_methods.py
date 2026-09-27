@@ -207,6 +207,70 @@ def test_pydeseq2_runs_where_multiprocessing_is_unavailable(matrix, monkeypatch)
     assert np.isfinite(fit.p_raw).all()
 
 
+@pytest.mark.skipif(available_methods()["pydeseq2"] != "", reason="pydeseq2 not installed")
+def test_pydeseq2_uses_poscounts_size_factors(matrix, monkeypatch):
+    """Every microbiome table has a zero in every feature, so PyDESeq2's default
+    median-of-ratios silently falls back to an iterative fit, which can collapse: on a
+    published dataset it made every one of 1,318 ASVs significant (SPEC §24.9). DESeq2's
+    poscounts estimator is the one for such tables."""
+    import pydeseq2.dds as dds_module
+
+    seen = {}
+    original = dds_module.DeseqDataSet
+
+    class Spy(original):
+        def __init__(self, *args, **kwargs):
+            seen.update(kwargs)
+            super().__init__(*args, **kwargs)
+
+    monkeypatch.setattr(dds_module, "DeseqDataSet", Spy)
+    run_method("pydeseq2", matrix)
+    assert seen.get("size_factors_fit_type") == "poscounts"
+
+
+def _sparse_null_table(seed=2, n_taxa=200, n_samples=80, alpha=0.02, structural_zeros=0.8):
+    """Overdispersed, 80% structural zeros, a zero in every feature, no group effect —
+    the shape of a real ASV table. Under PyDESeq2's default size factors this exact
+    table collapses: 86% of features significant, median |log2FC| 9.5."""
+    rng = np.random.default_rng(seed)
+    depth = rng.integers(2000, 10000, n_samples)
+    counts = np.zeros((n_taxa, n_samples), dtype=int)
+    for j in range(n_samples):
+        counts[:, j] = rng.multinomial(depth[j], rng.dirichlet(np.full(n_taxa, alpha)))
+    counts[rng.random(counts.shape) < structural_zeros] = 0
+    counts[np.arange(n_taxa), np.arange(n_taxa) % n_samples] = 0
+    return counts, np.array([0, 1] * (n_samples // 2))
+
+
+@pytest.mark.skipif(available_methods()["pydeseq2"] != "", reason="pydeseq2 not installed")
+def test_pydeseq2_does_not_call_a_sparse_null_table_significant():
+    """There is nothing to find in this table, so next to nothing may come out
+    significant and the fold changes must stay near zero."""
+    from types import SimpleNamespace
+
+    counts, groups = _sparse_null_table()
+    assert (counts == 0).any(axis=1).all()
+    fit = run_method("pydeseq2", SimpleNamespace(counts=counts, groups=groups,
+                                                 taxa_idx=np.arange(counts.shape[0])))
+    assert (adjust(fit.p_raw, "bh") <= 0.05).mean() < 0.10
+    assert np.median(np.abs(fit.effect_native)) < 1.0
+
+
+@pytest.mark.skipif(available_methods()["pydeseq2"] != "", reason="pydeseq2 not installed")
+def test_pydeseq2_fits_when_a_sample_has_no_reads():
+    """A prevalence filter can empty a sample. It has no size factor under poscounts,
+    so it sits out the fit instead of failing it."""
+    from types import SimpleNamespace
+
+    counts, groups = _sparse_null_table(seed=4, n_taxa=150, n_samples=60, alpha=0.1,
+                                        structural_zeros=0.9)
+    counts[:, 5] = 0
+    fit = run_method("pydeseq2", SimpleNamespace(counts=counts, groups=groups,
+                                                 taxa_idx=np.arange(counts.shape[0])))
+    assert len(fit.p_raw) == counts.shape[0]
+    assert np.isfinite(fit.p_raw).all()
+
+
 def test_aldex2_is_reproducible(matrix):
     from app.core.methods.aldex2 import run_aldex2
 

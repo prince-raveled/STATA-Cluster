@@ -46,6 +46,17 @@ def _run_in_one_process() -> None:
     default_inference.parallel_backend = _one_process
 
 
+#: DESeq2's size-factor estimator for tables in which every feature has zeros, which is
+#: every microbiome table. PyDESeq2's default is median-of-ratios; it cannot take a
+#: geometric mean over a zero, so on these tables it silently switches to its iterative
+#: fit, and that fit can collapse. On Nearing et al.'s edd_singh (203 samples, library
+#: sizes 2,006-10,538) it returned size factors from 1e-10 to 3.7e3 and every one of
+#: 1,318 ASVs came out significant; R's DESeq2 as the paper ran it found 80. poscounts
+#: is what that paper, phyloseq and DESeq2's own documentation use for such data, and it
+#: is closed-form, so there is nothing to converge (SPEC §24.9).
+SIZE_FACTORS = "poscounts"
+
+
 def run_pydeseq2(matrix, covariate_frame=None, n_cpus: int = 1) -> FitResult:
     from pydeseq2.dds import DeseqDataSet
     from pydeseq2.ds import DeseqStats
@@ -58,11 +69,21 @@ def run_pydeseq2(matrix, covariate_frame=None, n_cpus: int = 1) -> FitResult:
         return FitResult(matrix.taxa_idx, np.array([]), np.array([]), np.array([]),
                          EFFECT_NATIVE_TYPE["pydeseq2"], 0)
 
+    # A prevalence filter can leave a sample with no reads in this matrix. It says
+    # nothing about any taxon, and poscounts cannot give it a size factor, so it sits
+    # out this one fit rather than making the whole fit fail.
+    has_reads = counts.sum(axis=0) > 0
+    groups = np.asarray(matrix.groups)
+    if not has_reads.all():
+        counts, groups = counts[:, has_reads], groups[has_reads]
+        if covariate_frame is not None:
+            covariate_frame = covariate_frame.iloc[np.flatnonzero(has_reads)]
+
     gene_ids = [f"t{i}" for i in range(n_taxa)]
     sample_ids = [f"s{j}" for j in range(counts.shape[1])]
     count_frame = pd.DataFrame(counts.T, index=sample_ids, columns=gene_ids)
     metadata = pd.DataFrame(
-        {"group": np.where(matrix.groups == 1, "B", "A")}, index=sample_ids
+        {"group": np.where(groups == 1, "B", "A")}, index=sample_ids
     )
     factors = ["group"]
     if covariate_frame is not None and covariate_frame.shape[1] > 0:
@@ -80,10 +101,12 @@ def run_pydeseq2(matrix, covariate_frame=None, n_cpus: int = 1) -> FitResult:
         warnings.simplefilter("ignore")
         try:
             dds = DeseqDataSet(counts=count_frame, metadata=metadata, design=design,
+                               size_factors_fit_type=SIZE_FACTORS,
                                refit_cooks=True, quiet=True, n_cpus=n_cpus)
         except TypeError:  # older API took design_factors
             dds = DeseqDataSet(counts=count_frame, metadata=metadata,
                                design_factors=factors, refit_cooks=True, quiet=True)
+            dds.size_factors_fit_type = SIZE_FACTORS
         dds.deseq2()
         stats_result = DeseqStats(dds, contrast=["group", "B", "A"], quiet=True)
         stats_result.summary()
