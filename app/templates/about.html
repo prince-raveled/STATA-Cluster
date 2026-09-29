@@ -11,7 +11,7 @@
     <p class="eyebrow">Method</p>
     <h1>Report the distribution, not your favourite point in it.</h1>
     <p class="purpose">How MicroVerse builds the space of defensible analyses, runs it, and
-      turns thousands of answers into one label per taxon, in twelve steps.</p>
+      turns thousands of answers into one label per taxon, in thirteen steps.</p>
   </header>
 
   {#  The sections are independent: a reader arrives wanting one of them. #}
@@ -22,11 +22,12 @@
       <li><a href="#problem"><b>The problem</b><span>Why one analysis is not enough</span></a></li>
       <li><a href="#specification"><b>Specifications</b><span>The unit of analysis</span></a></li>
       <li><a href="#forks"><b>The seven choices</b><span>And why each is contested</span></a></li>
-      <li><a href="#pruning"><b>Pruning</b><span>What is ruled out, and why</span></a></li>
+      <li><a href="#pruning"><b>Pruning</b><span>What is ruled out, and why: the register</span></a></li>
       <li><a href="#modes"><b>Three modes</b><span>How much of the space runs</span></a></li>
       <li><a href="#pipeline"><b>Inside one specification</b><span>The fixed order</span></a></li>
       <li><a href="#effect"><b>Effect size</b><span>One scale for every test</span></a></li>
       <li><a href="#tiers"><b>Robustness labels</b><span>Two numbers, six labels</span></a></li>
+      <li><a href="#weighting"><b>Weighting</b><span>How much each analysis counts</span></a></li>
       <li><a href="#attribution"><b>Choice attribution</b><span>Which choice moved it</span></a></li>
       <li><a href="#norm"><b>Against cherry-picking</b><span>No “best” export</span></a></li>
       <li><a href="#scope"><b>Scope and limitations</b><span>What it will not do</span></a></li>
@@ -142,16 +143,52 @@
         many are coherent. The data can also rule things out: a table of relative abundances
         cannot be rarefied, and without a taxonomy nothing can be collapsed to genus.</p>
     </div>
-    <div class="table-wrap" tabindex="0" role="region" aria-label="Validity rules, scrollable">
+    <h3 id="register" style="margin-top:var(--space-5)">The defensibility register</h3>
+    <p class="small" style="margin:8px 0 14px;color:var(--ink-2)">Every rule and every
+      choice carries a reason, its sources and a type from Del Giudice &amp; Gangestad's
+      framework: <b>E</b>, {{ DEFENSIBILITY.types.E }} (the options should agree, so
+      varying them measures noise); <b>N</b>, {{ DEFENSIBILITY.types.N }} (one option is
+      wrong for the question, so it is ruled out rather than varied); <b>U</b>,
+      {{ DEFENSIBILITY.types.U }} (the field has not settled it, which is what a
+      multiverse is for). New runs use rule set {{ DEFENSIBILITY.default_ruleset }}
+      ({{ DEFENSIBILITY.rulesets[DEFENSIBILITY.default_ruleset]|join(', ') }}); results
+      produced before it keep rule set v2 ({{ DEFENSIBILITY.rulesets['v2']|join(', ') }}).
+      The same register is kept as <code>docs/defensibility_register.json</code>.</p>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Pruning rules, scrollable">
       <table class="data">
-        <thead><tr><th scope="col">Rule</th><th scope="col">Removes</th></tr></thead>
+        <thead><tr><th scope="col">Rule</th><th scope="col">Removes or changes</th>
+          <th scope="col">Why</th><th scope="col">Type</th><th scope="col">Sources</th></tr></thead>
         <tbody>
-          {% for rule in PRUNING_RULES %}
-            <tr><td>{{ rule.rule }}</td><td>{{ rule.excludes or "—" }}</td></tr>
+          {% for rule in DEFENSIBILITY.rules %}
+            <tr>
+              <td class="mono">{{ rule.id }}{% if rule.ruleset == 'v3' %}<br><span class="micro">from v3</span>{% endif %}</td>
+              <td>{{ rule.removes|capitalize }}</td>
+              <td>{{ rule.reason|capitalize }}.</td>
+              <td title="{{ rule.type_label }}">{{ rule.type }}</td>
+              <td class="small">{% for c in rule.citations %}{{ c.text }}{% if not loop.last %}<br>{% endif %}{% else %}—{% endfor %}</td>
+            </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Analytical choices and their types, scrollable" style="margin-top:var(--space-4)">
+      <table class="data">
+        <thead><tr><th scope="col">Choice</th><th scope="col">Levels</th>
+          <th scope="col">Why it is varied</th><th scope="col">Type</th><th scope="col">Sources</th></tr></thead>
+        <tbody>
+          {% for fork in DEFENSIBILITY.forks %}
+            <tr>
+              <td>{{ fork.fork }}</td>
+              <td class="small">{{ fork.levels }}</td>
+              <td>{{ fork.reason|capitalize }}.</td>
+              <td title="{{ fork.type_label }}">{{ fork.type }}</td>
+              <td class="small">{% for c in fork.citations %}{{ c.text }}{% if not loop.last %}<br>{% endif %}{% else %}—{% endfor %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="micro" style="margin-top:10px">Framework: {{ DEFENSIBILITY.framework }}</p>
   </section>
 
   <!-- 6 -->
@@ -245,13 +282,15 @@
       </div>
       <div class="panel">
         <h3>Are the labels meaningful?</h3>
-        <p class="small" style="margin-top:8px;color:var(--ink-2)">They were tested against
-          held-out halves of published cohorts: the label assigned on one half predicts
-          replication on the other (AUC {{ TIER_VALIDATION.auc }}). Across independent
-          studies of the same disease it did not ({{ CROSS_STUDY.stable.rate|percent(0) }}
-          against {{ CROSS_STUDY.shaky.rate|percent(0) }}), so a label describes these data,
-          not another population. On a published study's own data, MicroVerse finds
-          {{ PUBLISHED_STUDY.recovered }} of the {{ PUBLISHED_STUDY.paper_significant }}
+        <p class="small" style="margin-top:8px;color:var(--ink-2)">The one-vote labels of
+          the first version were tested against held-out halves of published cohorts: the
+          label assigned on one half predicts replication on the other (AUC
+          {{ TIER_VALIDATION.auc }}). Across independent studies of the same disease it did
+          not ({{ CROSS_STUDY.stable.rate|percent(0) }} against
+          {{ CROSS_STUDY.shaky.rate|percent(0) }}), so a label describes these data, not
+          another population. The weighted labels new runs report are a different labelling
+          and have their own test, not yet run. On a published study's own data, MicroVerse
+          finds {{ PUBLISHED_STUDY.recovered }} of the {{ PUBLISHED_STUDY.paper_significant }}
           genera the paper did.
           <a href="/validation">The full evidence</a>.</p>
       </div>
@@ -259,9 +298,44 @@
   </section>
 
   <!-- 10 -->
-  <section class="method-section" id="attribution" aria-labelledby="attribution-title">
+  <section class="method-section" id="weighting" aria-labelledby="weighting-title">
     <div class="section-head">
       <p class="section-number">10</p>
+      <h2 id="weighting-title">How much each analysis counts</h2>
+      <p>Rarefying comes in twelve variants (four depths, three random draws each) and not
+        rarefying in one, so one vote per analysis would put most of the weight behind
+        rarefying and let the tool take a side in a disputed choice. New runs therefore
+        weight each analysis as if an analyst walked the pipeline in order: rarefy or not
+        get half each, and every later choice divides its share equally among the options
+        still valid at that point. Each taxon's two numbers are then weighted shares over
+        the analyses that tested it; the thresholds are unchanged.</p>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>Shown both ways</h3>
+        <p class="small" style="margin-top:8px;color:var(--ink-2)">Every run also labels
+          each taxon with one vote per analysis and with an equal share per rarefaction
+          level. The results page shows where the weight sits under each, and marks every
+          taxon whose label changes between them. The effect axis can be switched to each
+          test's own signed z, which moves with covariate adjustment where the common
+          effect size cannot.</p>
+      </div>
+      <div class="panel">
+        <h3>What it is not</h3>
+        <p class="small" style="margin-top:8px;color:var(--ink-2)">A weight is not the
+          probability that a pipeline is right, and no weighting makes the analyses
+          independent. The weighted labels have not yet been tested on held-out data, so
+          no replication rate is shown beside them.
+          <a href="{{ SOURCE_URL('docs/v3_weighting_note.md') }}">The weighting, in one
+          page of maths</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 -->
+  <section class="method-section" id="attribution" aria-labelledby="attribution-title">
+    <div class="section-head">
+      <p class="section-number">11</p>
       <h2 id="attribution-title">Which choice moved the answer</h2>
       <p>Two views. Per taxon, MicroVerse changes one choice at a time with everything else
         held fixed and measures how far the significance rate moves; that is measured, not
@@ -272,10 +346,10 @@
     </div>
   </section>
 
-  <!-- 11 -->
+  <!-- 12 -->
   <section class="method-section" id="norm" aria-labelledby="norm-title">
     <div class="section-head">
-      <p class="section-number">11</p>
+      <p class="section-number">12</p>
       <h2 id="norm-title">A multiverse tool can be used to p-hack. This one is built not to be.</h2>
     </div>
     <div class="grid-2">
@@ -293,10 +367,10 @@
     </div>
   </section>
 
-  <!-- 12 -->
+  <!-- 13 -->
   <section class="method-section" id="scope" aria-labelledby="scope-title">
     <div class="section-head">
-      <p class="section-number">12</p>
+      <p class="section-number">13</p>
       <h2 id="scope-title">Scope and limitations</h2>
       <p>A tool that does one thing completely is more useful than one that does six things
         partially. These are refusals, not gaps.</p>

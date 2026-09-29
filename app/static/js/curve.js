@@ -1,7 +1,9 @@
 /* Specification curve — SPEC §16.3.
  *
- * Simonsohn's two-panel plot. Upper: the harmonised effect for every tested
- * specification, sorted ascending, coloured by significance, zero reference line.
+ * Simonsohn's two-panel plot. Upper: every tested specification on one axis, sorted
+ * ascending, coloured by significance, zero reference line. The axis is the one the
+ * server sorted by (`data.axis`): the harmonised effect of SPEC §14, or the signed z of
+ * v3 plan §26.4, which moves with the covariate set where the harmonised effect cannot.
  * Lower: a dot matrix of which fork level was active in each specification,
  * x-aligned to the panel above.
  *
@@ -66,18 +68,21 @@
     const narrow = element.clientWidth < 640;
 
     const n = data.effect.length;
+    const onZ = data.axis === "z" && Array.isArray(data.z);
+    const values = onZ ? data.z : data.effect;
 
-    /* ---- upper panel: effect size, coloured by significance ---- */
+    /* ---- upper panel: the chosen axis, coloured by significance ---- */
     const sigX = [], sigY = [], sigText = [];
     const nullX = [], nullY = [], nullText = [];
     for (let i = 0; i < n; i++) {
-      const label = data.labels[i]
-        + "<br>effect " + data.effect[i].toFixed(3) + " log2FC"
-        + "<br>adjusted p " + data.p_adjusted[i].toExponential(2);
+      let label = data.labels[i]
+        + "<br>effect " + data.effect[i].toFixed(3) + " log2FC";
+      if (Array.isArray(data.z)) label += "<br>signed z " + data.z[i].toFixed(2);
+      label += "<br>adjusted p " + data.p_adjusted[i].toExponential(2);
       if (data.significant[i]) {
-        sigX.push(i); sigY.push(data.effect[i]); sigText.push(label);
+        sigX.push(i); sigY.push(values[i]); sigText.push(label);
       } else {
-        nullX.push(i); nullY.push(data.effect[i]); nullText.push(label);
+        nullX.push(i); nullY.push(values[i]); nullText.push(label);
       }
     }
 
@@ -192,13 +197,15 @@
       grid: { rows: 2, columns: 1, pattern: "independent" },
       xaxis: {
         domain: [0, 1], anchor: "y2",
-        title: { text: "specifications, sorted by effect size", font: { size: 11 } },
+        title: { text: "specifications, sorted by " + (onZ ? "signed z" : "effect size"),
+                 font: { size: 11 } },
         showgrid: false, zeroline: false, color: colors.grey, linecolor: colors.line
       },
       yaxis: {
         domain: [0.58, 1], anchor: "x",
         title: {
-          text: "log2 fold change (" + data.group_b + " vs " + data.group_a + ")",
+          text: (onZ ? "signed z" : "log2 fold change")
+            + " (" + data.group_b + " vs " + data.group_a + ")",
           standoff: 6,
           font: { size: 11.5 }
         },

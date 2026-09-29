@@ -16,6 +16,10 @@ small marker rather than as the heading.
 """
 from __future__ import annotations
 
+from .evidence import TIER_REPLICATION as _RATES
+from .evidence import TIER_VALIDATION as _V2
+from .evidence import WEIGHTING_VALIDATION as _V8
+
 TERMS: dict[str, dict] = {
     # --- the core idea ----------------------------------------------------
     "specification": {
@@ -171,12 +175,19 @@ TERMS: dict[str, dict] = {
         "term": "robustness tier",
         "short": "A verdict summarising how consistently the analyses agreed about a taxon.",
         "long": "One of six labels, from ROBUST (nearly every analysis agrees, and on the "
-                "direction) down to NOT DETECTED (no analysis found it). The tiers are "
-                "not just a convention: they were tested on 25 published datasets by "
-                "assigning them on half the samples and checking replication on the "
-                "held-out half. ROBUST taxa replicated 90% of the time, FRAGILE 12%. That "
-                "is replication within a study: across independent studies of the same "
-                "disease, the tiers did not predict which findings replicated.",
+                "direction) down to NOT DETECTED (no analysis found it). The first "
+                "version's labels, which counted one vote per analysis, are not just a "
+                "convention: they were tested on "
+                f"{_V2['n_cohorts']} published datasets by assigning them on half the "
+                "samples and checking replication on the held-out half. ROBUST taxa "
+                f"replicated {_RATES['ROBUST']['rate']:.0%} of the time, FRAGILE "
+                f"{_RATES['FRAGILE']['rate']:.0%}. That is replication within a study: "
+                "across independent studies of the same disease, the tiers did not "
+                "predict which findings replicated. The weighted labels new runs report "
+                + ("have their own test, V8, on the Evidence page; the rates above are "
+                   "not shown beside them." if _V8.get("registered_design") else
+                   "have their own test, which has not been run yet, so these rates are "
+                   "not shown beside them."),
         "spec": "16.2",
     },
     "attribution": {
@@ -226,6 +237,50 @@ TERMS: dict[str, dict] = {
                 "what the computation really costs.",
         "spec": "12",
     },
+    # --- weighting (v3 plan §26) ---------------------------------------------
+    "weighting_scheme": {
+        "term": "weighting",
+        "short": "How much each analysis counts towards a taxon's label.",
+        "long": "Rarefying has twelve variants (four depths, three random draws each) and "
+                "not rarefying has one, so one vote per analysis puts most of the weight "
+                "behind rarefying and quietly takes a side in a disputed choice. v3 "
+                "labels use a decision tree instead: rarefy or not get half the weight "
+                "each, and every later choice splits its share equally among the options "
+                "that are valid at that point. The results page shows the same run under "
+                "one vote each and under an equal share per rarefaction level too.",
+        "spec": "26.2",
+    },
+    "effective_specifications": {
+        "term": "effective analyses",
+        "short": "How many equally weighted analyses the weights amount to: "
+                 "(sum of weights)² / sum of squared weights.",
+        "long": "Kish's effective sample size, applied to analyses. With one vote each it "
+                "equals the number of analyses; the more the weight concentrates, the "
+                "smaller it gets. It describes how the weight is spread, not how many "
+                "independent analyses there are — every analysis re-uses the same samples.",
+        "spec": "26.2",
+    },
+    "weight_stable": {
+        "term": "changes with weighting",
+        "short": "The taxon's label is different under at least one other weighting.",
+        "long": "Every v3 run labels each taxon three ways: with the decision-tree "
+                "weights the page uses, with one vote per analysis, and with an equal "
+                "share per rarefaction level. A taxon whose label is the same under all "
+                "three is weight-stable; one whose label changes depends on how the "
+                "analyses are counted, and its page shows the label under each.",
+        "spec": "26.2",
+    },
+    "signed_z": {
+        "term": "signed z",
+        "short": "Each analysis's own test result on one scale: the z-score of its "
+                 "p-value, signed by the direction it found.",
+        "long": "z = sign(effect) × Φ⁻¹(1 − p/2), from each test's own p-value and its "
+                "own direction. Unlike the common effect size, which is computed from the "
+                "table and so cannot change when an analysis adjusts for a covariate, the "
+                "signed z comes from the test and moves when the adjustment set does. The "
+                "specification curve can be drawn on either.",
+        "spec": "26.4",
+    },
 }
 
 #: Order for the glossary page: the idea, then the choices, then the outputs.
@@ -237,6 +292,8 @@ GLOSSARY_ORDER = [
                               "direction_agreement", "effect_size",
                               "harmonised_effect", "attribution"]),
     ("Counting the analyses", ["enumerated", "valid", "pruned", "model_fit"]),
+    ("Weighting the analyses", ["weighting_scheme", "effective_specifications",
+                                "weight_stable", "signed_z"]),
 ]
 
 

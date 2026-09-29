@@ -290,6 +290,10 @@ def _apply_weighting(run, frame: pd.DataFrame, scheme: str, custom: dict):
     for other in weights:
         frac = columns[f"frac_significant_{other}"].to_numpy()
         sign = columns[f"sign_consistency_{other}"].to_numpy()
+        # The two numbers each scheme's tier is made from, so a tier that changes with
+        # the weighting can be traced to the share that moved.
+        frame[f"frac_significant_{other}"] = np.where(untested, 0.0, frac)
+        frame[f"sign_consistency_{other}"] = np.where(untested, 0.0, sign)
         frame[f"tier_{other}"] = [
             assign_tier(int(n), 0.0 if u else float(f), 0.0 if u else float(c))
             for n, f, c, u in zip(frame["n_specs_tested"], frac, sign, untested,

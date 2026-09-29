@@ -929,3 +929,17 @@ pre.code code { background: none; padding: 0; color: inherit; }
   .block-head { grid-template-columns: minmax(0, 1fr); }
   .block-number { grid-row: auto; }
 }
+
+/* ---- v3: weighting (plan §26) ---------------------------------------------------
+   A taxon whose label depends on how the analyses are counted is marked in words, in
+   the caution colour; the curve's axis choice is a plain radio group. */
+.weight-flag {
+  display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 5px;
+  border: 1px solid var(--amber-line); background: var(--amber-bg); color: var(--amber);
+  font: 600 11.5px/1.6 var(--sans); white-space: nowrap;
+}
+.axis-toggle { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 0 0 14px; padding: 0; border: 0; }
+.axis-toggle legend { float: left; margin-right: 6px; font-weight: 600; font-size: 14px; color: var(--ink); }
+.axis-toggle label { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-2); }
+.axis-toggle input { accent-color: var(--accent-strong); }
+.scheme-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: var(--space-3); }

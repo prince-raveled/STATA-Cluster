@@ -534,32 +534,3 @@ def _space(mode, report, cards, factors, product, extra, total) -> dict:
         "matches": enumerated is not None and total == enumerated,
         "per_fit": per_fit,
     }
-
-
-def pruning_rules() -> list:
-    """The validity rules, as the engine states them, for the Method page."""
-    from .core.models import METHOD_LABELS
-    from .core.validity import INCOMPATIBLE, INCOMPATIBLE_REASON, RULES
-
-    rules = []
-    for method, transforms in INCOMPATIBLE.items():
-        if transforms:
-            names = sorted(TRANSFORM_NAMES.get(t, t) for t in transforms)
-            listed = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " or " + names[-1]
-            rules.append({"rule": INCOMPATIBLE_REASON[method],
-                          "excludes": f"{METHOD_LABELS[method]} given {listed} input"})
-    for _, reason in RULES:
-        rules.append({"rule": reason, "excludes": RULE_EXCLUDES.get(reason, "")})
-    return rules
-
-
-#: What each extra validity rule removes, in words. Keyed by the engine's own reason
-#: text, so a rule this map does not know still appears, just without the gloss.
-RULE_EXCLUDES = {
-    "ANCOM-BC estimates sampling fractions; rarefaction double-corrects":
-        "ANCOM-BC on rarefied data",
-    "TMM + rarefaction is double library-size correction": "TMM on rarefied data",
-    "presence/absence is transform-invariant; keep one canonical combination":
-        "logistic regression on anything but raw counts",
-    "DESeq2 models library size internally": "PyDESeq2 on rarefied data",
-}

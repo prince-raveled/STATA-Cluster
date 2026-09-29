@@ -20,6 +20,16 @@ MicroVerse enumerates that space of choices, executes it, and reports what happe
 Implements `MICROVERSE_SPEC_v2_idea2.md` (frozen). Deviations are logged in the spec's
 §24 and cross-referenced from the code.
 
+**v3, in progress** (`docs/MICROVERSE_V3_PLAN.md`; deviations in `docs/V3_DEVIATIONS.md`).
+Phase 0 is in: new runs prune with rule set v3 (v2's rules plus R8 and R9, each with its
+reason, sources and type in the defensibility register on `/about`), weight every
+specification by a decision tree so the twelve rarefied variants no longer outvote the
+one unrarefied analysis (`docs/v3_weighting_note.md`), label every taxon under three
+weightings and mark those whose label changes, and can draw the curve on each test's
+signed z. The weighted labels have **not** yet been tested on held-out data (V8), so the
+replication rates below, measured for the one-vote labels, are not shown beside them.
+Runs stored before v3 are summarised exactly as before.
+
 ---
 
 ## Quick start

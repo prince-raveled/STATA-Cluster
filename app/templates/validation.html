@@ -22,14 +22,17 @@
   <section class="answer" aria-labelledby="headline-title">
     <div>
       <p class="eyebrow eyebrow-purple">The short answer</p>
-      <h2 id="headline-title">MicroVerse reproduces a published analysis, and its labels
-        predict replication within a study. Across studies, they did not.</h2>
+      <h2 id="headline-title">MicroVerse reproduces a published analysis, and its one-vote
+        labels predict replication within a study. Across studies, they did not.</h2>
       <p class="answer-detail">
         Of {{ n_total }} components, {{ n_reference }} have been checked against a separate
         implementation of the same method, {{ n_empirical }} against held-out data, and
         {{ n_exploratory }} {{ 'is' if n_exploratory == 1 else 'are' }} correct arithmetic
         that has <b>not</b> been validated against anything, labelled as such wherever it
-        appears.</p>
+        appears. The weighted labels new runs report are
+        {% if V8_RECORD.registered_design %}tested in <a href="#v8">V8</a>{% else %}not yet
+        tested: their experiment, <a href="#v8">V8</a>, is pre-registered and has not been
+        run{% endif %}.</p>
       <p class="small" style="margin-top:12px">
         <a href="#tier-experiment">The held-out experiment</a> ·
         <a href="#published">A published study, reproduced</a> ·
@@ -97,7 +100,10 @@
         <p class="small" style="margin:10px 0 16px;color:var(--ink-2)">
           {{ TIER_VALIDATION.design }}. Data: {{ TIER_VALIDATION.data }}.
           Replication was defined as “{{ TIER_VALIDATION.definition }}”, scored on the
-          held-out half without reference to the discovery label.</p>
+          held-out half without reference to the discovery label. The labels tested are the
+          first version's: one vote per specification, under the {{ TIER_VALIDATION.ruleset }}
+          pruning rules. These rates are not shown beside the weighted labels new runs
+          report.</p>
 
         <div class="table-wrap" tabindex="0" role="region" aria-label="Replication by label, scrollable">
           <table class="data">
@@ -142,6 +148,57 @@
           </ul>
         {% endcall %}
       </div>
+    </div>
+  </section>
+
+  <section class="section-sm" aria-labelledby="v8-title">
+    <div class="panel" id="v8">
+      <p class="eyebrow eyebrow-purple">Pre-registered · V8</p>
+      <h2 id="v8-title" style="font-size:22px">Do the weighted labels still predict replication?</h2>
+      <p class="small" style="margin:10px 0 16px;color:var(--ink-2)">{{ V8.question }}
+        Data: {{ V8.data }}. Metrics: {{ V8.metrics }}. Success: {{ V8.success }}, with a
+        margin of {{ V8.margin }} in AUC. If it fails: {{ V8.if_it_fails }}.</p>
+      {% if V8_RECORD.registered_design %}
+        {% set ni = V8_RECORD.non_inferiority.replicated_majority %}
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Replication by weighting, scrollable">
+          <table class="data">
+            <thead><tr><th scope="col">Labels</th><th scope="col" class="num">AUC</th>
+              {% for t in ['ROBUST', 'CONDITIONAL', 'FRAGILE', 'UNSTABLE'] %}<th scope="col" class="num">{{ t }}</th>{% endfor %}
+              <th scope="col" class="num">Label changed</th></tr></thead>
+            <tbody>
+              {% for key, block in V8_RECORD.labellings.items() %}
+                {% set d = block.definitions.replicated_majority %}
+                {% set rates = {} %}
+                {% for r in d.by_tier %}{% set _ = rates.update({r.tier: r.replication_rate}) %}{% endfor %}
+                {% set change = V8_RECORD.label_changes.from_v3_uniform.get(key) %}
+                <tr>
+                  <td>{{ block.scheme|replace('_', ' ') }}, rule set {{ block.ruleset }}</td>
+                  <td class="num"><b>{{ d.discrimination.auc|fixed(3) }}</b></td>
+                  {% for t in ['ROBUST', 'CONDITIONAL', 'FRAGILE', 'UNSTABLE'] %}<td class="num">{{ rates.get(t)|percent(0) }}</td>{% endfor %}
+                  <td class="num">{{ change.share_changed|percent(1) if change else '—' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <p class="small" style="margin-top:16px;color:var(--ink-2)">Decision tree minus one
+          vote each, same rules: <b>{{ ni.difference|signed(3) }}</b> in AUC (95% CI
+          {{ ni.ci[0]|signed(3) }} to {{ ni.ci[1]|signed(3) }}, paired bootstrap over
+          cohorts): <b>{{ 'non-inferior' if ni.non_inferior else 'non-inferiority not shown' }}</b>
+          at the pre-registered margin. {{ V8_RECORD.n_cohorts }} cohorts,
+          {{ V8_RECORD.n_splits }} splits, {{ V8_RECORD.n_observations|commafy }} taxon
+          observations; code at commit <code>{{ (V8_RECORD.code_commit.sha or '')[:12] }}</code>.
+          Record: <code>docs/weighting_validation.json</code>.</p>
+      {% else %}
+        {% call callout('amber', 'Not yet run') %}
+          <p>The weighted labels have not been tested on held-out data. Until this
+            experiment is run and published here, whichever way it falls, no replication
+            rate is shown beside them on any page, and their grade in the matrix above is
+            “{{ GRADE_LABEL['internal'] }}”. The script is
+            <code>tests/reference/weighting_validation.py</code>; its record will be
+            <code>docs/weighting_validation.json</code>.</p>
+        {% endcall %}
+      {% endif %}
     </div>
   </section>
 

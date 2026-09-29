@@ -14,13 +14,16 @@ import zipfile
 import numpy as np
 import pandas as pd
 
+from .effects import signed_z
 from .evidence import (
     CROSS_STUDY,
     NEARING_STUDY,
     PUBLISHED_STUDY,
+    REPLICATION_BY_LABELLING,
     TIER_CAVEATS,
-    TIER_REPLICATION,
     TIER_VALIDATION,
+    WEIGHTING_VALIDATION,
+    labelling_of,
     matrix_rows,
 )
 from .methods.deseq import SIZE_FACTORS
@@ -76,14 +79,29 @@ def _order_levels(fork: str, levels) -> list:
 # --------------------------------------------------------------------------
 # §16.3 Specification curve
 # --------------------------------------------------------------------------
-def specification_curve(run, taxon_id: int, max_points: int = 4000) -> dict:
+#: The two y axes the curve can be drawn on (plan §26.4). `effect` is SPEC §14's
+#: harmonised log2 fold change; `z` is each specification's signed z, which moves with
+#: the covariate set where the harmonised effect cannot.
+CURVE_AXES = {
+    "effect": "harmonised log2 fold change",
+    "z": "signed z (from each test's own p-value and direction)",
+}
+
+
+def specification_curve(run, taxon_id: int, max_points: int = 4000,
+                        axis: str = "effect") -> dict:
     """Simonsohn's two-panel plot for one taxon.
 
-    Upper panel: the harmonised effect for every tested specification, sorted
-    ascending, coloured by significance. Lower panel: which fork level was active in
-    each specification, x-aligned to the panel above — this is how you *see* that the
-    null results all sit under one rarefaction depth.
+    Upper panel: every tested specification on the chosen axis — the harmonised effect
+    (default) or the signed z — sorted ascending, coloured by significance. Lower panel:
+    which fork level was active in each specification, x-aligned to the panel above —
+    this is how you *see* that the null results all sit under one rarefaction depth.
+
+    `effect` and `z` are both returned in plotting order whichever axis sorts them, so
+    a client can label a point with either.
     """
+    if axis not in CURVE_AXES:
+        raise ValueError(f"Unknown axis '{axis}'. Available: {', '.join(CURVE_AXES)}.")
     rows = run.long[run.long["taxon"] == taxon_id]
     if rows.empty:
         # Same keys as the populated case, all empty. Returning a different shape here
@@ -96,7 +114,8 @@ def specification_curve(run, taxon_id: int, max_points: int = 4000) -> dict:
             "taxon_id": int(taxon_id),
             "n_specs": 0, "n_plotted": 0, "stride": 1,
             "group_a": run.group_labels[0], "group_b": run.group_labels[1],
-            "effect": [], "significant": [], "p_adjusted": [], "p_raw": [],
+            "axis": axis, "axis_label": CURVE_AXES[axis],
+            "effect": [], "z": [], "significant": [], "p_adjusted": [], "p_raw": [],
             "spec_id": [], "labels": [],
             "forks": {}, "fork_labels": {}, "categories": {},
             "declared_position": -1, "declared": {},
@@ -110,7 +129,10 @@ def specification_curve(run, taxon_id: int, max_points: int = 4000) -> dict:
                     "nothing to plot.",
         }
 
-    rows = rows.sort_values("effect_h", kind="mergesort").reset_index(drop=True)
+    rows = rows.assign(z=signed_z(rows["p_raw"].to_numpy(dtype=float),
+                                  rows["effect_n"].to_numpy(dtype=float)))
+    sort_key = "effect_h" if axis == "effect" else "z"
+    rows = rows.sort_values(sort_key, kind="mergesort").reset_index(drop=True)
     thinned = rows
     stride = 1
     if len(rows) > max_points:
@@ -143,7 +165,10 @@ def specification_curve(run, taxon_id: int, max_points: int = 4000) -> dict:
         "stride": stride,
         "group_a": run.group_labels[0],
         "group_b": run.group_labels[1],
+        "axis": axis,
+        "axis_label": CURVE_AXES[axis],
         "effect": [float(v) for v in thinned["effect_h"]],
+        "z": [float(v) for v in thinned["z"]],
         "significant": [bool(v) for v in thinned["significant"]],
         "p_adjusted": [float(v) for v in thinned["p_adj"]],
         "p_raw": [float(v) for v in thinned["p_raw"]],
@@ -157,6 +182,119 @@ def specification_curve(run, taxon_id: int, max_points: int = 4000) -> dict:
         "median_effect": float(rows["effect_h"].median()),
         "frac_significant": float(rows["significant"].mean()),
     }
+
+
+# --------------------------------------------------------------------------
+# v3 plan §26.2 — how the weight was spread, for the page, the paragraph and the manifest
+# --------------------------------------------------------------------------
+def weighting_summary(summary):
+    """The grid-composition panel's contents, or None for a run summarised as v2.
+
+    One entry per scheme, the primary (the one the tiers use) first: where the weight
+    sits, how many effective specifications that is, and how many taxa would be
+    labelled differently under it.
+    """
+    if not getattr(summary, "weighted", False) or not summary.composition:
+        return None
+    from .weights import SCHEME_LABELS
+
+    table = summary.table
+    changes = summary.tier_changes or {}
+    order = [summary.scheme] + [s for s in summary.composition if s != summary.scheme]
+    schemes = []
+    for scheme in order:
+        comp = summary.composition[scheme]
+        schemes.append({
+            "scheme": scheme,
+            "label": SCHEME_LABELS.get(scheme, scheme),
+            "primary": scheme == summary.scheme,
+            "n_specs": int(comp.n_specs),
+            "n_effective": float(comp.n_effective),
+            "rarefied_share": float(comp.rarefied_share),
+            "by_method": {k: float(v) for k, v in comp.by_method.items()},
+            "by_transform": {k: float(v) for k, v in comp.by_transform.items()},
+            "by_rank": {k: float(v) for k, v in comp.by_rank.items()},
+            "by_prevalence": {k: float(v) for k, v in comp.by_prevalence.items()},
+            "taxa_labelled_differently": (None if scheme == summary.scheme
+                                          else int(changes.get(scheme, 0))),
+        })
+    unstable = (~table["weight_stable"].astype(bool)) if "weight_stable" in table else None
+    flips = table.get("pseudocount_sign_flip")
+    return {
+        "ruleset": summary.ruleset,
+        "scheme": summary.scheme,
+        "scheme_label": SCHEME_LABELS.get(summary.scheme, summary.scheme),
+        "schemes": schemes,
+        "n_weight_unstable": int(unstable.sum()) if unstable is not None else 0,
+        "n_pseudocount_sign_flips": int(flips.astype(bool).sum()) if flips is not None
+                                    else 0,
+    }
+
+
+def _v3_rule_sentence(run) -> str:
+    report = run.grid_report
+    from .validity import R8_REASON
+    removed = int(report.pruned_reasons.get(R8_REASON, 0))
+    adjusted = sum(1 for s in run.specs if getattr(s, "depth_adjusted", False))
+    return (
+        f"Pruning followed rule set v3, which adds two rules to the v2 validity matrix: "
+        f"Wilcoxon, Welch and linear-regression tests on unrarefied raw counts were "
+        f"removed ({removed:,} specifications), because nothing in them corrects for "
+        f"library size, and presence/absence (logistic) models on unrarefied counts "
+        f"included log library size as a covariate ({adjusted:,} specifications), "
+        f"because whether a taxon is detected depends on sequencing depth (McMurdie & "
+        f"Holmes 2014; Weiss et al. 2017)."
+    )
+
+
+def _v3_weighting_sentence(summary) -> str:
+    facts = weighting_summary(summary)
+    primary = facts["schemes"][0]
+    uniform = next((s for s in facts["schemes"] if s["scheme"] == "uniform"), None)
+    if summary.scheme == "decision_tree":
+        how = ("by a decision tree over the pipeline order: at every choice the weight "
+               "was divided equally among the options still valid given the earlier "
+               "choices, except that rarefying and not rarefying received half each, "
+               "because that is the contested decision (Del Giudice & Gangestad 2021)")
+    elif summary.scheme == "flat_tree":
+        how = ("by a decision tree whose first choice gave each rarefaction level an "
+               "equal share, dividing the weight equally among valid options thereafter")
+    elif summary.scheme == "uniform":
+        how = "equally, one vote per specification"
+    else:
+        how = f"by the declared scheme ({primary['label']})"
+    sentence = (
+        f"Specifications were weighted {how}. Under these weights "
+        f"{primary['rarefied_share']:.0%} of the weight was on rarefied specifications"
+    )
+    if uniform and summary.scheme != "uniform":
+        sentence += f" ({uniform['rarefied_share']:.0%} with one vote per specification)"
+    sentence += (
+        f", and the effective number of specifications (Kish) was "
+        f"{primary['n_effective']:,.0f} of {primary['n_specs']:,}. Each taxon's weighted "
+        f"share of significant specifications and its weighted direction agreement were "
+        f"computed over the specifications in which it was testable, with the weights "
+        f"renormalised over them."
+    )
+    others = [_SCHEME_PHRASES.get(s["scheme"], s["label"]) for s in facts["schemes"]
+              if not s["primary"]]
+    if others:
+        listed = others[0] if len(others) == 1 else (", ".join(others[:-1]) + " and "
+                                                     + others[-1])
+        n = facts["n_weight_unstable"]
+        sentence += (
+            f" {n} {'taxon' if n == 1 else 'taxa'} received a different label when the "
+            f"specifications were instead weighted by {listed}."
+        )
+    return sentence
+
+
+#: How the methods paragraph names each scheme mid-sentence.
+_SCHEME_PHRASES = {
+    "uniform": "one vote per specification",
+    "flat_tree": "an equal share for each rarefaction level",
+    "decision_tree": "the decision tree",
+}
 
 
 # --------------------------------------------------------------------------
@@ -195,6 +333,9 @@ def methods_paragraph(run, summary, attribution=None) -> str:
         f"({', '.join(methods)}), and multiple-testing correction "
         f"(Benjamini-Hochberg at 0.05 and 0.10, Benjamini-Yekutieli at 0.05)."
     )
+    weighted = bool(getattr(summary, "weighted", False))
+    if getattr(run, "ruleset", "v2") != "v2":
+        lines.append(_v3_rule_sentence(run))
     lines.append(
         "Significance was taken from each method's own p-value after FDR adjustment "
         "within that specification. Effect size was computed separately and identically "
@@ -208,9 +349,13 @@ def methods_paragraph(run, summary, attribution=None) -> str:
             "which every feature has zeros, and its raw Wald p-values entered the same "
             "FDR correction as every other method."
         )
+    if weighted:
+        lines.append(_v3_weighting_sentence(summary))
+    share_of = ("of the weight of the specifications" if weighted
+                else "of the specifications")
     lines.append(
         f"Taxa were tiered by robustness: {counts['ROBUST']} ROBUST (FDR-significant in "
-        f"at least 80% of the specifications in which they were testable, with at least "
+        f"at least 80% {share_of} in which they were testable, with at least "
         f"95% sign consistency), {counts['CONDITIONAL']} CONDITIONAL (30-80%), "
         f"{counts['FRAGILE']} FRAGILE (under 30%), and {counts['UNSTABLE']} UNSTABLE "
         f"(sign consistency below 80%, i.e. the direction of effect is not determined by "
@@ -269,6 +414,10 @@ CITATIONS = {
         "Pelto J, Auranen K, Kujala JV, Lahti L. Elementary methods provide more "
         "replicable results in microbial differential abundance analysis. "
         "Brief Bioinform 2025;26(2):bbaf130.",
+        "Del Giudice M, Gangestad SW. A traveler's guide to the multiverse: promises, "
+        "pitfalls, and a framework for the evaluation of analytic decisions. "
+        "Adv Methods Pract Psychol Sci 2021;4(1).",
+        "Kish L. Survey Sampling. New York: Wiley; 1965.",
     ],
     "attribution": [
         "Young C, Holsteen K. Model uncertainty and robustness: a computational "
@@ -317,6 +466,8 @@ CITATIONS = {
         "Bioinformatics 2022;38(9):2389.",
         "Gloor GB, Macklaim JM, Pawlowsky-Glahn V, Egozcue JJ. Microbiome datasets are "
         "compositional: and this is not optional. Front Microbiol 2017;8:2224.",
+        "Weiss S, Xu ZZ, Peddada S, et al. Normalization and microbial differential "
+        "abundance strategies depend upon data characteristics. Microbiome 2017;5:27.",
     ],
     "multiple_testing": [
         "Benjamini Y, Hochberg Y. Controlling the false discovery rate: a practical and "
@@ -374,6 +525,12 @@ def robustness_csv(summary) -> bytes:
 def long_results_csv_gz(run) -> bytes:
     """Every (specification, taxon) row. The whole distribution, never a slice (§18)."""
     frame = run.long.copy()
+    if getattr(run, "ruleset", "v2") != "v2":
+        # v3 plan §26.4: the signed z for every row, beside the native statistic it is
+        # signed by. A v2 run keeps exactly v2's columns.
+        z = signed_z(frame["p_raw"].to_numpy(dtype=float),
+                     frame["effect_n"].to_numpy(dtype=float)).astype(np.float32)
+        frame.insert(frame.columns.get_loc("effect_n") + 1, "signed_z", z)
     frame["taxon_name"] = [run.taxa_names[i] for i in frame["taxon"]]
     frame = frame.merge(run.specs_frame, on="spec_id", how="left")
     frame = frame.drop(columns=["taxon"]).rename(columns={"effect_h": "effect_harmonized",
@@ -480,6 +637,14 @@ def run_manifest(run, summary, attribution=None) -> dict:
         "method_status": run.method_status,
         "failures": run.failures[:50],
     }
+    ruleset, scheme = labelling_of(summary)
+    if getattr(summary, "weighted", False):
+        # v3 plan §26: which rules pruned the grid, how the specifications were
+        # weighted, and where that put the weight. A v2 run's manifest is unchanged.
+        from .validity import defensibility_register
+        manifest["ruleset"] = ruleset
+        manifest["rules_applied"] = defensibility_register()["rulesets"][ruleset]
+        manifest["weighting"] = weighting_summary(summary)
     if attribution:
         manifest["attribution"] = {
             target: {
@@ -517,10 +682,26 @@ def run_manifest(run, summary, attribution=None) -> dict:
 
     manifest["validation"] = {
         "matrix": matrix_rows(),
-        "tier_replication": {
+        # Replication measured for the labelling this run's tiers were assigned under,
+        # or {} when nobody has measured it; a rate belongs to its labelling (V8).
+        "tier_replication": _jsonable({
             tier: {"rate": facts["rate"], "ci": list(facts["ci"]), "n": facts["n"]}
-            for tier, facts in TIER_REPLICATION.items()
+            for tier, facts in REPLICATION_BY_LABELLING.get((ruleset, scheme), {}).items()
+        }),
+        "tier_replication_labelling": {
+            "ruleset": ruleset, "scheme": scheme,
+            "measured": (ruleset, scheme) in REPLICATION_BY_LABELLING,
         },
+        # A V8 interval can be undefined (a tier seen in fewer than three cohorts), and
+        # JSON has no NaN: these two pass through _jsonable, which writes null.
+        "tier_replication_by_labelling": _jsonable({
+            f"{key[0]}/{key[1]}": {
+                tier: {"rate": facts["rate"], "ci": list(facts["ci"]), "n": facts["n"]}
+                for tier, facts in rates.items()}
+            for key, rates in REPLICATION_BY_LABELLING.items()
+        }),
+        "weighting_experiment": _jsonable(WEIGHTING_VALIDATION) or {
+            "experiment": "V8", "status": "pre-registered, not yet run"},
         "tier_experiment": TIER_VALIDATION,
         "tier_caveats": list(TIER_CAVEATS),
         "published_study": PUBLISHED_STUDY,
@@ -571,6 +752,30 @@ Confounding, contamination and batch effects survive a multiverse intact.
 """
 
 
+ZIP_README_V3 = """
+This run: rule set v3, weighted specifications
+----------------------------------------------
+The grid was pruned with rule set v3 (v2's rules plus R8 and R9; the register with
+reasons and citations is on the Method page), and the tiers were assigned with every
+specification weighted by the scheme named in manifest.json ("weighting"). Columns
+that exist only in a weighted run:
+
+  taxa_robustness.csv   frac_significant, frac_nominal and sign_consistency are the
+                        weighted shares the tier uses; frac_significant_unweighted is
+                        the one-vote count; tier_<scheme> is the tier under each scheme;
+                        weight_stable is True when every scheme gives the same tier;
+                        n_eff_specs is the taxon's effective number of specifications;
+                        median_effect_pc_low / _high and pseudocount_sign_flip are the
+                        harmonised effect at 0.1x and 10x the run's pseudocount.
+  specifications.csv    weight (the scheme the tiers use) and weight_<scheme>.
+  results_long.csv.gz   signed_z: sign(native effect) x z of the test's own p-value.
+
+A weight is not a probability that a pipeline is right. The replication rates measured
+for v2's one-vote labels are not evidence about weighted labels; manifest.json says which
+labellings have been measured ("tier_replication_by_labelling").
+"""
+
+
 def build_zip(run, summary, attribution=None, long_csv_gz: bytes = None) -> bytes:
     """Assemble the results bundle.
 
@@ -583,7 +788,8 @@ def build_zip(run, summary, attribution=None, long_csv_gz: bytes = None) -> byte
         long_csv_gz = long_results_csv_gz(run)
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr("README.txt", ZIP_README)
+        archive.writestr("README.txt", ZIP_README + (
+            ZIP_README_V3 if getattr(summary, "weighted", False) else ""))
         archive.writestr("methods.txt",
                          methods_paragraph(run, summary, attribution) + "\n\nReferences\n\n"
                          + "\n".join(f"{i + 1}. {c}" for i, c in enumerate(citation_list())))

@@ -273,6 +273,37 @@ DEFENSIBILITY = {
 }
 
 
+def defensibility_register() -> dict:
+    """The register as a reader sees it: every rule and fork with its citations spelled
+    out, and which rules each rule set applies.
+
+    What `tests/reference/make_defensibility_register.py` writes to
+    docs/defensibility_register.json and the /about page renders, so the two cannot
+    say different things.
+    """
+    def expand(entry: dict) -> dict:
+        out = {k: v for k, v in entry.items() if k != "cite"}
+        out["type_label"] = TYPE_LABELS[entry["type"]]
+        out["citations"] = [{"key": key, "text": CITATIONS[key]} for key in entry["cite"]]
+        return out
+
+    rules = [expand(rule) for rule in DEFENSIBILITY["rules"]]
+    order = {name: i for i, name in enumerate(("v2", "v3"))}
+    return {
+        "source": "app/core/validity.py (DEFENSIBILITY)",
+        "framework": CITATIONS["delgiudice2021"],
+        "types": dict(TYPE_LABELS),
+        "rulesets": {
+            name: [r["id"] for r in rules if order[r["ruleset"]] <= order[name]]
+            for name in ("v2", "v3")
+        },
+        "default_ruleset": DEFAULT_RULESET,
+        "rules": rules,
+        "forks": [expand(fork) for fork in DEFENSIBILITY["forks"]],
+        "citations": dict(CITATIONS),
+    }
+
+
 def rule_id(reason: str) -> str:
     """The register id for a pruning reason, or '' for a dataset capability."""
     if reason == R8_REASON:

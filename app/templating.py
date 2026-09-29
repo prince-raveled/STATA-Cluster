@@ -14,18 +14,20 @@ from .core.evidence import (
     TIER_CAVEATS,
     TIER_REPLICATION,
     TIER_VALIDATION,
+    V8_PREREGISTRATION,
+    WEIGHTING_VALIDATION,
     matrix_rows,
     tier_sentence,
 )
 from .core.glossary import glossary_sections
 from .core.models import FORK_LABELS, METHOD_LABELS, ordinal
 from .core.robustness import TIERS
+from .core.validity import defensibility_register, rule_id
 from .ui import (
     MODE_SUMMARIES,
     TIER_HEADLINES,
     glossary_with_ui_terms,
     help_term,
-    pruning_rules,
     run_stages,
     run_time,
     skipped_reasons,
@@ -100,14 +102,15 @@ templates.env.globals.update(
     RUN_STAGES=run_stages,
     RUN_TIME=run_time,
     SKIPPED_REASONS=skipped_reasons,
-    PRUNING_RULES=pruning_rules(),
     # Changes whenever the stylesheet or scripts change shape, so a returning visitor
     # never renders new markup against a cached stylesheet. The application version
     # is recorded in every run manifest and is deliberately not bumped for a restyle.
-    ASSETS=f"{config.VERSION}-ui6",
+    ASSETS=f"{config.VERSION}-ui7",
     TIERS=TIERS,
     TIER_REPLICATION=TIER_REPLICATION,
     TIER_VALIDATION=TIER_VALIDATION,
+    V8=V8_PREREGISTRATION,
+    V8_RECORD=WEIGHTING_VALIDATION,
     TIER_CAVEATS=TIER_CAVEATS,
     PUBLISHED_STUDY=PUBLISHED_STUDY,
     CROSS_STUDY=CROSS_STUDY,
@@ -120,6 +123,9 @@ templates.env.globals.update(
     VERSION=config.VERSION,
     SPEC_VERSION=config.SPEC_VERSION,
     REPOSITORY=config.REPOSITORY,
+    SOURCE_URL=config.source_url,
+    RULE_ID=rule_id,
+    DEFENSIBILITY=defensibility_register(),
     MODE_LABELS=config.MODE_LABELS,
     MODE_BLURBS=config.MODE_BLURBS,
     RETENTION_DAYS=config.RETENTION_DAYS,

@@ -36,6 +36,13 @@ Then `app/core/runner.py` for orchestration, and `tests/test_worked_example.py`,
 encodes the specification's own worked example and is the gate that fails if the engine
 is wrong.
 
+v3 adds two files to that list: `app/core/weights.py`, which defines how much each
+specification counts (a decision tree over the pipeline order), and
+`app/core/weighted.py`, which turns those weights into each taxon's shares. The maths is
+one page, `docs/v3_weighting_note.md`; every departure from the v3 plan is in
+`docs/V3_DEVIATIONS.md`. The weighted labels are graded internal only: their held-out
+test (V8) has not been run.
+
 ---
 
 ## 3. Data flow

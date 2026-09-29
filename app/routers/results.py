@@ -14,12 +14,20 @@ from fastapi.responses import (
 )
 
 from .. import config, db, services, storage
+from ..core.evidence import (
+    labelling_of,
+    labelling_summary,
+    tier_rates,
+    tier_sentence,
+    unmeasured_sentence,
+)
 from ..core.instability import (
     FINGERPRINT_LABELS,
     analyse_taxon,
     stability_fingerprint,
 )
 from ..core.report import (
+    CURVE_AXES,
     attribution_csv,
     build_zip,
     citation_list,
@@ -29,6 +37,7 @@ from ..core.report import (
     run_manifest,
     specification_curve,
     specifications_csv,
+    weighting_summary,
 )
 from ..core.robustness import (
     locate_declared,
@@ -37,6 +46,7 @@ from ..core.robustness import (
     verdict_sentence,
 )
 from ..core.validation import DatasetError, NotFoundError, RunNotReadyError
+from ..core.weighted import taxon_axes
 from ..templating import templates
 
 router = APIRouter()
@@ -125,11 +135,20 @@ def results_page(request: Request, token: str):
         except Exception:                                   # noqa: BLE001
             readiness = None       # never let a diagnostic block the results page
 
+    ruleset, scheme = labelling_of(summary)
     return templates.TemplateResponse(
         request, "results.html",
         {
             "job": job, "token": token, "run": run, "summary": summary,
             "attribution": attribution,
+            # Replication evidence for the labelling these tiers were assigned under,
+            # and nothing borrowed from another labelling (plan §33, V8).
+            "labelling": {"ruleset": ruleset, "scheme": scheme,
+                          **labelling_summary(ruleset, scheme)},
+            "tier_rates": tier_rates(ruleset, scheme),
+            "unmeasured": unmeasured_sentence(ruleset, scheme),
+            "weighting": weighting_summary(summary),
+            "curve_axes": CURVE_AXES,
             "verdict": verdict_sentence(run, summary),
             "n_detected": detected,
             "n_stable": stable,
@@ -175,11 +194,20 @@ def taxon_evidence(request: Request, token: str, taxon_id: int):
 
     evidence = analyse_taxon(run, taxon_id)
     ranked = list(summary.table["taxon_id"]).index(taxon_id)
+    ruleset, scheme = labelling_of(summary)
     return templates.TemplateResponse(
         request, "taxon.html",
         {
             "job": job, "token": token, "run": run, "summary": summary,
             "row": row, "evidence": evidence,
+            "tier_note": (tier_sentence(row["robustness_tier"], ruleset, scheme)
+                          or (unmeasured_sentence(ruleset, scheme)
+                              if row["robustness_tier"] not in ("INSUFFICIENT",)
+                              else "")),
+            "tier_note_measured": bool(tier_sentence(row["robustness_tier"], ruleset,
+                                                     scheme)),
+            "weighting": weighting_summary(summary),
+            "axes": taxon_axes(run, summary, taxon_id),
             "fingerprint": stability_fingerprint(row),
             "fingerprint_labels": FINGERPRINT_LABELS,
             "declared": locate_declared(run, taxon_id),
@@ -191,20 +219,26 @@ def taxon_evidence(request: Request, token: str, taxon_id: int):
 
 
 @router.get("/results/{token}/curve/{taxon_id}", include_in_schema=False)
-def curve(token: str, taxon_id: int):
+def curve(token: str, taxon_id: int, axis: str = "effect"):
     """The curve the results page fetches. Always JSON, including its errors.
 
     This is consumed by `fetch`, so an HTML error page here is useless to the caller.
     The bounds check is the same one the public API applies — without it an
     out-of-range id reached `specification_curve` and surfaced as a 500.
+
+    `axis` is `effect` (the harmonised log2 fold change) or `z` (signed z, plan §26.4).
     """
+    if axis not in CURVE_AXES:
+        return JSONResponse(status_code=422, content={
+            "error": f"Unknown axis '{axis}'.",
+            "hint": "Available: " + ", ".join(CURVE_AXES) + "."})
     try:
         _, run, _, _ = _require(token)
         _require_taxon(run, taxon_id)
     except DatasetError as exc:
         return JSONResponse(status_code=getattr(exc, "status_code", 422),
                             content={"error": exc.message, "hint": exc.hint})
-    return JSONResponse(specification_curve(run, taxon_id))
+    return JSONResponse(specification_curve(run, taxon_id, axis=axis))
 
 
 def _require_finished_job(token: str):

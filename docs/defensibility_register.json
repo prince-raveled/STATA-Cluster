@@ -1,0 +1,335 @@
+{
+  "source": "app/core/validity.py (DEFENSIBILITY)",
+  "framework": "Del Giudice M, Gangestad SW. A traveler's guide to the multiverse: promises, pitfalls, and a framework for the evaluation of analytic decisions. Adv Methods Pract Psychol Sci 2021;4(1).",
+  "types": {
+    "E": "principled equivalence",
+    "N": "principled non-equivalence",
+    "U": "uncertainty"
+  },
+  "rulesets": {
+    "v2": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6",
+      "R7"
+    ],
+    "v3": [
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "R6",
+      "R7",
+      "R8",
+      "R9"
+    ]
+  },
+  "default_ruleset": "v3",
+  "rules": [
+    {
+      "id": "R1",
+      "ruleset": "v2",
+      "removes": "PyDESeq2 given CLR, TSS or TMM",
+      "reason": "DESeq2 models integer counts; a transformed matrix is not its input",
+      "type": "N",
+      "type_label": "principled non-equivalence",
+      "citations": [
+        {
+          "key": "love2014",
+          "text": "Love MI, Huber W, Anders S. Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2. Genome Biol 2014;15:550."
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "ruleset": "v2",
+      "removes": "ALDEx2 given CLR",
+      "reason": "ALDEx2 applies the CLR itself; a second CLR is not its model",
+      "type": "N",
+      "type_label": "principled non-equivalence",
+      "citations": [
+        {
+          "key": "fernandes2014",
+          "text": "Fernandes AD, et al. Unifying the analysis of high-throughput sequencing datasets: characterizing RNA-seq, 16S rRNA gene sequencing and selective growth experiments by compositional data analysis. Microbiome 2014;2:15."
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "ruleset": "v2",
+      "removes": "ANCOM-BC given CLR, TSS or TMM",
+      "reason": "ANCOM-BC estimates sample-specific sampling fractions from counts",
+      "type": "N",
+      "type_label": "principled non-equivalence",
+      "citations": [
+        {
+          "key": "lin2020",
+          "text": "Lin H, Peddada SD. Analysis of compositions of microbiomes with bias correction. Nat Commun 2020;11:3514."
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "ruleset": "v2",
+      "removes": "ANCOM-BC on rarefied counts",
+      "reason": "rarefying and ANCOM-BC's bias correction both correct for sampling fraction, so together they correct twice",
+      "type": "N",
+      "type_label": "principled non-equivalence",
+      "citations": [
+        {
+          "key": "lin2020",
+          "text": "Lin H, Peddada SD. Analysis of compositions of microbiomes with bias correction. Nat Commun 2020;11:3514."
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "ruleset": "v2",
+      "removes": "TMM on rarefied counts",
+      "reason": "rarefying and TMM are both library-size corrections",
+      "type": "N",
+      "type_label": "principled non-equivalence",
+      "citations": [
+        {
+          "key": "robinson2010",
+          "text": "Robinson MD, Oshlack A. A scaling normalization method for differential expression analysis of RNA-seq data. Genome Biol 2010;11:R25."
+        },
+        {
+          "key": "mcmurdie2014",
+          "text": "McMurdie PJ, Holmes S. Waste not, want not: why rarefying microbiome data is inadmissible. PLoS Comput Biol 2014;10:e1003531."
+        }
+      ]
+    },
+    {
+      "id": "R6",
+      "ruleset": "v2",
+      "removes": "logistic regression on any transform but raw",
+      "reason": "presence/absence is identical under every transform, so the copies would count one analysis several times",
+      "type": "E",
+      "type_label": "principled equivalence",
+      "citations": []
+    },
+    {
+      "id": "R7",
+      "ruleset": "v2",
+      "removes": "PyDESeq2 on rarefied counts",
+      "reason": "DESeq2 models library size through its size factors",
+      "type": "N",
+      "type_label": "principled non-equivalence",
+      "citations": [
+        {
+          "key": "love2014",
+          "text": "Love MI, Huber W, Anders S. Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2. Genome Biol 2014;15:550."
+        },
+        {
+          "key": "mcmurdie2014",
+          "text": "McMurdie PJ, Holmes S. Waste not, want not: why rarefying microbiome data is inadmissible. PLoS Comput Biol 2014;10:e1003531."
+        }
+      ]
+    },
+    {
+      "id": "R8",
+      "ruleset": "v3",
+      "removes": "Wilcoxon, Welch or linear regression on unrarefied raw counts",
+      "reason": "nothing corrects for library size, so a difference in sequencing depth between the groups is enough to make a taxon differential",
+      "type": "N",
+      "type_label": "principled non-equivalence",
+      "citations": [
+        {
+          "key": "mcmurdie2014",
+          "text": "McMurdie PJ, Holmes S. Waste not, want not: why rarefying microbiome data is inadmissible. PLoS Comput Biol 2014;10:e1003531."
+        },
+        {
+          "key": "weiss2017",
+          "text": "Weiss S, et al. Normalization and microbial differential abundance strategies depend upon data characteristics. Microbiome 2017;5:27."
+        }
+      ]
+    },
+    {
+      "id": "R9",
+      "ruleset": "v3",
+      "removes": "nothing: changes logistic regression on unrarefied counts",
+      "reason": "whether a taxon is detected at all depends on sequencing depth, so presence/absence without rarefying is modelled with log library size as a covariate",
+      "type": "N",
+      "type_label": "principled non-equivalence",
+      "citations": [
+        {
+          "key": "mcmurdie2014",
+          "text": "McMurdie PJ, Holmes S. Waste not, want not: why rarefying microbiome data is inadmissible. PLoS Comput Biol 2014;10:e1003531."
+        },
+        {
+          "key": "weiss2017",
+          "text": "Weiss S, et al. Normalization and microbial differential abundance strategies depend upon data characteristics. Microbiome 2017;5:27."
+        }
+      ]
+    }
+  ],
+  "forks": [
+    {
+      "fork": "Rarefy or not",
+      "levels": "no; yes",
+      "reason": "the field disagrees about whether rarefying is admissible",
+      "type": "U",
+      "type_label": "uncertainty",
+      "citations": [
+        {
+          "key": "mcmurdie2014",
+          "text": "McMurdie PJ, Holmes S. Waste not, want not: why rarefying microbiome data is inadmissible. PLoS Comput Biol 2014;10:e1003531."
+        },
+        {
+          "key": "schloss2024",
+          "text": "Schloss PD. Rarefaction is currently the best approach to control for uneven sequencing effort in amplicon sequence analyses. mSphere 2024;9:e00354-23."
+        }
+      ]
+    },
+    {
+      "fork": "Rarefaction depth",
+      "levels": "minimum library, 1,000, 5,000, 10,000",
+      "reason": "no depth is agreed; deeper keeps more reads and fewer samples",
+      "type": "U",
+      "type_label": "uncertainty",
+      "citations": [
+        {
+          "key": "schloss2024",
+          "text": "Schloss PD. Rarefaction is currently the best approach to control for uneven sequencing effort in amplicon sequence analyses. mSphere 2024;9:e00354-23."
+        }
+      ]
+    },
+    {
+      "fork": "Rarefaction seed",
+      "levels": "1, 2, 3",
+      "reason": "draws from the same subsampling; they should agree, so their spread measures the randomness rarefying adds",
+      "type": "E",
+      "type_label": "principled equivalence",
+      "citations": [
+        {
+          "key": "mcmurdie2014",
+          "text": "McMurdie PJ, Holmes S. Waste not, want not: why rarefying microbiome data is inadmissible. PLoS Comput Biol 2014;10:e1003531."
+        }
+      ]
+    },
+    {
+      "fork": "Taxonomic rank",
+      "levels": "input rank; genus",
+      "reason": "the unit of analysis changes what a taxon is",
+      "type": "U",
+      "type_label": "uncertainty",
+      "citations": [
+        {
+          "key": "nearing2022",
+          "text": "Nearing JT, et al. Microbiome differential abundance methods produce different results across 38 datasets. Nat Commun 2022;13:342."
+        }
+      ]
+    },
+    {
+      "fork": "Prevalence filter",
+      "levels": "0%, 5%, 10%, 20%",
+      "reason": "no agreed threshold; it trades power against rare-taxon noise",
+      "type": "U",
+      "type_label": "uncertainty",
+      "citations": [
+        {
+          "key": "nearing2022",
+          "text": "Nearing JT, et al. Microbiome differential abundance methods produce different results across 38 datasets. Nat Commun 2022;13:342."
+        }
+      ]
+    },
+    {
+      "fork": "Transformation",
+      "levels": "raw, TSS, CLR, TMM",
+      "reason": "compositional and count-scale approaches remain in dispute",
+      "type": "U",
+      "type_label": "uncertainty",
+      "citations": [
+        {
+          "key": "gloor2017",
+          "text": "Gloor GB, et al. Microbiome datasets are compositional: and this is not optional. Front Microbiol 2017;8:2224."
+        },
+        {
+          "key": "weiss2017",
+          "text": "Weiss S, et al. Normalization and microbial differential abundance strategies depend upon data characteristics. Microbiome 2017;5:27."
+        }
+      ]
+    },
+    {
+      "fork": "Statistical test",
+      "levels": "Wilcoxon, Welch, linear, logistic; ANCOM-BC, ALDEx2, PyDESeq2 in Full mode",
+      "reason": "methods disagree substantially on the same data",
+      "type": "U",
+      "type_label": "uncertainty",
+      "citations": [
+        {
+          "key": "nearing2022",
+          "text": "Nearing JT, et al. Microbiome differential abundance methods produce different results across 38 datasets. Nat Commun 2022;13:342."
+        },
+        {
+          "key": "pelto2025",
+          "text": "Pelto J, et al. Elementary methods provide more replicable results in microbial differential abundance analysis. Brief Bioinform 2025;26:bbaf130."
+        }
+      ]
+    },
+    {
+      "fork": "FDR method",
+      "levels": "Benjamini-Hochberg; Benjamini-Yekutieli",
+      "reason": "BY is valid under any dependence, BH under positive dependence, which microbiome data may or may not satisfy",
+      "type": "U",
+      "type_label": "uncertainty",
+      "citations": [
+        {
+          "key": "benjamini1995",
+          "text": "Benjamini Y, Hochberg Y. Controlling the false discovery rate. J R Stat Soc B 1995;57:289-300."
+        },
+        {
+          "key": "benjamini2001",
+          "text": "Benjamini Y, Yekutieli D. The control of the false discovery rate in multiple testing under dependency. Ann Stat 2001;29:1165-1188."
+        }
+      ]
+    },
+    {
+      "fork": "FDR threshold",
+      "levels": "0.05; 0.10",
+      "reason": "the tolerated false discovery rate is a convention, not a fact",
+      "type": "U",
+      "type_label": "uncertainty",
+      "citations": [
+        {
+          "key": "benjamini1995",
+          "text": "Benjamini Y, Hochberg Y. Controlling the false discovery rate. J R Stat Soc B 1995;57:289-300."
+        }
+      ]
+    },
+    {
+      "fork": "Covariate adjustment",
+      "levels": "every subset of the chosen covariates (up to 64)",
+      "reason": "which confounders to adjust for changes microbiome associations",
+      "type": "U",
+      "type_label": "uncertainty",
+      "citations": [
+        {
+          "key": "tierney2022",
+          "text": "Tierney BT, et al. Systematically assessing microbiome-disease associations identifies drivers of inconsistency in metagenomic research. PLoS Biol 2022;20:e3001556."
+        }
+      ]
+    }
+  ],
+  "citations": {
+    "mcmurdie2014": "McMurdie PJ, Holmes S. Waste not, want not: why rarefying microbiome data is inadmissible. PLoS Comput Biol 2014;10:e1003531.",
+    "weiss2017": "Weiss S, et al. Normalization and microbial differential abundance strategies depend upon data characteristics. Microbiome 2017;5:27.",
+    "schloss2024": "Schloss PD. Rarefaction is currently the best approach to control for uneven sequencing effort in amplicon sequence analyses. mSphere 2024;9:e00354-23.",
+    "love2014": "Love MI, Huber W, Anders S. Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2. Genome Biol 2014;15:550.",
+    "fernandes2014": "Fernandes AD, et al. Unifying the analysis of high-throughput sequencing datasets: characterizing RNA-seq, 16S rRNA gene sequencing and selective growth experiments by compositional data analysis. Microbiome 2014;2:15.",
+    "lin2020": "Lin H, Peddada SD. Analysis of compositions of microbiomes with bias correction. Nat Commun 2020;11:3514.",
+    "robinson2010": "Robinson MD, Oshlack A. A scaling normalization method for differential expression analysis of RNA-seq data. Genome Biol 2010;11:R25.",
+    "gloor2017": "Gloor GB, et al. Microbiome datasets are compositional: and this is not optional. Front Microbiol 2017;8:2224.",
+    "nearing2022": "Nearing JT, et al. Microbiome differential abundance methods produce different results across 38 datasets. Nat Commun 2022;13:342.",
+    "pelto2025": "Pelto J, et al. Elementary methods provide more replicable results in microbial differential abundance analysis. Brief Bioinform 2025;26:bbaf130.",
+    "benjamini1995": "Benjamini Y, Hochberg Y. Controlling the false discovery rate. J R Stat Soc B 1995;57:289-300.",
+    "benjamini2001": "Benjamini Y, Yekutieli D. The control of the false discovery rate in multiple testing under dependency. Ann Stat 2001;29:1165-1188.",
+    "tierney2022": "Tierney BT, et al. Systematically assessing microbiome-disease associations identifies drivers of inconsistency in metagenomic research. PLoS Biol 2022;20:e3001556.",
+    "delgiudice2021": "Del Giudice M, Gangestad SW. A traveler's guide to the multiverse: promises, pitfalls, and a framework for the evaluation of analytic decisions. Adv Methods Pract Psychol Sci 2021;4(1)."
+  }
+}

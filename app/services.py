@@ -360,8 +360,17 @@ def taxon_options(summary, limit: int = TAXON_OPTION_LIMIT) -> list:
 
 def table_records(summary) -> list:
     frame: pd.DataFrame = summary.table
+    # v3 runs carry the tier under every weighting scheme and whether they agree
+    # (plan §26.2). A v2 run has neither, and its records are unchanged.
+    schemes = [c[len("tier_"):] for c in frame.columns if c.startswith("tier_")]
+    has_stability = "weight_stable" in frame.columns
     records = []
     for row in frame.itertuples():
+        extra = {}
+        if has_stability:
+            data = row._asdict()
+            extra = {"weight_stable": bool(row.weight_stable),
+                     "tiers": {scheme: data[f"tier_{scheme}"] for scheme in schemes}}
         records.append({
             "taxon_id": int(row.taxon_id),
             "label": row.label,
@@ -377,6 +386,7 @@ def table_records(summary) -> list:
             "iqr_low": _number(row.iqr_low, 4),
             "iqr_high": _number(row.iqr_high, 4),
             "direction": row.direction,
+            **extra,
         })
     return records
 

@@ -115,6 +115,15 @@ LICENSE = "MIT"
 #: (your-org/microverse), which 404s on GitHub — override it per deployment.
 REPOSITORY = os.environ.get(
     "MICROVERSE_REPO", "https://github.com/prince-raveled/STATA-Cluster")
+#: The revision documents under docs/ are linked at. docs/ is not deployed with the
+#: application, so a page links to the file in the repository; on Vercel the deployed
+#: commit is known, so the link shows exactly the text that shipped with the code.
+SOURCE_REF = os.environ.get("VERCEL_GIT_COMMIT_SHA", "") or "HEAD"
+
+
+def source_url(path: str) -> str:
+    """A repository file at the revision this deployment was built from."""
+    return f"{REPOSITORY}/blob/{SOURCE_REF}/{path.lstrip('/')}"
 
 MODE_LABELS = {
     "quick": "Quick",

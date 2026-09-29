@@ -138,4 +138,79 @@ def pseudocount_flip(median: np.ndarray, low: np.ndarray, high: np.ndarray) -> n
     return flipped & (reference != 0) & np.isfinite(median)
 
 
+def taxon_axes(run, summary, taxon_id: int) -> dict:
+    """What the taxon page shows beyond v2: the tier under each weighting, the
+    pseudocount sensitivity, and the spread of the signed z (plan §26.2, §26.4).
+
+    Weighted by the scheme the tiers use; a v2 summary gets the signed z unweighted and
+    nothing else, because it has no other scheme and no stored sensitivity.
+    """
+    from .effects import signed_z
+    from .weights import SCHEME_LABELS
+
+    rows = run.long[run.long["taxon"] == taxon_id]
+    table = summary.table[summary.table["taxon_id"] == taxon_id]
+    out: dict = {"weighted": bool(getattr(summary, "weighted", False)), "schemes": [],
+                 "pseudocount": None, "z": None, "within_matrix": None}
+    if rows.empty or table.empty:
+        return out
+    row = table.iloc[0]
+
+    if out["weighted"]:
+        primary = summary.scheme
+        for scheme in [primary] + [s for s in summary.composition if s != primary]:
+            if f"tier_{scheme}" not in table.columns:
+                continue
+            out["schemes"].append({
+                "scheme": scheme, "label": SCHEME_LABELS.get(scheme, scheme),
+                "primary": scheme == primary, "tier": str(row[f"tier_{scheme}"]),
+                "frac_significant": float(row.get(f"frac_significant_{scheme}", np.nan)),
+                "sign_consistency": float(row.get(f"sign_consistency_{scheme}", np.nan)),
+            })
+        if "median_effect_pc_low" in table.columns:
+            out["pseudocount"] = {
+                "pseudocount": float(getattr(run, "pseudocount", np.nan)),
+                "multipliers": list(PSEUDOCOUNT_MULTIPLIERS),
+                "low": float(row["median_effect_pc_low"]),
+                "reference": float(row["median_effect"]),
+                "high": float(row["median_effect_pc_high"]),
+                "sign_flip": bool(row["pseudocount_sign_flip"]),
+            }
+
+    z = signed_z(rows["p_raw"].to_numpy(dtype=float), rows["effect_n"].to_numpy(dtype=float))
+    spec_ids = rows["spec_id"].to_numpy()
+    if out["weighted"] and "weight" in summary.spec_summary.columns:
+        weights = summary.spec_summary.set_index("spec_id")["weight"].reindex(
+            spec_ids).to_numpy(dtype=float)
+    else:
+        weights = np.ones(z.size)
+    total = weights.sum()
+    low, median, high = weighted_quantiles(z, weights, np.zeros(z.size, dtype=int), 1)[0]
+    out["z"] = {
+        "n": int(z.size), "median": float(median), "iqr_low": float(low),
+        "iqr_high": float(high), "min": float(z.min()), "max": float(z.max()),
+        "share_positive": float(weights[z > 0].sum() / total) if total > 0 else np.nan,
+        "share_negative": float(weights[z < 0].sum() / total) if total > 0 else np.nan,
+    }
+
+    # Where several specifications share one preprocessed matrix — the covariate sets
+    # of covariate mode, the tests and FDR settings of every mode — the harmonised effect
+    # cannot differ between them; the signed z can. Shown only when it happens.
+    spec_matrix = getattr(run, "spec_matrix", None)
+    if spec_matrix is not None and any(s.covariates for s in run.specs):
+        frame = pd.DataFrame({"matrix": spec_matrix[spec_ids], "z": z,
+                              "effect": rows["effect_h"].to_numpy(dtype=float)})
+        spread = frame.groupby("matrix").agg(z=("z", "std"), effect=("effect", "std"),
+                                             n=("z", "size"))
+        spread = spread[spread["n"] > 1]
+        if len(spread):
+            out["within_matrix"] = {
+                "n_matrices": int(len(spread)),
+                "median_specs": float(spread["n"].median()),
+                "effect_sd": float(spread["effect"].median()),
+                "z_sd": float(spread["z"].median()),
+            }
+    return out
+
+
 BUILT_IN = SCHEMES

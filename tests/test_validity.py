@@ -28,7 +28,19 @@ def test_incompatible_transforms_are_pruned(method, transform):
 @pytest.mark.parametrize("method", ["wilcoxon", "ttest", "linear"])
 @pytest.mark.parametrize("transform", TRANSFORMS)
 def test_transform_agnostic_methods_accept_every_transform(method, transform):
-    assert is_valid(spec(method=method, transform=transform))
+    """SPEC §11 as written: these methods take any transform. That is the v2 rule set;
+    v3's R8 then removes one combination, tested below."""
+    assert is_valid(spec(method=method, transform=transform), ruleset="v2")
+
+
+@pytest.mark.parametrize("method", ["wilcoxon", "ttest", "linear"])
+@pytest.mark.parametrize("transform", TRANSFORMS)
+def test_v3_keeps_every_transform_except_unrarefied_raw(method, transform):
+    """R8 (plan §26.3) removes only raw counts without rarefaction."""
+    unrarefied = spec(method=method, transform=transform)
+    assert is_valid(unrarefied, ruleset="v3") == (transform != "raw")
+    rarefied = spec(method=method, transform=transform, rarefaction="1000", seed=1)
+    assert is_valid(rarefied, ruleset="v3") == (transform != "tmm")   # R5, both sets
 
 
 def test_incompatible_table_matches_the_spec():
@@ -87,8 +99,13 @@ def test_capabilities_prune_impossible_specifications():
     assert "not integers" in invalid_reason(spec(rarefaction="1000", seed=1), caps)
     assert "integer counts" in invalid_reason(spec(method="pydeseq2"), caps)
     assert "integer counts" in invalid_reason(spec(transform="tmm"), caps)
-    assert "cannot be collapsed to genus" in invalid_reason(spec(rank="genus"), caps)
-    assert is_valid(spec(), caps)
+    # TSS rather than this module's raw-count default: under the v3 rules R8 prunes an
+    # unrarefied raw-count Wilcoxon for its own reason before any capability is checked,
+    # and this test is about the capabilities.
+    assert "cannot be collapsed to genus" in invalid_reason(
+        spec(rank="genus", transform="tss"), caps)
+    assert is_valid(spec(transform="tss"), caps)
+    assert is_valid(spec(), caps, ruleset="v2")
 
 
 # --- grid counts ----------------------------------------------------------

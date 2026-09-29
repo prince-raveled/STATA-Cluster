@@ -25,7 +25,29 @@ def summary(run):
 
 
 def test_denominators_use_n_specs_tested_not_total(run, summary):
-    """§15: frac_significant and sign_consistency divide by n_specs_tested."""
+    """§15: frac_significant and sign_consistency divide by n_specs_tested.
+
+    A v3 run's shares are weighted (plan §26.2), so the denominator is the weight of the
+    specifications that tested the taxon, not a count; the one-vote share is kept as
+    frac_significant_unweighted and must still divide by n_specs_tested.
+    """
+    long = run.long
+    weights = summary.spec_summary.set_index("spec_id")["weight"]
+    for _, row in summary.table.sample(12, random_state=0).iterrows():
+        rows = long[long["taxon"] == row["taxon_id"]]
+        assert row["n_specs_tested"] == len(rows)
+        assert np.isclose(row["frac_significant_unweighted"], rows["significant"].mean())
+        w = weights.loc[rows["spec_id"]].to_numpy()
+        assert np.isclose(row["frac_significant"],
+                          (w * rows["significant"].to_numpy()).sum() / w.sum())
+        assert np.isclose(row["frac_nominal"],
+                          (w * (rows["p_raw"].to_numpy() < 0.05)).sum() / w.sum())
+
+
+def test_denominators_under_v2_rules_are_counts(dataset):
+    """The same §15 check on a v2 run, which counts one vote per specification."""
+    run = run_multiverse(dataset, mode="quick", ruleset="v2")
+    summary = compute_robustness(run)
     long = run.long
     for _, row in summary.table.sample(12, random_state=0).iterrows():
         rows = long[long["taxon"] == row["taxon_id"]]

@@ -20,8 +20,15 @@ import urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 
-MAIN_PYTHON = os.path.join(ROOT, ".venv", "Scripts", "python.exe")
-SKBIO_PYTHON = os.path.join(ROOT, ".venv310", "Scripts", "python.exe")
+def _venv_python(name: str) -> str:
+    """A virtualenv's interpreter: Scripts/python.exe on Windows, bin/python elsewhere."""
+    windows = os.path.join(ROOT, name, "Scripts", "python.exe")
+    posix = os.path.join(ROOT, name, "bin", "python")
+    return windows if os.path.exists(windows) or os.name == "nt" else posix
+
+
+MAIN_PYTHON = _venv_python(".venv")
+SKBIO_PYTHON = _venv_python(".venv310")
 
 
 #: The four cohorts the runner uses; the full 17 are in real_data_study.py.
@@ -222,6 +229,26 @@ CHECKS = [
                   "Rscript tests/reference/pelto_export.R "
                   "data/pelto/data_171023.rds data/pelto/export",
         "args": ["--max-cohorts", "6", "--repeats", "1"],
+    },
+    {
+        # v3 plan §33 V8. Only the full pre-registered design writes the record, so this
+        # smaller run checks the script end to end and writes under data/.
+        "name": "V8: weighted labels keep their predictive value (plan §33)",
+        "script": "weighting_validation.py",
+        "python": MAIN_PYTHON,
+        "requires": _pelto_exported,
+        "reason": "needs Pelto's curated cohorts: "
+                  "python tests/reference/pelto_fetch.py, then "
+                  "Rscript tests/reference/pelto_export.R "
+                  "data/pelto/data_171023.rds data/pelto/export",
+        "args": ["--max-cohorts", "4", "--repeats", "1"],
+    },
+    {
+        "name": "regenerate the defensibility register from the engine (plan §26.3)",
+        "script": "make_defensibility_register.py",
+        "python": MAIN_PYTHON,
+        "requires": lambda: True,
+        "reason": "",
     },
     {
         "name": "fork attribution is stable enough to report (SPEC §17)",

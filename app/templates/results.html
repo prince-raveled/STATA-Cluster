@@ -178,10 +178,20 @@
         against it.</p>
     </div>
 
+    {% if weighting %}
+      <p class="small" style="margin:-4px 0 var(--space-4);color:var(--ink-2)">
+        The two numbers are {{ dfn('weighting_scheme', 'weighted') }}: labels here use
+        <b>{{ weighting.scheme_label }}</b>, so the many rarefied variants of an analysis
+        do not outvote the one unrarefied version.
+        {% if weighting.n_weight_unstable %}{{ weighting.n_weight_unstable }}
+          {{ 'taxon changes' if weighting.n_weight_unstable == 1 else 'taxa change' }}
+          label under another weighting; the table marks them.{% endif %}
+        <a href="#grid-composition">Where the weight sits</a>.</p>
+    {% endif %}
     <div class="tier-cards">
       {% for name in TIER_ORDER %}
         {% set t = TIERS[name] %}
-        {% set ev = TIER_REPLICATION.get(name) %}
+        {% set ev = tier_rates.get(name) %}
         <article class="tier-card {{ t.class }}">
           <span class="tier {{ t.class }}" style="justify-self:start">{{ name }}</span>
           <span class="tier-card-count">{{ summary.tier_counts[name] }}</span>
@@ -189,30 +199,104 @@
           <span class="tier-card-rule">{{ t.blurb|capitalize }}.</span>
           <span class="tier-card-evidence">
             {% if ev %}<b>{{ ev.rate|percent(0) }}</b> replicated within the same study
-              ({{ ev.ci[0]|percent(0) }}–{{ ev.ci[1]|percent(0) }})
+              {% if ev.ci[0] == ev.ci[0] %}({{ ev.ci[0]|percent(0) }}–{{ ev.ci[1]|percent(0) }}){% endif %}
+            {% elif not labelling.measured and name not in ('INSUFFICIENT',) %}replication
+              not yet measured for these labels
             {% else %}no replication claim{% endif %}
           </span>
         </article>
       {% endfor %}
     </div>
 
+    {% if weighting %}
+    <div class="panel" id="grid-composition" style="margin-top:var(--space-5)" aria-labelledby="composition-title">
+      <div class="panel-head">
+        <h3 id="composition-title">Where the weight sits</h3>
+        <a class="small" href="{{ SOURCE_URL('docs/v3_weighting_note.md') }}">How the weights are defined</a>
+      </div>
+      <p class="small" style="margin:0 0 14px;color:var(--ink-2)">Rarefying has many
+        variants (depths and random draws) and not rarefying has one, so counting one vote
+        per analysis would put most of the weight behind rarefying. The labels on this page
+        use <b>{{ weighting.scheme_label }}</b>. The same run under the other schemes is
+        shown for comparison; a taxon whose label differs between them is marked
+        <span class="weight-flag">changes with weighting</span> in the table.</p>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Weight by scheme, scrollable">
+        <table class="data">
+          <thead><tr><th scope="col">Weighting</th>
+            <th scope="col" class="num">Weight on rarefied analyses</th>
+            <th scope="col" class="num">{{ dfn('effective_specifications', 'Effective analyses') }}</th>
+            <th scope="col" class="num">Taxa labelled differently</th></tr></thead>
+          <tbody>
+            {% for s in weighting.schemes %}
+              <tr>
+                <td>{{ s.label|capitalize }}{% if s.primary %} <span class="chip">labels on this page</span>{% endif %}</td>
+                <td class="num">{{ s.rarefied_share|percent(0) }}</td>
+                <td class="num">{{ s.n_effective|fixed(0) }} <span class="muted">of {{ s.n_specs|commafy }}</span></td>
+                <td class="num">{% if s.primary %}—{% else %}{{ s.taxa_labelled_differently|commafy }}{% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% set primary = weighting.schemes[0] %}
+      <details class="disclosure" style="margin-top:14px">
+        <summary>Weight by test, transformation and filter
+          <span class="summary-meta">{{ primary.label }}</span></summary>
+        <div class="disclosure-body">
+          <div class="grid-2">
+            {% for title, shares in [("Statistical test", primary.by_method), ("Transformation", primary.by_transform), ("Prevalence filter", primary.by_prevalence), ("Taxonomic rank", primary.by_rank)] %}
+              <div>
+                <h4 style="margin-bottom:6px">{{ title }}</h4>
+                <table class="data">
+                  <tbody>
+                    {% for level, share in shares.items() %}
+                      <tr><td>{{ METHOD_LABELS.get(level, level) if title == "Statistical test" else level }}</td><td class="num">{{ share|percent(1) }}</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% endfor %}
+          </div>
+          <p class="micro" style="margin-top:10px">The effective number of analyses is
+            Kish's (Σw)² / Σw²: it summarises how evenly the weight is spread. It is not a
+            count of independent analyses — under any weighting they are re-analyses of the
+            same samples.</p>
+        </div>
+      </details>
+    </div>
+    {% endif %}
+
     <details class="disclosure" style="margin-top:var(--space-4)">
+      {% if labelling.measured %}
       <summary>Why these labels mean something
         <span class="summary-meta"><span class="grade-chip grade-empirical">{{ GRADE_LABEL['empirical'] }}</span></span></summary>
       <div class="disclosure-body">
         <p>These are not conventions. The labels were tested against samples they had never seen:
-          {{ TIER_VALIDATION.n_splits }} discovery/validation splits of
-          {{ TIER_VALIDATION.n_cohorts }} published cohorts,
-          {{ TIER_VALIDATION.n_observations|commafy }} taxon observations. A taxon's label
+          {{ labelling.n_splits }} discovery/validation splits of
+          {{ labelling.n_cohorts }} published cohorts,
+          {{ labelling.n_observations|commafy }} taxon observations. A taxon's label
           was assigned on the discovery half; replication was scored on the held-out half
-          without reference to it. <b>AUC {{ TIER_VALIDATION.auc }}</b>, against
-          {{ TIER_VALIDATION.null_rate|percent(1) }} under permuted labels.
+          without reference to it. <b>AUC {{ labelling.auc|fixed(3) }}</b>{% if labelling.null_rate is not none %}, against
+          {{ labelling.null_rate|percent(1) }} under permuted labels{% endif %}.
           <a href="/validation">See the full validation matrix</a>.</p>
+        {% if labelling.ruleset == 'v2' %}
         <p style="margin-bottom:6px"><b>What this evidence does not establish</b></p>
         <ul class="limits-list">
           {% for caveat in TIER_CAVEATS %}<li>{{ caveat }}</li>{% endfor %}
         </ul>
+        {% endif %}
       </div>
+      {% else %}
+      <summary>Have these labels been tested?
+        <span class="summary-meta"><span class="grade-chip grade-internal">{{ GRADE_LABEL['internal'] }}</span></span></summary>
+      <div class="disclosure-body">
+        <p>{{ unmeasured }}</p>
+        <p>The rules that turn the two numbers into a label are unchanged; what changed is
+          how much each analysis counts. Tests prove the weights and labels are computed as
+          specified, which is not evidence that they predict anything. The test that would
+          show it is <a href="/validation#v8">V8 on the Evidence page</a>.</p>
+      </div>
+      {% endif %}
     </details>
   </section>
 
@@ -266,6 +350,15 @@
           further down holds <b>every</b> taxon: click its row to load its curve.
         {% endif %}</p>
 
+      {% if weighting %}
+      <fieldset class="axis-toggle" id="curve-axis">
+        <legend>Plot each analysis by</legend>
+        {% for key, label in curve_axes.items() %}
+          <label><input type="radio" name="curve-axis" value="{{ key }}" {% if loop.first %}checked{% endif %}>
+            {{ 'the common effect size (log2 fold change)' if key == 'effect' else 'its signed z (the test\'s own result)' }}</label>
+        {% endfor %}
+      </fieldset>
+      {% endif %}
       <div class="curve-summary" id="curve-summary" aria-live="polite"></div>
       <div class="plot-frame"><div id="curve" class="plot"></div></div>
       <ul class="plot-legend" aria-label="Legend">
@@ -309,6 +402,11 @@
               each method's own native statistic in the downloads. Treat the plotted effect as
               a common yardstick, not as a model coefficient you could quote from a regression
               table.</p>
+            {% if weighting %}
+            <p>The {{ dfn('signed_z') }} axis above is the alternative: each analysis's own
+              test result, signed by its own direction, so it does move when the
+              adjustment set changes.</p>
+            {% endif %}
           </details>
         {% endcall %}
       </div>
@@ -469,14 +567,18 @@
             <div class="disclosure-body">
               <div class="table-wrap" tabindex="0" role="region" aria-label="Reasons specifications were pruned, scrollable">
                 <table class="data">
-                  <thead><tr><th scope="col">Ruled out because</th><th scope="col" class="num">How many</th></tr></thead>
+                  <thead><tr><th scope="col">Rule</th><th scope="col">Ruled out because</th><th scope="col" class="num">How many</th></tr></thead>
                   <tbody>
                     {% for reason, count in grid.pruned_reasons.items() %}
-                      <tr><td>{{ reason }}</td><td class="num">{{ count|commafy }}</td></tr>
+                      <tr><td class="mono">{{ RULE_ID(reason) or "data" }}</td><td>{{ reason }}</td><td class="num">{{ count|commafy }}</td></tr>
                     {% endfor %}
                   </tbody>
                 </table>
               </div>
+              <p class="micro" style="margin-top:10px">Rule numbers refer to the
+                <a href="/about#register">defensibility register</a>, which gives each rule's
+                reason and sources.{% if summary.ruleset == 'v3' %} This run used rule set
+                v3, which adds R8 and R9 to v2's R1–R7.{% endif %}</p>
             </div>
           </details>
         {% endif %}
@@ -707,6 +809,19 @@
     const t = tiers[key] || { class: "" };
     return '<span class="tier ' + t.class + '">' + escapeHtml(key) + "</span>";
   }
+  /* A v3 run marks a taxon whose label depends on the weighting (v3 plan 26.2), and says
+     in words which scheme gives which label. */
+  const schemeNames = {{ (weighting.schemes if weighting else [])|map(attribute='label')|list|tojson }};
+  const schemeKeys = {{ (weighting.schemes if weighting else [])|map(attribute='scheme')|list|tojson }};
+  function labelCell(cell) {
+    const data = cell.getRow().getData();
+    let html = tierChip(cell.getValue());
+    if (data.weight_stable === false && data.tiers) {
+      const parts = schemeKeys.map(function (key, i) { return schemeNames[i] + ": " + data.tiers[key]; });
+      html += ' <span class="weight-flag" title="' + escapeHtml(parts.join("; ")) + '">changes with weighting</span>';
+    }
+    return html;
+  }
   /* Tabulator's own accessibility markup does not validate and cannot be turned off:
      it marks the outer element role="grid" although that element also holds the
      pagination controls, and it nests rowgroups. An invalid grid is announced worse
@@ -746,8 +861,8 @@
         formatter: (cell) => '<a class="taxon-link" href="/results/' + token
           + "/taxon/" + encodeURIComponent(cell.getRow().getData().taxon_id) + '">'
           + escapeHtml(cell.getValue()) + "</a>" },
-      { title: "Label", field: "tier", width: 150, headerFilter: "list",
-        headerFilterParams: { values: true }, formatter: (cell) => tierChip(cell.getValue()) },
+      { title: "Label", field: "tier", width: {{ 230 if weighting else 150 }}, headerFilter: "list",
+        headerFilterParams: { values: true }, formatter: labelCell },
       /* Reader-facing titles; `field` is untouched, so the CSV and the API keep the
          machine-readable names. `headerTooltip` carries the definition and the export
          column name. */
@@ -827,6 +942,7 @@
       rows.push({
         spec_id: data.spec_id[i], label: data.labels[i], p_raw: data.p_raw[i],
         p_adjusted: data.p_adjusted[i], effect: effect, significant: data.significant[i],
+        z: data.z ? data.z[i] : null,
         direction: effect > 0 ? "higher in " + data.group_b
           : effect < 0 ? "higher in " + data.group_a : "no difference"
       });
@@ -847,6 +963,8 @@
         { title: "p-value", field: "p_raw", width: 110, hozAlign: "right", cssClass: "num-cell", formatter: expo },
         { title: "Adjusted p", field: "p_adjusted", width: 120, hozAlign: "right", cssClass: "num-cell", formatter: expo },
         { title: "Effect (log2)", field: "effect", width: 120, hozAlign: "right", cssClass: "num-cell", formatter: fixed2 },
+        { title: "Signed z", field: "z", width: 100, hozAlign: "right", cssClass: "num-cell", formatter: fixed2,
+          headerTooltip: "sign(the test's own direction) × z of its p-value" },
         { title: "Direction", field: "direction", width: 170, formatter: (cell) => escapeHtml(cell.getValue()) },
         { title: "Significant", field: "significant", width: 118, headerFilter: "tickCross",
           headerFilterParams: { tristate: true },
@@ -878,10 +996,17 @@
   }
 
   /* ---------------- specification curve ---------------- */
+  /* The curve's y axis: the common effect (default) or the signed z (v3 runs only). */
+  function curveAxis() {
+    const checked = document.querySelector('input[name="curve-axis"]:checked');
+    return checked ? checked.value : "effect";
+  }
+  let currentTaxon = null;
   function loadCurve(taxonId) {
     const status = document.getElementById("curve-status");
     status.textContent = "Loading…";
-    fetch("/results/" + token + "/curve/" + taxonId)
+    currentTaxon = taxonId;
+    fetch("/results/" + token + "/curve/" + taxonId + "?axis=" + encodeURIComponent(curveAxis()))
       .then((response) => response.json())
       .then(function (data) {
         MicroVerseCurve.render("curve", data);
@@ -915,6 +1040,11 @@
   const taxonSelect = document.getElementById("taxon-select");
   taxonSelect.addEventListener("change", function (event) {
     loadCurve(parseInt(event.target.value, 10));
+  });
+  document.querySelectorAll('input[name="curve-axis"]').forEach(function (input) {
+    input.addEventListener("change", function () {
+      if (currentTaxon !== null) loadCurve(currentTaxon);
+    });
   });
 
   /* ---------------- taxon search ----------------

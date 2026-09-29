@@ -18,7 +18,9 @@ produced the number quoted, and the number quoted is the one that experiment pro
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
+from pathlib import Path
 
 INTERNAL = "internal"
 REFERENCE = "reference"
@@ -62,6 +64,11 @@ TIER_VALIDATION = {
     "risk_ratio_robust": 7.4,
     "null_rate": 0.007,
     "mode": "quick",
+    #: What the labels in that experiment were: the v2 engine's, one vote per
+    #: specification under the v2 pruning rules. A v3 run's decision-tree labels are a
+    #: different labelling, and these rates are not evidence about them (plan §33 V8).
+    "ruleset": "v2",
+    "scheme": "uniform",
 }
 
 #: Replication rate by tier, with a cluster bootstrap over cohorts. `share` is how often
@@ -192,20 +199,147 @@ TIER_CAVEATS = [
 ]
 
 
-def tier_evidence(tier: str) -> dict:
-    """Held-out replication evidence for one tier, or {} if it has none."""
-    return TIER_REPLICATION.get(tier, {})
+# ---------------------------------------------------------------------------
+# Replication by labelling — v3 plan §33, V8
+# ---------------------------------------------------------------------------
+#: The V8 record, written by tests/reference/weighting_validation.py (never by hand).
+#: docs/ is not deployed, so the script copies its record here as well, and
+#: tests/test_evidence.py fails if the two differ. Absent until V8 has been run.
+WEIGHTING_RECORD = Path(__file__).resolve().parent / "records" / "weighting_validation.json"
 
 
-def tier_sentence(tier: str) -> str:
-    """One line a researcher can read next to the tier itself."""
-    facts = TIER_REPLICATION.get(tier)
+def _load_weighting_record() -> dict:
+    try:
+        with open(WEIGHTING_RECORD, encoding="utf-8") as handle:
+            return json.load(handle)
+    except (OSError, ValueError):
+        return {}
+
+
+WEIGHTING_VALIDATION = _load_weighting_record()
+
+#: V8 as pre-registered in the v3 plan (§33). The script reads its margin from here, so
+#: the criterion the site states and the one the script tests cannot drift apart.
+V8_PREREGISTRATION = {
+    "question": "Does neutral weighting change the labels, and do they keep their "
+                "within-study predictive value?",
+    "data": "25 published cohorts curated by Pelto et al., 75 stratified 50/50 splits "
+            "(the design of the v2 label experiment)",
+    "metrics": "held-out replication AUC for each weighting; share of taxa whose label "
+               "changes; Kendall tau between weightings",
+    "margin": 0.03,
+    "success": "the decision-tree labels' AUC is non-inferior to one vote per "
+               "specification",
+    "if_it_fails": "reported as it falls; the decision tree stays the default, because it "
+                   "was chosen on principle and choosing the weighting with the best AUC "
+                   "would itself be an analytical choice",
+}
+
+
+def _by_tier(block: dict) -> dict:
+    """A V8 labelling's majority-definition rates in TIER_REPLICATION's shape."""
+    rows = block["definitions"]["replicated_majority"]["by_tier"]
+    total = sum(int(r["n_taxa"]) for r in rows) or 1
+    return {
+        r["tier"]: {"rate": float(r["replication_rate"]),
+                    "ci": (float(r["ci_low"]), float(r["ci_high"])),
+                    "n": int(r["n_taxa"]), "cohorts": int(r["n_cohorts"]),
+                    "share": int(r["n_taxa"]) / total}
+        for r in rows if r["tier"] != "INSUFFICIENT"
+    }
+
+
+def replication_by_labelling() -> dict:
+    """(rule set, scheme) -> {tier: facts}, for the labellings that were measured.
+
+    A label's replication rate belongs to the labelling it was measured on. v2's rates
+    (tier_validation.py) were measured with one vote per specification under the v2
+    rules; a decision-tree label is a different label, and quoting v2's rate beside it
+    would claim evidence nobody has collected. Only measured labellings appear here.
+    """
+    out = {(TIER_VALIDATION["ruleset"], TIER_VALIDATION["scheme"]): TIER_REPLICATION}
+    if WEIGHTING_VALIDATION.get("registered_design"):
+        for block in WEIGHTING_VALIDATION.get("labellings", {}).values():
+            key = (block["ruleset"], block["scheme"])
+            # v2's own record stays the source for v2; V8 reruns it only as a check.
+            out.setdefault(key, _by_tier(block))
+    return out
+
+
+REPLICATION_BY_LABELLING = replication_by_labelling()
+
+
+def labelling_of(summary) -> tuple:
+    """(rule set, scheme) a results summary's tiers were assigned under. A summary
+    stored before v3 carries neither, and is v2's."""
+    return (getattr(summary, "ruleset", "v2") or "v2",
+            getattr(summary, "scheme", "uniform") or "uniform")
+
+
+def labelling_measured(ruleset: str = "v2", scheme: str = "uniform") -> bool:
+    return (ruleset, scheme) in REPLICATION_BY_LABELLING
+
+
+def tier_rates(ruleset: str = "v2", scheme: str = "uniform") -> dict:
+    """{tier: facts} measured for this labelling, or {} when it has not been measured."""
+    return REPLICATION_BY_LABELLING.get((ruleset, scheme), {})
+
+
+def tier_evidence(tier: str, ruleset: str = "v2", scheme: str = "uniform") -> dict:
+    """Held-out replication evidence for one tier of one labelling, or {} if none."""
+    return tier_rates(ruleset, scheme).get(tier, {})
+
+
+def tier_sentence(tier: str, ruleset: str = "v2", scheme: str = "uniform") -> str:
+    """One line a researcher can read next to the tier itself — only about the
+    labelling it was measured on."""
+    facts = tier_evidence(tier, ruleset, scheme)
     if not facts:
         return ""
     low, high = facts["ci"]
-    return (f"On held-out samples of the same study, across {TIER_VALIDATION['n_cohorts']} "
+    interval = (f"95% CI {low:.0%}–{high:.0%}, " if low == low and high == high else "")
+    n_cohorts = (TIER_VALIDATION["n_cohorts"] if (ruleset, scheme) == ("v2", "uniform")
+                 else WEIGHTING_VALIDATION.get("n_cohorts"))
+    return (f"On held-out samples of the same study, across {n_cohorts} "
             f"published cohorts, {facts['rate']:.0%} of {tier} taxa replicated "
-            f"(95% CI {low:.0%}–{high:.0%}, n = {facts['n']}).")
+            f"({interval}n = {facts['n']}).")
+
+
+def labelling_summary(ruleset: str = "v2", scheme: str = "uniform") -> dict:
+    """The held-out headline for one labelling, from the record that measured it.
+
+    {"measured": False} when nothing has; the page then says so instead of borrowing
+    another labelling's numbers.
+    """
+    if (ruleset, scheme) == (TIER_VALIDATION["ruleset"], TIER_VALIDATION["scheme"]):
+        return {"measured": True, "experiment": "tier validation (v2)",
+                "record": TIER_VALIDATION["record"],
+                "auc": TIER_VALIDATION["auc"], "null_rate": TIER_VALIDATION["null_rate"],
+                "n_cohorts": TIER_VALIDATION["n_cohorts"],
+                "n_splits": TIER_VALIDATION["n_splits"],
+                "n_observations": TIER_VALIDATION["n_observations"]}
+    if (ruleset, scheme) in REPLICATION_BY_LABELLING:
+        block = next(b for b in WEIGHTING_VALIDATION["labellings"].values()
+                     if (b["ruleset"], b["scheme"]) == (ruleset, scheme))
+        definition = block["definitions"]["replicated_majority"]
+        return {"measured": True, "experiment": "V8",
+                "record": "docs/weighting_validation.json",
+                "auc": definition["discrimination"].get("auc"),
+                "null_rate": definition.get("null_rate"),
+                "n_cohorts": WEIGHTING_VALIDATION["n_cohorts"],
+                "n_splits": WEIGHTING_VALIDATION["n_splits"],
+                "n_observations": WEIGHTING_VALIDATION["n_observations"]}
+    return {"measured": False, "experiment": "V8", "record": None}
+
+
+def unmeasured_sentence(ruleset: str, scheme: str) -> str:
+    """What to say beside a tier whose labelling has no replication measurement."""
+    from .weights import SCHEME_LABELS
+    return (f"No replication rate has been measured for labels assigned this way "
+            f"({SCHEME_LABELS.get(scheme, scheme)}, rule set {ruleset}). The held-out "
+            f"test for them (V8) is pre-registered and has not been run yet; the rates "
+            f"on the Evidence page were measured for v2's labels, one vote per "
+            f"specification, and are not evidence about these.")
 
 
 # ---------------------------------------------------------------------------
@@ -283,10 +417,13 @@ VALIDATION_MATRIX = [
         note="The strongest evidence in the system, and bounded: the labels predict "
              "replication in more samples from the same study, not in another "
              "population. Ordering survives dropping any single cohort; the ROBUST "
-             "rate itself rests on 5 cohorts.",
+             "rate itself rests on 5 cohorts. Measured for the labels v2 assigns: one "
+             "vote per specification, v2's pruning rules. v3's decision-tree labels "
+             "are the next row.",
         sources=["tests/reference/tier_validation.py", "docs/tier_validation.json",
                  "tests/reference/published_findings_study.py"],
     ),
+    "WEIGHTED_TIERS",
     Component(
         name="Reproducing a published analysis",
         grade=REFERENCE,
@@ -373,6 +510,54 @@ VALIDATION_MATRIX = [
                  "tests/reference/make_format_fixtures.py"],
     ),
 ]
+
+
+def _weighted_tiers() -> Component:
+    """The decision-tree labels (plan §26), graded by whether V8 has been run.
+
+    Every number in the held-out cell is formatted from the V8 record; nothing here is
+    typed. Until the record exists the row says the test has not been run.
+    """
+    record = WEIGHTING_VALIDATION
+    internal = ("tests/test_v3_weighting.py: weights match a hand-computed tree, sum to "
+                "1 over the valid children of every node, give seeds equal shares, and "
+                "reproduce v2 byte for byte under one vote each.")
+    sources = ["app/core/weights.py", "tests/test_v3_weighting.py",
+               "tests/reference/weighting_validation.py"]
+    if not record.get("registered_design"):
+        return Component(
+            name="Weighted tiers (v3 decision tree)", grade=INTERNAL, internal=internal,
+            note="The labels v3 runs report by default. Their held-out test, V8, is "
+                 "pre-registered in the v3 plan and has not been run, so no replication "
+                 "rate is shown beside them anywhere on this site.",
+            sources=sources)
+    labellings = record["labellings"]
+
+    def auc_of(label):
+        return labellings[label]["definitions"]["replicated_majority"][
+            "discrimination"].get("auc", float("nan"))
+    result = record["non_inferiority"]["replicated_majority"]
+    changed = record["label_changes"]["from_v3_uniform"]["v3_decision_tree"]
+    verdict = ("non-inferior" if result["non_inferior"]
+               else "non-inferiority not shown")
+    return Component(
+        name="Weighted tiers (v3 decision tree)", grade=EMPIRICAL, internal=internal,
+        empirical=(
+            f"V8, pre-registered: {record['n_cohorts']} cohorts, {record['n_splits']} "
+            f"splits, {record['n_observations']:,} taxon observations. AUC "
+            f"{auc_of('v3_decision_tree'):.3f} with decision-tree weights against "
+            f"{auc_of('v3_uniform'):.3f} with one vote each; difference "
+            f"{result['difference']:+.3f} (95% CI {result['ci'][0]:+.3f} to "
+            f"{result['ci'][1]:+.3f}), margin {result['margin']:+.2f}: {verdict}. "
+            f"Weighting changed the label of {changed['share_changed']:.1%} of "
+            f"observations."),
+        note="Within a study only, like the v2 result above. The default weighting was "
+             "chosen on principle before V8 and stays whatever V8 found.",
+        sources=[*sources, "docs/weighting_validation.json"])
+
+
+VALIDATION_MATRIX = [_weighted_tiers() if c == "WEIGHTED_TIERS" else c
+                     for c in VALIDATION_MATRIX]
 
 
 def matrix_rows() -> list:

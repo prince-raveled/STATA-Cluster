@@ -56,6 +56,85 @@
     </div>
   </dl>
 
+  {% if axes.weighted %}
+  <!-- ============ v3: weighting, pseudocount, signed z ============ -->
+  {% set stable = row.weight_stable %}
+  <section class="result-section" aria-labelledby="weighting-title">
+    <div class="section-head">
+      {{ section_label('How the label depends on counting', '26', 'purple') }}
+      <h2 id="weighting-title">{% if stable %}The same label however the analyses are weighted.{% else %}The label changes with the weighting.{% endif %}</h2>
+      <p>The label above uses {{ dfn('weighting_scheme', weighting.scheme_label) }}. Here
+        is the same taxon with each analysis counted differently. The thresholds are the
+        same in every row; only how much each analysis counts changes.</p>
+    </div>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Label under each weighting, scrollable">
+      <table class="data">
+        <thead><tr><th scope="col">Weighting</th><th scope="col">Label</th>
+          <th scope="col" class="num">Significant</th>
+          <th scope="col" class="num">Direction agreement</th></tr></thead>
+        <tbody>
+          {% for s in axes.schemes %}
+            <tr>
+              <td>{{ s.label|capitalize }}{% if s.primary %} <span class="chip">used above</span>{% endif %}</td>
+              <td><span class="tier {{ TIERS[s.tier].class }}">{{ s.tier }}</span></td>
+              <td class="num">{{ s.frac_significant|percent(0) }}</td>
+              <td class="num">{{ s.sign_consistency|percent(0) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid-2" style="margin-top:var(--space-4)">
+      {% if axes.pseudocount %}
+        {% set pc = axes.pseudocount %}
+        <div class="panel">
+          <h3>Does the pseudocount move it?</h3>
+          <p class="small" style="margin:8px 0 12px;color:var(--ink-2)">The common effect
+            size adds one small constant to every mean so that a zero does not become
+            −∞. Recomputed at a tenth and ten times that constant:</p>
+          <dl class="evidence-strip" style="grid-template-columns:repeat(3, minmax(0, 1fr))">
+            <div><dt>× {{ pc.multipliers[0]|fixed(1) }}</dt><dd class="num">{{ pc.low|signed(2) }}</dd></div>
+            <div><dt>as run</dt><dd class="num">{{ pc.reference|signed(2) }}</dd></div>
+            <div><dt>× {{ pc.multipliers[1]|fixed(0) }}</dt><dd class="num">{{ pc.high|signed(2) }}</dd></div>
+          </dl>
+          <p class="small" style="margin-top:10px">{% if pc.sign_flip %}<span class="weight-flag">direction depends on the pseudocount</span>
+            The typical effect changes direction at one of these settings, so its sign is
+            not a property of the data alone.{% else %}The typical effect keeps its direction
+            at both settings.{% endif %}</p>
+        </div>
+      {% endif %}
+      {% if axes.z %}
+        {% set z = axes.z %}
+        <div class="panel">
+          <h3>The tests' own verdicts</h3>
+          <p class="small" style="margin:8px 0 12px;color:var(--ink-2)">The
+            {{ dfn('signed_z') }} of each of the {{ z.n|commafy }} analyses, weighted as
+            above: {{ z.share_positive|percent(0) }} point to higher in {{ run.group_labels[1] }},
+            {{ z.share_negative|percent(0) }} to higher in {{ run.group_labels[0] }}{% set zero = 1 - z.share_positive - z.share_negative %}{% if zero > 0.005 %},
+            and {{ zero|percent(0) }} are exactly zero (a p-value of 1, or a test that found
+            no direction at all){% endif %}.</p>
+          <dl class="evidence-strip" style="grid-template-columns:repeat(3, minmax(0, 1fr))">
+            <div><dt>Typical</dt><dd class="num">{{ z.median|signed(2) }}</dd></div>
+            <div><dt>Middle half</dt><dd class="num">{{ z.iqr_low|signed(1) }} to {{ z.iqr_high|signed(1) }}</dd></div>
+            <div><dt>Full range</dt><dd class="num">{{ z.min|signed(1) }} to {{ z.max|signed(1) }}</dd></div>
+          </dl>
+          {% if axes.within_matrix %}
+            {% set wm = axes.within_matrix %}
+            <p class="small" style="margin-top:10px">Analyses that share one preprocessed
+              table differ only in the test, the covariates adjusted for and the FDR
+              setting. Across them (a median of {{ wm.median_specs|fixed(0) }} per table,
+              {{ wm.n_matrices|commafy }} tables) the common effect size has a standard
+              deviation of {{ wm.effect_sd|fixed(2) }} and the signed z
+              {{ wm.z_sd|fixed(2) }}: whatever the adjustment changed shows up here, not on
+              the effect axis.</p>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
   <!-- ============ why did it change ============ -->
   <section class="result-section" aria-labelledby="influence-title">
     <div class="section-head">
@@ -155,6 +234,13 @@
         significance, over a panel showing which choice was active in each.</p>
     </div>
     <div class="panel">
+      {% if axes.weighted %}
+      <fieldset class="axis-toggle">
+        <legend>Plot each analysis by</legend>
+        <label><input type="radio" name="curve-axis" value="effect" checked> the common effect size (log2 fold change)</label>
+        <label><input type="radio" name="curve-axis" value="z"> its signed z (the test's own result)</label>
+      </fieldset>
+      {% endif %}
       <div class="plot-frame"><div id="curve" class="plot" data-taxon="{{ evidence.taxon_id }}"></div></div>
       <ul class="plot-legend" aria-label="Legend">
         <li><i class="sw-sig" aria-hidden="true"></i>significant after correction</li>
@@ -253,10 +339,12 @@
           across 32 adjustment sets is exactly zero). Adjustment does matter here — it
           shows up in whether the taxon is called significant, not in this number. Do not
           quote it as a regression coefficient.</li>
-        {% if row.robustness_tier in TIER_REPLICATION %}
-          <li>{{ row.robustness_tier|tier_sentence }} That is a within-study rate measured
+        {% if tier_note and tier_note_measured %}
+          <li>{{ tier_note }} That is a within-study rate measured
             on other people's cohorts, not a prediction about this taxon in your data; across
             independent studies, the labels did not predict replication.</li>
+        {% elif tier_note %}
+          <li>{{ tier_note }}</li>
         {% endif %}
       </ul>
     {% endcall %}
@@ -294,13 +382,21 @@
   (function () {
     var node = document.getElementById("curve");
     if (!node || !window.MicroVerseCurve) { return; }
-    fetch("/results/{{ token }}/curve/{{ evidence.taxon_id }}")
-      .then(function (r) { return r.json(); })
-      .then(function (data) { MicroVerseCurve.render("curve", data); })
-      .catch(function () {
-        node.innerHTML = "<p class='plot-empty'>The plot could not be loaded. "
-          + "Every value behind it is in the results export.</p>";
-      });
+    function load() {
+      var checked = document.querySelector('input[name="curve-axis"]:checked');
+      var axis = checked ? checked.value : "effect";
+      fetch("/results/{{ token }}/curve/{{ evidence.taxon_id }}?axis=" + encodeURIComponent(axis))
+        .then(function (r) { return r.json(); })
+        .then(function (data) { MicroVerseCurve.render("curve", data); })
+        .catch(function () {
+          node.innerHTML = "<p class='plot-empty'>The plot could not be loaded. "
+            + "Every value behind it is in the results export.</p>";
+        });
+    }
+    document.querySelectorAll('input[name="curve-axis"]').forEach(function (input) {
+      input.addEventListener("change", load);
+    });
+    load();
   })();
 </script>
 {% endblock %}

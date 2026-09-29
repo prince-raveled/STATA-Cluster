@@ -9,11 +9,14 @@ from fastapi import APIRouter, BackgroundTasks, File, Form, Query, Request, Uplo
 from fastapi.responses import JSONResponse
 
 from .. import config, db, jobs, services
+from ..core.evidence import labelling_of, labelling_summary, tier_rates
 from ..core.methods import available_methods
 from ..core.parsers import SUPPORTED_FORMATS
-from ..core.report import run_manifest, specification_curve
+from ..core.report import CURVE_AXES, run_manifest, specification_curve, weighting_summary
 from ..core.robustness import locate_declared, verdict_sentence
 from ..core.validation import DatasetError
+from ..core.validity import DEFAULT_RULESET, defensibility_register
+from ..core.weights import DEFAULT_SCHEME, SCHEME_LABELS, SCHEMES
 from ..limits import enforce_rate_limit, run_queue
 
 router = APIRouter(prefix="/api", tags=["multiverse"])
@@ -62,6 +65,12 @@ def info():
             "6_fdr": ["bh@0.05", "bh@0.10", "by@0.05"],
             "7_covariates": "covariate mode only",
         },
+        # v3 plan §26: the rules that prune the grid and how the survivors are weighted.
+        "rulesets": defensibility_register()["rulesets"],
+        "default_ruleset": DEFAULT_RULESET,
+        "weighting_schemes": {name: SCHEME_LABELS[name] for name in SCHEMES},
+        "default_weighting": DEFAULT_SCHEME,
+        "curve_axes": dict(CURVE_AXES),
         "policy": {
             "best_specification_export": "never — see SPEC §18",
             "two_group_only": True,
@@ -144,10 +153,21 @@ def job_results(
         table = table[table["robustness_tier"] == tier.upper()]
     # to_dict hands NaN straight through, and this is rendered as JSON.
     records = services.json_safe(table.head(limit).to_dict(orient="records"))
+    ruleset, scheme = labelling_of(summary)
     return {
         "token": token,
         "verdict": verdict_sentence(run, summary),
         "manifest": run_manifest(run, summary, attribution),
+        # The labelling the tiers were assigned under, what has been measured about it,
+        # and — for a v3 run — where the weight sits under every scheme.
+        "labelling": services.json_safe({
+            "ruleset": ruleset, "scheme": scheme,
+            **labelling_summary(ruleset, scheme),
+            "tier_replication": {tier: {"rate": f["rate"], "ci": list(f["ci"]),
+                                        "n": f["n"]}
+                                 for tier, f in tier_rates(ruleset, scheme).items()},
+        }),
+        "weighting": services.json_safe(weighting_summary(summary)),
         "n_taxa_returned": len(records),
         "n_taxa_total": len(summary.table),
         "taxa": records,
@@ -155,7 +175,13 @@ def job_results(
 
 
 @router.get("/jobs/{token}/curve/{taxon_id}", summary="Specification curve for one taxon")
-def job_curve(token: str, taxon_id: int):
+def job_curve(token: str, taxon_id: int,
+              axis: str = Query("effect", description="effect (harmonised log2 fold "
+                                                      "change) or z (signed z)")):
+    if axis not in CURVE_AXES:
+        return JSONResponse(status_code=422, content={
+            "error": f"Unknown axis '{axis}'.",
+            "hint": "Available: " + ", ".join(CURVE_AXES) + "."})
     job, run, _, _ = services.load_results(token)
     if run is None:
         return _not_ready(job)
@@ -165,7 +191,7 @@ def job_curve(token: str, taxon_id: int):
             "hint": f"This run has {len(run.taxa_names)} taxa, numbered 0 to "
                     f"{len(run.taxa_names) - 1}.",
         })
-    return specification_curve(run, taxon_id)
+    return specification_curve(run, taxon_id, axis=axis)
 
 
 @router.get("/jobs/{token}/locate/{taxon_id}", summary="Where the declared pipeline sits")
