@@ -136,3 +136,25 @@ def test_a_calibrated_job_shows_its_extra_stage():
     plain = type("Job", (), {"status": "running", "mode": "quick",
                              "message": "Saving results", "progress": 0.99})()
     assert "calibrate" not in [s["key"] for s in ui.run_stages(plain)]
+
+
+def test_certified_robust_is_described_by_what_v9_has_shown(client, calibrated):
+    """Until V9 has run, every place that presents CERTIFIED ROBUST says it has not been
+    validated on real data; afterwards, what V9 found."""
+    import re
+
+    from app.core.evidence import certified_status
+    sentence = certified_status()["sentence"]
+
+    def text(html):
+        html = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", html, flags=re.S | re.I)
+        return " ".join(re.sub(r"<[^>]+>", " ", html).split()).replace("&#39;", "'")
+
+    _, _, summary, _ = services.load_results(calibrated)
+    taxon = int(summary.table["taxon_id"].iloc[0])
+    for path in (f"/results/{calibrated}", f"/results/{calibrated}/taxon/{taxon}",
+                 f"/configure/{calibrated}", "/about"):
+        assert sentence in text(client.get(path).text), path
+    assert sentence in client.get(f"/download/{calibrated}/methods").text
+    manifest = client.get(f"/download/{calibrated}/manifest").json()
+    assert manifest["calibration"]["validation"]["sentence"] == sentence

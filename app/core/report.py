@@ -295,7 +295,9 @@ def _v3_weighting_sentence(summary) -> str:
 
 
 def _calibration_sentences(calibration) -> str:
-    """The error-control guarantee and its assumptions, in plain sentences (§27.5)."""
+    """The error-control guarantee and its assumptions, in plain sentences (§27.5),
+    and what V9 has (or has not yet) established about them."""
+    from .evidence import certified_status
     procedure = {"bh": "Benjamini-Hochberg", "by": "Benjamini-Yekutieli",
                  "ebh": "e-BH"}[calibration.discovery]
     return (
@@ -315,7 +317,7 @@ def _calibration_sentences(calibration) -> str:
         f"taxon if samples are exchangeable between the groups under the null "
         f"hypothesis, and relies on subset pivotality within each taxon's family, which "
         f"strong compositional shifts in other taxa can violate; covariate adjustment "
-        f"was not calibrated."
+        f"was not calibrated. " + certified_status()["sentence"]
     )
 
 
@@ -751,6 +753,7 @@ def calibration_manifest(calibration) -> dict:
     """What a calibrated run did, enough to repeat it (plan §27.3): the permutations
     (count, seed and a hash of the label matrix), the procedures, the counts and the
     assumptions its guarantee rests on."""
+    from .evidence import certified_status
     from .inference import ASSUMPTIONS, CERTIFIED_CR, CERTIFIED_SIGN, TAIL_P_FLOOR
     return _jsonable({
         "plan": "docs/MICROVERSE_V3_PLAN.md section 27",
@@ -777,7 +780,7 @@ def calibration_manifest(calibration) -> dict:
         "specs_excluded": calibration.specs_excluded,
         "timings": calibration.timings,
         "assumptions": list(ASSUMPTIONS),
-        "validation": "V9 (plan section 33) has not been run",
+        "validation": certified_status(),
     })
 
 

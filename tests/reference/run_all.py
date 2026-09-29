@@ -110,6 +110,12 @@ def _pelto_exported() -> bool:
     return os.path.exists(os.path.join(ROOT, "data", "pelto", "export", "index.csv"))
 
 
+def _v9_data() -> bool:
+    """V9 needs both collections: Pelto's export and Nearing's cached archive."""
+    return _pelto_exported() and os.path.exists(
+        os.path.join(ROOT, "data", "nearing", "DA_COMPARE_DATA_21_03_08.tar.gz"))
+
+
 def _tierney_exported() -> bool:
     return os.path.exists(os.path.join(ROOT, "data", "cmd", "export", "index.csv"))
 
@@ -260,6 +266,19 @@ CHECKS = [
         "requires": lambda: True,
         "reason": "",
         "args": ["--threads", "2"],
+    },
+    {
+        # v3 plan §33 V9. Only the full registered design writes the record; this
+        # smaller run checks the script end to end and writes under data/.
+        "name": "V9: calibrated inference controls error on real data (plan §33)",
+        "script": "v9_calibration.py",
+        "python": MAIN_PYTHON,
+        "requires": _v9_data,
+        "reason": "needs Pelto's curated cohorts (pelto_fetch.py, then pelto_export.R) "
+                  "and Nearing et al.'s archive in data/nearing/ (nearing_study.py "
+                  "fetches it)",
+        "args": ["--max-datasets", "4", "--splits-a", "1", "--replicates-b", "1",
+                 "--replicates-c", "2"],
     },
     {
         "name": "regenerate the defensibility register from the engine (plan §26.3)",

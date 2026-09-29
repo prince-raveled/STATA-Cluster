@@ -202,6 +202,61 @@
     </div>
   </section>
 
+  <section class="section-sm" aria-labelledby="v9-title">
+    <div class="panel" id="v9">
+      <p class="eyebrow eyebrow-purple">Pre-registered · V9</p>
+      <h2 id="v9-title" style="font-size:22px">Does calibrated inference control error on real data?</h2>
+      <p class="small" style="margin:10px 0 12px;color:var(--ink-2)">{{ V9.question }}
+        Metrics: {{ V9.metrics }}.</p>
+      <ul class="limits-list small">
+        {% for key, text in V9.parts.items() %}<li><b>({{ key }})</b> {{ text|capitalize }}. Success: {{ V9.success[key] }}.</li>{% endfor %}
+        <li>If it fails: {{ V9.if_it_fails }}.</li>
+      </ul>
+      {% if V9_RECORD %}
+        <div class="table-wrap" tabindex="0" role="region" aria-label="V9 results, scrollable" style="margin-top:var(--space-4)">
+          <table class="data">
+            <thead><tr><th scope="col">Criterion</th><th scope="col" class="num">Value</th>
+              <th scope="col" class="num">Threshold</th><th scope="col">Met</th></tr></thead>
+            <tbody>
+              {% for c in V9_RECORD.verdict.criteria %}
+                <tr><td>{{ c.name }}</td><td class="num">{{ '%.4g'|format(c.value) }}</td>
+                  <td class="num">{{ c.threshold }}</td><td><b>{{ 'yes' if c.passed else 'no' }}</b></td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if V9_RECORD.parts.b %}
+        <div class="table-wrap" tabindex="0" role="region" aria-label="V9 spiked templates, scrollable" style="margin-top:var(--space-4)">
+          <table class="data">
+            <thead><tr><th scope="col">Spiked real templates</th><th scope="col" class="num">FDR</th>
+              <th scope="col" class="num">Within-family FWER</th><th scope="col" class="num">Power</th>
+              <th scope="col" class="num">CERTIFIED ROBUST precision</th></tr></thead>
+            <tbody>
+              {% for name, b in V9_RECORD.parts.b.scenarios.items() %}
+                <tr><td>{{ name|replace('_', ' ') }}</td><td class="num">{{ '%.3f'|format(b.fdr) }}</td>
+                  <td class="num">{{ '%.3f'|format(b.within_family_fwer) }}</td>
+                  <td class="num">{{ '%.2f'|format(b.power) if b.power is not none else '—' }}</td>
+                  <td class="num">{{ '%.2f'|format(b.certified_precision) if b.certified_precision is not none else '—' }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+        <p class="small" style="margin-top:12px;color:var(--ink-2)">{{ CERTIFIED_STATUS.sentence }}
+          Code at commit <code>{{ (V9_RECORD.code_commit.sha or '')[:12] }}</code>; record
+          <code>docs/v9_calibration.json</code>.</p>
+      {% else %}
+        {% call callout('amber', 'Not yet run') %}
+          <p>{{ CERTIFIED_STATUS.sentence }} Until this experiment is run and published
+            here, whichever way it falls, every page describes CERTIFIED ROBUST as not yet
+            validated on real data. The script is
+            <code>tests/reference/v9_calibration.py</code>; its record will be
+            <code>docs/v9_calibration.json</code>.</p>
+        {% endcall %}
+      {% endif %}
+    </div>
+  </section>
+
   {% set ps = PUBLISHED_STUDY %}
   {% set xs = CROSS_STUDY %}
   <section class="section-sm">

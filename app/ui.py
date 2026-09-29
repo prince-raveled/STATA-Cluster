@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 
+from .core.evidence import certified_status
 from .core.glossary import term as core_term
 
 # --------------------------------------------------------------------------
@@ -395,8 +396,8 @@ MODE_SUMMARIES = {
     "calibrated": "Quick, then every analysis repeated with the two groups shuffled, "
                   "to attach an error rate: which taxa differ under at least one "
                   "pipeline with the false discovery rate controlled across taxa, and "
-                  "which are CERTIFIED ROBUST. Slower; not yet validated on published "
-                  "data.",
+                  "which are CERTIFIED ROBUST. Slower; "
+                  + certified_status()["short"] + ".",
 }
 
 TRANSFORM_NAMES = {"tss": "TSS", "clr": "CLR", "raw": "raw counts", "tmm": "TMM"}

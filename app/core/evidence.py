@@ -236,6 +236,92 @@ V8_PREREGISTRATION = {
 }
 
 
+# ---------------------------------------------------------------------------
+# V9 — does calibrated inference control error on real data? (v3 plan §33)
+# ---------------------------------------------------------------------------
+#: V9 as pre-registered in the v3 plan. tests/reference/v9_calibration.py reads its
+#: thresholds from here, so the criteria the site states and the ones the script
+#: applies cannot differ.
+V9_PREREGISTRATION = {
+    "question": "Does calibrated multiverse inference control error on real data, and "
+                "with what power?",
+    "parts": {
+        "a": "implementation check: mock comparisons between random halves of the "
+             "control samples of the Pelto et al. and Nearing et al. datasets, where "
+             "there is no difference by construction",
+        "b": "spiked real templates: effects planted on known taxa in the same control "
+             "samples, with and without large shifts in the dominant taxa, so the "
+             "remaining taxa carry compositional side-effects",
+        "c": "simulations over sample size, sparsity and effect size",
+    },
+    "metrics": "false discovery rate among non-planted taxa; within-family familywise "
+               "error of the per-taxon test; power; precision of CERTIFIED ROBUST",
+    "q": 0.05,
+    "fdr_margin": 0.01,
+    "uniformity_ks_alpha": 0.01,
+    "family_alpha": 0.05,
+    "success": {
+        "a": "family p-values uniform: Kolmogorov-Smirnov p above 0.01",
+        "b": "false discovery rate at most q + 0.01 without dominant-taxon shifts; "
+             "with them, reported whatever it is",
+        "c": "false discovery rate at most q + 0.01",
+    },
+    "if_it_fails": "the failure mode is documented and the claims are restricted to "
+                   "the settings that pass",
+}
+
+#: The V9 record, written by tests/reference/v9_calibration.py (never by hand) to
+#: docs/ and copied here because docs/ is not deployed. Absent until V9 has been run.
+V9_RECORD_PATH = Path(__file__).resolve().parent / "records" / "v9_calibration.json"
+
+
+def _load_v9_record() -> dict:
+    try:
+        with open(V9_RECORD_PATH, encoding="utf-8") as handle:
+            record = json.load(handle)
+    except (OSError, ValueError):
+        return {}
+    # Only the full pre-registered design is evidence; anything else is not shown.
+    return record if record.get("registered_design") else {}
+
+
+V9_RECORD = _load_v9_record()
+
+
+def certified_status(record: dict | None = None) -> dict:
+    """How CERTIFIED ROBUST may be described, from what V9 has measured.
+
+    Until the V9 record exists the label is described everywhere as computed as
+    specified but not validated on real data. Afterwards the sentence reports what V9
+    found, pass or fail, and the settings the claims are restricted to.
+    """
+    record = V9_RECORD if record is None else record
+    if not record:
+        return {
+            "validated": False,
+            "short": "not yet validated on real data",
+            "sentence": "CERTIFIED ROBUST has not yet been validated on real data: its "
+                        "pre-registered test, V9, has not been run. Tests show the "
+                        "calibration is computed as specified, which is not evidence "
+                        "that it controls error in practice.",
+        }
+    criteria = record.get("verdict", {}).get("criteria", [])
+    failed = [c["name"] for c in criteria if not c.get("passed")]
+    restricted = record.get("verdict", {}).get("restricted_to") or []
+    if failed:
+        sentence = ("V9, the pre-registered test on real data, has been run, and "
+                    f"{len(failed)} of its {len(criteria)} criteria were not met ("
+                    + "; ".join(failed) + "). ")
+        sentence += ("Claims are restricted to: " + "; ".join(restricted) + "."
+                     if restricted else "See the Evidence page before relying on it.")
+    else:
+        sentence = (f"V9, the pre-registered test on real data, met all {len(criteria)} "
+                    "of its criteria; the settings it covered are on the Evidence page.")
+    return {"validated": not failed, "short": ("validated in V9" if not failed
+                                               else "V9 criteria not all met"),
+            "sentence": sentence}
+
+
 def _by_tier(block: dict) -> dict:
     """A V8 labelling's majority-definition rates in TIER_REPLICATION's shape."""
     rows = block["definitions"]["replicated_majority"]["by_tier"]
@@ -424,20 +510,7 @@ VALIDATION_MATRIX = [
                  "tests/reference/published_findings_study.py"],
     ),
     "WEIGHTED_TIERS",
-    Component(
-        name="Calibrated inference (v3)",
-        grade=INTERNAL,
-        internal="tests/test_inference.py: the vectorised tests equal the scalar ones to "
-                 "1e-10 on observed and permuted labels; the streamed maxima equal a "
-                 "brute-force loop over permutations; the depth-adjusted score test "
-                 "equals statsmodels'; BH and BY equal statsmodels'.",
-        note="Permutation-calibrated error control across taxa and pipelines, and the "
-             "CERTIFIED ROBUST label, for calibrated Quick runs. Its null-uniformity "
-             "check and its pre-registered validation on published data (V9) have not "
-             "been run, so no error rate or power is claimed for it here.",
-        sources=["app/core/inference.py", "tests/test_inference.py",
-                 "tests/reference/calibration_null.py"],
-    ),
+    "CALIBRATED",
     Component(
         name="Reproducing a published analysis",
         grade=REFERENCE,
@@ -570,7 +643,50 @@ def _weighted_tiers() -> Component:
         sources=[*sources, "docs/weighting_validation.json"])
 
 
-VALIDATION_MATRIX = [_weighted_tiers() if c == "WEIGHTED_TIERS" else c
+def _calibrated(record: dict | None = None) -> Component:
+    """Calibrated inference, graded by whether V9 has been run; every number in the
+    held-out cell is formatted from the V9 record."""
+    record = V9_RECORD if record is None else record
+    internal = ("tests/test_inference.py: the vectorised tests equal the scalar ones to "
+                "1e-10 on observed and permuted labels; the streamed maxima equal a "
+                "brute-force loop over permutations; the depth-adjusted score test "
+                "equals statsmodels'; BH and BY equal statsmodels'.")
+    sources = ["app/core/inference.py", "tests/test_inference.py",
+               "tests/reference/v9_calibration.py"]
+    status = certified_status(record)
+    if not record:
+        return Component(
+            name="Calibrated inference (v3)", grade=INTERNAL, internal=internal,
+            note="Permutation-calibrated error control across taxa and pipelines, and "
+                 "the CERTIFIED ROBUST label, for calibrated Quick runs. "
+                 + status["sentence"] + " No error rate or power is claimed for it here.",
+            sources=sources)
+    parts = record["parts"]
+    cells = []
+    if "a" in parts:
+        a = parts["a"]
+        cells.append(f"(a) {a['n_datasets']} datasets, {a['n_replicates']} mock "
+                     f"comparisons: family p-values against uniform, KS p = "
+                     f"{a['ks_p']:.3f}; any false discovery in "
+                     f"{a['any_discovery_rate']:.1%} of comparisons.")
+    if "b" in parts:
+        for name, block in parts["b"]["scenarios"].items():
+            cells.append(f"(b) {name.replace('_', ' ')}: FDR {block['fdr']:.3f}, power "
+                         f"{block['power']:.2f}, CERTIFIED ROBUST precision "
+                         + (f"{block['certified_precision']:.2f}."
+                            if block["certified_precision"] is not None else "n/a."))
+    if "c" in parts:
+        c = parts["c"]["overall"]
+        cells.append(f"(c) {parts['c']['n_replicates']} simulations: FDR {c['fdr']:.3f}, "
+                     f"power {c['power']:.2f}.")
+    return Component(
+        name="Calibrated inference (v3)", grade=EMPIRICAL, internal=internal,
+        empirical=" ".join(cells), note=status["sentence"],
+        sources=[*sources, "docs/v9_calibration.json"])
+
+
+VALIDATION_MATRIX = [_weighted_tiers() if c == "WEIGHTED_TIERS"
+                     else _calibrated() if c == "CALIBRATED" else c
                      for c in VALIDATION_MATRIX]
 
 

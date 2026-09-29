@@ -229,15 +229,15 @@
           <span class="stat-note">false discovery rate {{ calibration.q|percent(0) }} across taxa</span></div>
         <div class="stat"><span class="stat-value">{{ calibration.n_certified|commafy }}</span>
           <span class="stat-label">CERTIFIED ROBUST</span>
-          <span class="stat-note">error-controlled analyses carry ≥ 80% of the weight, ≥ 95% in one direction</span></div>
+          <span class="stat-note">error-controlled analyses carry ≥ 80% of the weight, ≥ 95% in one direction · {{ CERTIFIED_STATUS.short }}</span></div>
       </div>
       <details class="disclosure" style="margin-top:14px">
         <summary>What the guarantee rests on</summary>
         <div class="disclosure-body">
           <ul class="limits-list">
             {% for line in calibration_assumptions %}<li>{{ line }}</li>{% endfor %}
-            <li>The calibration itself has not yet been validated on published data (V9 on
-              the Evidence page); tests show it is computed as specified.</li>
+            <li>{{ CERTIFIED_STATUS.sentence }} <a href="/validation#v9">V9 on the
+              Evidence page</a>.</li>
             <li>A certified analysis is one rejected with error control inside a taxon
               that was already discovered, at level q·R/m =
               {{ '%.2g'|format(calibration.within_threshold) }}. The descriptive label is
@@ -861,12 +861,13 @@
   }
   /* A v3 run marks a taxon whose label depends on the weighting (v3 plan 26.2), and says
      in words which scheme gives which label. */
+  const certifiedStatus = {{ CERTIFIED_STATUS.sentence|tojson }};
   const schemeNames = {{ (weighting.schemes if weighting else [])|map(attribute='label')|list|tojson }};
   const schemeKeys = {{ (weighting.schemes if weighting else [])|map(attribute='scheme')|list|tojson }};
   function labelCell(cell) {
     const data = cell.getRow().getData();
     let html = tierChip(cell.getValue());
-    if (data.certified_robust) html += ' <span class="tier robust">CERTIFIED ROBUST</span>';
+    if (data.certified_robust) html += ' <span class="tier robust" title="' + escapeHtml(certifiedStatus) + '">CERTIFIED ROBUST</span>';
     if (data.weight_stable === false && data.tiers) {
       const parts = schemeKeys.map(function (key, i) { return schemeNames[i] + ": " + data.tiers[key]; });
       html += ' <span class="weight-flag" title="' + escapeHtml(parts.join("; ")) + '">changes with weighting</span>';
@@ -960,7 +961,8 @@
       { title: "Certified share", field: "certified_share", width: 130, hozAlign: "right", cssClass: "num-cell",
         formatter: pct,
         headerTooltip: "The weight of this taxon's analyses rejected with calibrated error "
-          + "control. CERTIFIED ROBUST needs 80% or more, in one direction. "
+          + "control. CERTIFIED ROBUST needs 80% or more, in one direction; "
+          + {{ CERTIFIED_STATUS.short|tojson }} + ". "
           + "Export column: certified_share" },
       {% endif %}
       { title: "Higher in", field: "direction", minWidth: 150,

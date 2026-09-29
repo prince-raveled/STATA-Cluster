@@ -19,6 +19,7 @@ from __future__ import annotations
 from .evidence import TIER_REPLICATION as _RATES
 from .evidence import TIER_VALIDATION as _V2
 from .evidence import WEIGHTING_VALIDATION as _V8
+from .evidence import certified_status as _certified_status
 
 TERMS: dict[str, dict] = {
     # --- the core idea ----------------------------------------------------
@@ -270,6 +271,20 @@ TERMS: dict[str, dict] = {
                 "analyses are counted, and its page shows the label under each.",
         "spec": "26.2",
     },
+    "certified_robust": {
+        "term": "CERTIFIED ROBUST",
+        "short": "Discovered with calibrated error control, with error-controlled analyses "
+                 "carrying at least 80% of the weight in one direction. "
+                 + _certified_status()["short"].capitalize() + ".",
+        "long": "A calibrated run repeats every Quick analysis with the two groups "
+                "shuffled. A taxon is discovered when its strongest result across its "
+                "analyses beats the shuffles, with the false discovery rate controlled "
+                "across taxa; it is CERTIFIED ROBUST when the analyses rejected with "
+                "error control inside it carry at least 80% of its weight and at least "
+                "95% agree on the direction. It sits beside the descriptive label, never "
+                "in place of it. " + _certified_status()["sentence"],
+        "spec": "27",
+    },
     "signed_z": {
         "term": "signed z",
         "short": "Each analysis's own test result on one scale: the z-score of its "
@@ -294,6 +309,7 @@ GLOSSARY_ORDER = [
     ("Counting the analyses", ["enumerated", "valid", "pruned", "model_fit"]),
     ("Weighting the analyses", ["weighting_scheme", "effective_specifications",
                                 "weight_stable", "signed_z"]),
+    ("Calibrated runs", ["certified_robust"]),
 ]
 
 

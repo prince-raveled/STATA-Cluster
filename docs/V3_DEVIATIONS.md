@@ -217,7 +217,9 @@ calibrated job type too.
 
 **C1 — V9 has not been run.** The plan stops Phase 1 before it, and it is to be run where
 its data are: Zenodo, which holds the Pelto cohorts, is not reachable from the build
-environment.
+environment. Its script is written (section D below); until its record exists, every
+page, the methods paragraph and the manifest describe CERTIFIED ROBUST as not yet
+validated on real data (`app/core/evidence.py::certified_status`).
 
 **C2 — The null-uniformity check and the compute benchmark have not been recorded.** Both
 scripts exist and are registered in `run_all.py`: `tests/reference/calibration_null.py`
@@ -225,3 +227,45 @@ scripts exist and are registered in `run_all.py`: `tests/reference/calibration_n
 §27.6 criterion) and `tests/reference/calibration_benchmark.py` (the §27.4 budget,
 written into `docs/benchmark.json`). This phase was limited to code and tests, so neither
 record was written; the 20 s above is a development measurement, not a record.
+
+### D. V9's script (`tests/reference/v9_calibration.py`)
+
+Written to plan §33 and not run. Choices the plan leaves open, fixed before any data:
+
+**D1 — Datasets.** Pelto: the 25 cohorts of the v2 tier validation (at least 40 samples in
+the smaller group), control samples only. Nearing: every dataset of the paper's filtered
+run with at most 1,500 features (the web limit) and at least 20 samples in its reference
+group, taken as the grouping level with more samples, because Nearing's groupings are not
+all case/control and a mock comparison needs one homogeneous group. The plan's "24
+Nearing datasets" is the expected count, not a filter; the record gives the actual one.
+
+**D2 — Metrics.** FDR is the mean over replicates of V/max(R, 1) among BH discoveries.
+"Within-family FWER" is the share of non-planted taxa whose family test rejects at 0.05:
+the family test is single-step maxT over the taxon's specifications, so that is exactly
+"some specification of this taxon rejected". Power is the mean share of planted taxa
+discovered; CERTIFIED ROBUST precision is planted taxa among all certified, pooled.
+Criteria are judged on point estimates; 95% intervals are reported beside them (bootstrap
+over datasets for (a) and (b), over replicates for (c)).
+
+**D3 — Part (a).** 4 random halves of each dataset's reference samples. Uniformity is tested
+with Kolmogorov–Smirnov on one family p-value per split (the most prevalent taxon's), so
+the values are independent; KS p above 0.01 passes, as in §27.6.
+
+**D4 — Part (b).** 2 replicates per dataset and scenario. Planting multiplies proportions
+in one half and redraws every sample's counts as a multinomial at its own library size
+(both halves redrawn). "standard": up to 10 taxa, present in at least 25% of samples and
+outside the 5 most abundant, fold change 2 or 4 up or down. "dominant_shift": the same
+plus the 3 most abundant taxa at fold change 4. Only "standard" carries the FDR criterion;
+"dominant_shift" is reported, as the plan says.
+
+**D5 — Part (c) uses a Dirichlet-multinomial simulator.** The plan asks for MIDASim-style
+simulations; the MIDASim port (§31.1, `app/core/sim.py`) is Phase 5 and does not exist
+yet. The grid is n per group 20, 40, 80; sparsity low or high (Dirichlet concentration
+500 or 50); fold change 1.5, 2, 4; 10 planted taxa; 10 replicates per cell. The record
+names the simulator, and (c) is to be rerun with MIDASim once it exists.
+
+**D6 — B = 2,000 permutations**, the web setting being validated; the plan's 20,000 is
+for offline Atlas runs.
+
+**D7 — Resumable.** Replicates are cached in `data/v9_calibration_rows.jsonl` with the code
+commit, so a long run can be interrupted; a changed commit starts again.

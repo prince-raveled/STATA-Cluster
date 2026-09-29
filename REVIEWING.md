@@ -44,7 +44,7 @@ one page, `docs/v3_weighting_note.md`; every departure from the v3 plan is in
 test (V8) has not been run. `app/core/inference.py` is the calibrated inference of plan
 §27: read its docstring for the procedure and its assumptions; `tests/test_inference.py`
 checks it against the scalar methods and a brute-force permutation loop. Its validation
-on published data (V9) has not been run.
+on real data, V9 (`tests/reference/v9_calibration.py`), is written and has not been run.
 
 ---
 

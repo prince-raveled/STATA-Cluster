@@ -35,7 +35,8 @@ every analysis repeated with the group labels permuted, giving each taxon a fami
 p-value (maxT over its pipelines) with the FDR controlled across taxa, and a CERTIFIED
 ROBUST label when error-controlled pipelines carry at least 80% of its weight in one
 direction. It is shown beside the descriptive tier, never instead of it, and it has not
-yet been validated on published data (V9).
+yet been validated on real data: V9's script (`tests/reference/v9_calibration.py`) is
+written and has not been run, and until its record exists every page says so.
 
 ---
 
