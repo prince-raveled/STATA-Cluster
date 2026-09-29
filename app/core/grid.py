@@ -17,7 +17,7 @@ from .models import (
     Specification,
 )
 from .preprocess import PREVALENCE_LEVELS, TRANSFORMS, MatrixBuilder
-from .validity import Capabilities, invalid_reason
+from .validity import DEFAULT_RULESET, Capabilities, apply_rules, invalid_reason
 
 #: Fork 6 — applied post-hoc to stored p-values, so all three cost essentially nothing.
 FDR_SETTINGS = (("bh", 0.05), ("bh", 0.10), ("by", 0.05))
@@ -106,8 +106,13 @@ def enumerate_grid(
     fixed_covariates=(),
     covariate_columns=(),
     declared: Specification = None,
+    ruleset: str = DEFAULT_RULESET,
 ):
-    """Return (valid specifications, GridReport) for the requested mode."""
+    """Return (valid specifications, GridReport) for the requested mode.
+
+    `ruleset` is "v3" (SPEC §11 plus rules R8-R9, plan §26.3) or "v2" (SPEC §11
+    exactly, kept so a v2 result can be reproduced).
+    """
     capabilities = capabilities or Capabilities()
     depths, dropped_notes = builder.available_depths()
     ranks = list(builder.ranks)
@@ -153,6 +158,7 @@ def enumerate_grid(
                             tuple(fixed_covariates),
                         ),
                         capabilities,
+                        ruleset,
                     )
                 ]
                 sample = _stratified_matrix_sample(
@@ -218,19 +224,30 @@ def enumerate_grid(
     valid: list = []
     pruned: Counter = Counter()
     for spec in enumerated:
-        reason = invalid_reason(spec, capabilities)
+        reason = invalid_reason(spec, capabilities, ruleset)
         if reason:
             pruned[reason] += 1
         else:
-            valid.append(spec)
+            # R9 changes how a specification is fitted rather than removing it, so it
+            # is applied to every survivor (a no-op under v2).
+            valid.append(apply_rules(spec, ruleset))
 
-    if (declared is not None and not invalid_reason(declared, capabilities)
-            and declared not in set(valid)):
-        valid.append(declared)
-        notes.append(
-            "Your declared pipeline was not on the grid as enumerated and was added so it "
-            "can be located in the distribution."
-        )
+    if declared is not None:
+        declared = apply_rules(declared, ruleset)
+        declared_reason = invalid_reason(declared, capabilities, ruleset)
+        if declared_reason:
+            # Silently dropping it left the reader looking for a percentile that was
+            # never going to appear. Say why it is outside the defensible grid.
+            notes.append(
+                f"Your declared pipeline is outside the defensible grid ({declared_reason}), "
+                "so it cannot be located in the distribution."
+            )
+        elif declared not in set(valid):
+            valid.append(declared)
+            notes.append(
+                "Your declared pipeline was not on the grid as enumerated and was added so "
+                "it can be located in the distribution."
+            )
 
     report = GridReport(
         mode=mode,

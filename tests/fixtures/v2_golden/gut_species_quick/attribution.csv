@@ -1,0 +1,14 @@
+decomposition,fork,fork_label,percent_of_variance,fallback_percent,estimator,converged
+effect,rarefaction,Rarefaction depth,74.854,89.43,"Mixed-effects model, each taxon its own group (the specification's named method)",True
+effect,rank,Taxonomic rank,17.528,0.0,"Mixed-effects model, each taxon its own group (the specification's named method)",True
+effect,transform,Transformation,5.399,8.008,"Mixed-effects model, each taxon its own group (the specification's named method)",True
+effect,prev_filter,Prevalence filter,2.22,2.562,"Mixed-effects model, each taxon its own group (the specification's named method)",True
+significance,rank,Taxonomic rank,39.982,0.0,"Mixed-effects model, each taxon its own group (the specification's named method)",True
+significance,method,DA method,29.946,52.676,"Mixed-effects model, each taxon its own group (the specification's named method)",True
+significance,transform,Transformation,22.134,22.077,"Mixed-effects model, each taxon its own group (the specification's named method)",True
+significance,rarefaction,Rarefaction depth,4.631,7.34,"Mixed-effects model, each taxon its own group (the specification's named method)",True
+significance,fdr_method,FDR method,1.508,10.669,"Mixed-effects model, each taxon its own group (the specification's named method)",True
+significance,fdr_threshold,FDR threshold,1.376,6.719,"Mixed-effects model, each taxon its own group (the specification's named method)",True
+significance,prev_filter,Prevalence filter,0.424,0.519,"Mixed-effects model, each taxon its own group (the specification's named method)",True
+rarefaction_draw,seed_share,seed share,43.305,,within/between depth variance,True
+rarefaction_draw,depth_share,depth share,56.695,,within/between depth variance,True

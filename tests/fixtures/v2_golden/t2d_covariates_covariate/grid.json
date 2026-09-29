@@ -1,0 +1,16 @@
+{
+  "n_enumerated": 2304,
+  "n_pruned": 288,
+  "n_valid": 2016,
+  "pruned_reasons": {
+    "presence/absence is transform-invariant; keep one canonical combination": 288
+  },
+  "tier_counts": {
+    "CONDITIONAL": 5,
+    "FRAGILE": 83,
+    "INSUFFICIENT": 12,
+    "NOT DETECTED": 85,
+    "ROBUST": 4,
+    "UNSTABLE": 31
+  }
+}

@@ -76,6 +76,18 @@ class RobustnessSummary:
     declared_percentile: float = float("nan")
     declared_rank: int = -1
     declared_n_significant: int = -1
+    #: The weighting the tiers were assigned under (weights.SCHEMES). Class-level
+    #: defaults, so a summary stored before v3 unpickles as what it was: uniform.
+    scheme: str = "uniform"
+    ruleset: str = "v2"
+    #: {scheme: weights.GridComposition} and {scheme: taxa whose tier differs from the
+    #: primary scheme's}, for the grid-composition panel (plan §26.2). None under v2.
+    composition: object = None
+    tier_changes: object = None
+
+    @property
+    def weighted(self) -> bool:
+        return self.ruleset != "v2"
 
 
 def _sign_consistency(values: np.ndarray) -> float:
@@ -86,9 +98,21 @@ def _sign_consistency(values: np.ndarray) -> float:
     return max(positive, negative) / values.size
 
 
-def compute_robustness(run) -> RobustnessSummary:
-    """Per-taxon metrics (§16.2) plus the per-specification summary the curve needs."""
+def compute_robustness(run, scheme: str = None, custom: dict = None) -> RobustnessSummary:
+    """Per-taxon metrics (§16.2) plus the per-specification summary the curve needs.
+
+    A v2 run (ruleset "v2", which includes every run stored before v3) is summarised
+    exactly as v2 did it, one vote per specification. A v3 run is summarised under
+    every weighting scheme; its tiers come from `scheme` (default `decision_tree`,
+    plan §26.2) and the table says which taxa another scheme would label differently.
+    """
     long = run.long
+    ruleset = getattr(run, "ruleset", "v2")
+    legacy = ruleset == "v2"
+    if legacy and scheme not in (None, "uniform"):
+        raise ValueError("A v2 run is summarised with one vote per specification.")
+    from .weights import DEFAULT_SCHEME
+    scheme = "uniform" if legacy else (scheme or DEFAULT_SCHEME)
 
     # A specification whose matrix was unusable (rarefaction can drop a group below the
     # minimum) produces no rows. Counting it as a denominator would understate every
@@ -168,11 +192,17 @@ def compute_robustness(run) -> RobustnessSummary:
             "min_p_adjusted": np.nan,
         })], ignore_index=True)
 
+    extras = None
+    if not legacy:
+        frame, extras = _apply_weighting(run, frame, scheme, custom)
+
     frame["robustness_tier"] = [
         assign_tier(int(n), float(f), float(s))
         for n, f, s in zip(frame["n_specs_tested"], frame["frac_significant"],
                            frame["sign_consistency"], strict=True)
     ]
+    if extras is not None:
+        _stability_columns(frame, extras["schemes"])
     frame["direction"] = np.where(
         frame["median_effect"] > 0, f"higher in {run.group_labels[1]}",
         np.where(frame["median_effect"] < 0, f"higher in {run.group_labels[0]}", "no difference"),
@@ -200,6 +230,10 @@ def compute_robustness(run) -> RobustnessSummary:
         spec_summary[["n_taxa_tested", "n_significant"]].fillna(0).astype(int)
     )
     spec_summary["ran"] = spec_summary["spec_id"].isin(ran)
+    if extras is not None:
+        spec_summary["weight"] = extras["weights"][scheme]
+        for name, weights in extras["weights"].items():
+            spec_summary[f"weight_{name}"] = weights
 
     summary = RobustnessSummary(
         table=frame,
@@ -207,7 +241,14 @@ def compute_robustness(run) -> RobustnessSummary:
         tier_counts=tier_counts,
         n_specs_total=n_specs_total,
         n_specs_skipped=n_specs_skipped,
+        scheme=scheme,
+        ruleset=ruleset,
     )
+    if extras is not None:
+        summary.composition = extras["composition"]
+        summary.tier_changes = {
+            other: int((frame[f"tier_{other}"] != frame["robustness_tier"]).sum())
+            for other in extras["schemes"] if other != scheme}
 
     if run.declared_spec_id >= 0:
         row = spec_summary.loc[spec_summary["spec_id"] == run.declared_spec_id]
@@ -220,6 +261,57 @@ def compute_robustness(run) -> RobustnessSummary:
             summary.declared_percentile = 100.0 * rank / max(1, len(values))
 
     return summary
+
+
+def _apply_weighting(run, frame: pd.DataFrame, scheme: str, custom: dict):
+    """Replace the v2 counts with the primary scheme's weighted metrics, and add the
+    per-scheme columns the stability flag and the CSV need (plan §26.2)."""
+    from .weighted import pseudocount_flip, weighting_table
+
+    columns, weights, comps = weighting_table(run, primary=scheme, custom=custom)
+    columns = columns.reindex(frame["taxon_id"].to_numpy())
+    frame = frame.copy()
+    # The v2 count stays, named for what it is, beside the weighted value that the tier
+    # now uses.
+    frame["frac_significant_unweighted"] = frame["frac_significant"]
+    frame["frac_significant"] = columns[f"frac_significant_{scheme}"].to_numpy()
+    frame["frac_nominal"] = columns[f"frac_nominal_{scheme}"].to_numpy()
+    frame["sign_consistency"] = columns[f"sign_consistency_{scheme}"].to_numpy()
+    if scheme != "uniform":
+        frame["median_effect"] = columns["median_effect_w"].to_numpy()
+        frame["iqr_low"] = columns["iqr_low_w"].to_numpy()
+        frame["iqr_high"] = columns["iqr_high_w"].to_numpy()
+    frame["n_eff_specs"] = columns[f"n_eff_{scheme}"].to_numpy()
+    untested = frame["n_specs_tested"].to_numpy() == 0
+    for column in ("frac_significant", "frac_nominal", "sign_consistency"):
+        # v2 wrote 0.0 for a taxon nothing tested; keep that, so its tier is unchanged.
+        frame.loc[untested, column] = 0.0
+
+    for other in weights:
+        frac = columns[f"frac_significant_{other}"].to_numpy()
+        sign = columns[f"sign_consistency_{other}"].to_numpy()
+        frame[f"tier_{other}"] = [
+            assign_tier(int(n), 0.0 if u else float(f), 0.0 if u else float(c))
+            for n, f, c, u in zip(frame["n_specs_tested"], frac, sign, untested,
+                                  strict=True)]
+
+    low = columns.get("median_effect_pc_x0.1")
+    high = columns.get("median_effect_pc_x10")
+    if low is not None and high is not None:
+        frame["median_effect_pc_low"] = low.to_numpy()
+        frame["median_effect_pc_high"] = high.to_numpy()
+        frame["pseudocount_sign_flip"] = pseudocount_flip(
+            frame["median_effect"].to_numpy(dtype=float), low.to_numpy(), high.to_numpy())
+    return frame, {"schemes": list(weights), "weights": weights, "composition": comps}
+
+
+def _stability_columns(frame: pd.DataFrame, schemes: list) -> None:
+    """weight_stable: the same tier under every built-in scheme (plan §26.2)."""
+    from .weights import SCHEMES
+
+    built_in = [s for s in SCHEMES if s in schemes]
+    tiers = frame[[f"tier_{s}" for s in built_in]]
+    frame["weight_stable"] = tiers.nunique(axis=1).eq(1).to_numpy()
 
 
 def locate_declared(run, taxon_id: int) -> dict:

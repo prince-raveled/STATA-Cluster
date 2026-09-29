@@ -8,6 +8,30 @@ the same preprocessed matrix for every specification.
 from __future__ import annotations
 
 import numpy as np
+from scipy import stats
+
+#: v3 plan §26.4: the harmonised effect is recomputed at these multiples of the run's
+#: pseudocount, so a taxon whose direction depends on that constant can be flagged.
+PSEUDOCOUNT_MULTIPLIERS = (0.1, 10.0)
+
+#: p-values below this are treated as this, so the signed z stays finite (|z| ~ 37.5).
+_P_FLOOR = 1e-300
+
+
+def signed_z(p_raw, effect_native) -> np.ndarray:
+    """Every specification's evidence on one axis: sign(effect) x Phi^-1(1 - p/2).
+
+    The harmonised log2 fold change of §14 is computed from the matrix alone, so it
+    cannot move when only the covariate set changes — over 32 adjustment sets its spread
+    is exactly zero, and covariate-driven sign changes were invisible on the curve. The
+    method's own statistic does move, and every native effect in this build is signed
+    so that positive means higher in group B. A p-value of 1 maps to 0.
+    """
+    p = np.clip(np.asarray(p_raw, dtype=float), _P_FLOOR, 1.0)
+    magnitude = stats.norm.isf(p / 2.0)
+    sign = np.sign(np.asarray(effect_native, dtype=float))
+    out = sign * magnitude
+    return np.where(np.isfinite(out), out, 0.0)
 
 
 def run_pseudocount(counts: np.ndarray) -> float:

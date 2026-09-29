@@ -1,0 +1,17 @@
+{
+  "n_enumerated": 4992,
+  "n_pruned": 1800,
+  "n_valid": 3192,
+  "pruned_reasons": {
+    "TMM + rarefaction is double library-size correction": 1152,
+    "presence/absence is transform-invariant; keep one canonical combination": 648
+  },
+  "tier_counts": {
+    "CONDITIONAL": 6,
+    "FRAGILE": 164,
+    "INSUFFICIENT": 5,
+    "NOT DETECTED": 100,
+    "ROBUST": 9,
+    "UNSTABLE": 56
+  }
+}

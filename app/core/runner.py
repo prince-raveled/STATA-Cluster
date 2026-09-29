@@ -15,12 +15,13 @@ import numpy as np
 import pandas as pd
 
 from . import fdr as fdr_module
-from .effects import harmonized_effect, run_pseudocount
+from .effects import PSEUDOCOUNT_MULTIPLIERS, harmonized_effect, run_pseudocount
 from .grid import capabilities_for, enumerate_grid
 from .methods import available_methods, run_method
 from .models import GridReport, Specification
 from .preprocess import MatrixBuilder
 from .validation import Dataset
+from .validity import DEFAULT_RULESET, apply_rules
 
 
 @dataclass
@@ -45,6 +46,17 @@ class RunResult:
     #: {"unusable": {...}} for matrices too small to test, {method: {...}} for a method
     #: that raised. Each entry counts specifications and matrices and keeps one error.
     skipped: dict = field(default_factory=dict)
+    #: The pruning rules the grid was built under (validity.RULESETS). The default is
+    #: "v2" so a run stored before v3 existed, unpickled without this attribute, reads
+    #: as what it is and is shown exactly as it was.
+    ruleset: str = "v2"
+    #: The run's single harmonised-effect pseudocount (SPEC §14).
+    pseudocount: float = float("nan")
+    #: v3 plan §26.4: the harmonised effect recomputed at the pseudocount x0.1 and x10,
+    #: per matrix — float32 array (n_matrices, n_taxa, 2), NaN where a matrix did not
+    #: test the taxon — and the matrix each specification ran on (-1 when it did not).
+    effect_sensitivity: object = None
+    spec_matrix: object = None
 
     @property
     def n_specs(self) -> int:
@@ -63,6 +75,25 @@ def _covariate_frame(dataset: Dataset, columns, sample_idx):
     return dataset.metadata.iloc[sample_idx][list(columns)]
 
 
+#: The column rule R9 adds. Metadata columns are user text, so the name is chosen to be
+#: one no upload would use; it never leaves the design matrix.
+DEPTH_COLUMN = "__microverse_log_library_size__"
+
+
+def _with_depth(frame, libraries, sample_idx):
+    """Rule R9: add log library size to a covariate frame (or make one of it).
+
+    Library size is each sample's total reads in the uploaded table — a property of the
+    sample, never of its group label.
+    """
+    depth = np.log(np.maximum(libraries[sample_idx], 1.0))
+    if frame is None:
+        return pd.DataFrame({DEPTH_COLUMN: depth})
+    frame = frame.copy()
+    frame[DEPTH_COLUMN] = depth
+    return frame
+
+
 def _method_needs(specs):
     """fit_key -> (matrix_key, method, covariates, [spec indices])."""
     fits: dict = {}
@@ -73,6 +104,7 @@ def _method_needs(specs):
                 "matrix_key": spec.matrix_key,
                 "method": spec.method,
                 "covariates": spec.covariates,
+                "depth_adjusted": bool(getattr(spec, "depth_adjusted", False)),
                 "spec_ids": [],
             }
         fits[key]["spec_ids"].append(i)
@@ -87,8 +119,13 @@ def run_multiverse(
     declared: Specification = None,
     progress=None,
     aldex_instances: int = 64,
+    ruleset: str = DEFAULT_RULESET,
 ) -> RunResult:
-    """Execute one multiverse. `progress(fraction, message)` is called as it goes."""
+    """Execute one multiverse. `progress(fraction, message)` is called as it goes.
+
+    `ruleset` selects the pruning rules (validity.RULESETS): "v3" by default, "v2" to
+    reproduce a result produced before v3.
+    """
     started = time.perf_counter()
 
     def report(fraction: float, message: str):
@@ -110,6 +147,7 @@ def run_multiverse(
         fixed_covariates=fixed_covariates,
         covariate_columns=covariate_columns,
         declared=declared,
+        ruleset=ruleset,
     )
     # Drop specifications whose method cannot run in this environment.
     unavailable = {name for name, why in status.items() if why}
@@ -128,6 +166,8 @@ def run_multiverse(
             + "; ".join(grid_report.pruned_reasons)
         )
 
+    if declared is not None:
+        declared = apply_rules(declared, ruleset)
     declared_id = specs.index(declared) if declared in set(specs) else -1
 
     # Global taxon vocabulary, one namespace per rank (§15 denominators depend on it).
@@ -149,6 +189,16 @@ def run_multiverse(
 
     matrix_keys = sorted(fits_by_matrix, key=lambda k: (str(k[0]), k[1] or 0, k[2], k[3], k[4]))
     total = len(matrix_keys)
+    libraries = builder.base_counts.sum(axis=0)
+
+    # Pseudocount sensitivity (plan §26.4) and the specification -> matrix map it is read
+    # through. Per matrix rather than per row: the harmonised effect depends on the
+    # matrix alone, so storing it per specification would repeat each value 12-fold.
+    matrix_index = {key: i for i, key in enumerate(matrix_keys)}
+    spec_matrix = np.array([matrix_index.get(spec.matrix_key, -1) for spec in specs],
+                           dtype=np.int32)
+    sensitivity = np.full((total, len(taxa_names), len(PSEUDOCOUNT_MULTIPLIERS)), np.nan,
+                          dtype=np.float32)
 
     spec_ids_out: list = []
     taxa_out: list = []
@@ -178,11 +228,16 @@ def run_multiverse(
 
         global_idx = matrix.taxa_idx + offsets[rank]
         effect_h = harmonized_effect(matrix.rel, matrix.groups, pseudocount).astype(np.float32)
+        for k, multiplier in enumerate(PSEUDOCOUNT_MULTIPLIERS):
+            sensitivity[position, global_idx, k] = harmonized_effect(
+                matrix.rel, matrix.groups, pseudocount * multiplier)
 
         for _, info in fits_by_matrix[matrix_key]:
             method = info["method"]
             covariates = info["covariates"]
             frame = _covariate_frame(dataset, covariates, matrix.sample_idx)
+            if info["depth_adjusted"]:
+                frame = _with_depth(frame, libraries, matrix.sample_idx)
             try:
                 fit = run_method(method, matrix, frame, aldex_instances=aldex_instances)
             except Exception as exc:  # a single method failing must not kill the run
@@ -232,6 +287,10 @@ def run_multiverse(
     )
 
     specs_frame = pd.DataFrame([s.as_row() for s in specs])
+    if "depth_adjusted" in specs_frame.columns:
+        # Only depth-adjusted rows carry the key (a v2 grid has none, so its columns
+        # are unchanged); the rest are simply not adjusted.
+        specs_frame["depth_adjusted"] = specs_frame["depth_adjusted"].eq(True)
     specs_frame.insert(0, "spec_id", np.arange(len(specs), dtype=np.int32))
 
     runtime = time.perf_counter() - started
@@ -253,4 +312,8 @@ def run_multiverse(
         failures=failures,
         group_labels=dataset.group_labels,
         skipped=skipped,
+        ruleset=ruleset,
+        pseudocount=float(pseudocount),
+        effect_sensitivity=sensitivity,
+        spec_matrix=spec_matrix,
     )

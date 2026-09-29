@@ -93,6 +93,11 @@ class Specification:
     fdr_method: FDRMethod
     fdr_threshold: float  # 0.05, 0.10
     covariates: tuple[str, ...] = ()  # empty in Modes A/B
+    #: v3 rule R9: presence/absence on unrarefied counts is modelled with log library
+    #: size as a covariate, because whether a taxon is detected depends on depth. Last,
+    #: and defaulting to False, so a v2 specification — including one unpickled from a
+    #: run stored before v3 — is unchanged.
+    depth_adjusted: bool = False
 
     @property
     def matrix_key(self) -> tuple:
@@ -105,7 +110,8 @@ class Specification:
 
         FDR is post-hoc (§10 fork 6), so the three FDR settings share one fit.
         """
-        return self.matrix_key + (self.method, self.covariates)
+        key = self.matrix_key + (self.method, self.covariates)
+        return key + ("depth",) if self.depth_adjusted else key
 
     @property
     def rarefaction_label(self) -> str:
@@ -120,18 +126,19 @@ class Specification:
 
     def fork_levels(self) -> dict[str, str]:
         """Fork -> active level, for the specification-curve dot matrix (§16.3)."""
+        method = METHOD_SHORT[self.method]
         return {
             "rarefaction": self.rarefaction_label,
             "rank": self.rank,
             "prev_filter": f"{self.prev_filter:.0%}",
             "transform": self.transform.upper(),
-            "method": METHOD_SHORT[self.method],
+            "method": method + " +depth" if self.depth_adjusted else method,
             "fdr_method": self.fdr_method.upper(),
             "fdr_threshold": f"{self.fdr_threshold:g}",
         }
 
     def as_row(self) -> dict:
-        return {
+        row = {
             "rarefaction": self.rarefaction,
             "rare_seed": self.rare_seed,
             "rank": self.rank,
@@ -142,6 +149,10 @@ class Specification:
             "fdr_threshold": self.fdr_threshold,
             "covariates": "|".join(self.covariates),
         }
+        # Only v3 grids carry the column, so a v2 export keeps its exact v2 columns.
+        if self.depth_adjusted:
+            row["depth_adjusted"] = True
+        return row
 
     def describe(self) -> str:
         bits = [
@@ -154,6 +165,8 @@ class Specification:
         ]
         if self.covariates:
             bits.append("covariates=" + "+".join(self.covariates))
+        if self.depth_adjusted:
+            bits.append("adjusted for log library size")
         return ", ".join(bits)
 
 

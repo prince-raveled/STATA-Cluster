@@ -1,0 +1,1 @@
+Of the 123 taxa significant in at least one specification, 4 are ROBUST, 5 CONDITIONAL, 83 FRAGILE and 31 UNSTABLE; a further 12 taxa could not be tiered (tested in fewer than 10 specifications), across 2,016 valid specifications.

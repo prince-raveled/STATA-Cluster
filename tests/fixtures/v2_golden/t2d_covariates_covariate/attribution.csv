@@ -1,0 +1,8 @@
+decomposition,fork,fork_label,percent_of_variance,fallback_percent,estimator,converged
+effect,rarefaction,Rarefaction depth,99.941,82.321,"Mixed-effects model, each taxon its own group (the specification's named method)",True
+effect,transform,Transformation,0.059,17.679,"Mixed-effects model, each taxon its own group (the specification's named method)",True
+significance,method,DA method,93.72,66.477,"Mixed-effects model, each taxon its own group (the specification's named method)",True
+significance,fdr_method,FDR method,3.001,6.099,"Mixed-effects model, each taxon its own group (the specification's named method)",True
+significance,fdr_threshold,FDR threshold,2.079,4.118,"Mixed-effects model, each taxon its own group (the specification's named method)",True
+significance,rarefaction,Rarefaction depth,1.092,4.042,"Mixed-effects model, each taxon its own group (the specification's named method)",True
+significance,transform,Transformation,0.108,19.265,"Mixed-effects model, each taxon its own group (the specification's named method)",True
