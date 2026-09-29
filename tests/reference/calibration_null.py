@@ -52,6 +52,15 @@ SMOKE_OUTPUT = os.path.join(ROOT, "data", "calibration_null_smoke.json")
 REGISTERED = {"replicates": 200, "permutations": 999, "taxa": 40, "per_group": 20}
 
 
+def _shown(path) -> str:
+    """A path for the console: relative to the repository where it can be, as given
+    otherwise (Windows has no relative path between two drives)."""
+    try:
+        return os.path.relpath(path, ROOT)
+    except ValueError:
+        return str(path)
+
+
 def null_dataset(seed: int, n_taxa: int, per_group: int):
     counts, groups, _, _ = make_counts(n_taxa=n_taxa, n_per_group=per_group,
                                        n_differential=0, seed=seed)
@@ -129,7 +138,7 @@ def main() -> int:
     with open(output, "w", encoding="utf-8", newline="\n") as handle:
         json.dump(payload, handle, indent=2)
         handle.write("\n")
-    print(f"\nwrote {os.path.relpath(output, ROOT)}")
+    print(f"\nwrote {_shown(output)}")
     return 0 if payload["passed"] else 1
 
 

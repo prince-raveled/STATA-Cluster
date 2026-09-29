@@ -127,6 +127,15 @@ SIM_FOLDS = (1.5, 2.0, 4.0)
 FAILURES: list = []
 
 
+def _shown(path) -> str:
+    """A path for the console: relative to the repository where it can be, as given
+    otherwise (Windows has no relative path between two drives)."""
+    try:
+        return os.path.relpath(path, ROOT)
+    except ValueError:
+        return str(path)
+
+
 def report(name: str, detail: str) -> None:
     print(f"  [ -- ] {name} — {detail}")
 
@@ -648,7 +657,7 @@ def main(argv=None) -> int:
         os.makedirs(os.path.dirname(APP_COPY), exist_ok=True)
         shutil.copyfile(output, APP_COPY)
         written.append(APP_COPY)
-    print("\nwrote " + ", ".join(os.path.relpath(p, ROOT) for p in written))
+    print("\nwrote " + ", ".join(_shown(p) for p in written))
     print("FAILED: " + ", ".join(FAILURES) if FAILURES else "All criteria met.")
     return 1 if FAILURES else 0
 

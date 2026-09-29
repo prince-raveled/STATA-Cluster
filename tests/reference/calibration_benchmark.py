@@ -25,6 +25,15 @@ OUTPUT = os.path.join(ROOT, "docs", "benchmark.json")
 BUDGET_SECONDS = 60.0
 
 
+def _shown(path) -> str:
+    """A path for the console: relative to the repository where it can be, as given
+    otherwise (Windows has no relative path between two drives)."""
+    try:
+        return os.path.relpath(path, ROOT)
+    except ValueError:
+        return str(path)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--permutations", type=int, default=2000)
@@ -79,7 +88,7 @@ def main() -> int:
           f"{BUDGET_SECONDS:.0f}s budget) on {os.cpu_count()} CPUs, threads "
           f"{entry['threads']}")
     print(f"phases: {result.timings}")
-    print(f"wrote {os.path.relpath(OUTPUT, ROOT)} (calibration)")
+    print(f"wrote {_shown(OUTPUT)} (calibration)")
     return 0 if entry["within_budget"] else 1
 
 

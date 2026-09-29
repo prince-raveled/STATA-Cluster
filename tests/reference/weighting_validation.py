@@ -103,6 +103,15 @@ OUTCOMES = ("replicated_majority", "replicated_reference")
 FAILURES: list = []
 
 
+def _shown(path) -> str:
+    """A path for the console: relative to the repository where it can be, as given
+    otherwise (Windows has no relative path between two drives)."""
+    try:
+        return os.path.relpath(path, ROOT)
+    except ValueError:
+        return str(path)
+
+
 def check(name: str, ok: bool, detail: str = "") -> None:
     print(f"  [{'PASS' if ok else 'FAIL'}] {name}" + (f" — {detail}" if detail else ""))
     if not ok:
@@ -400,7 +409,7 @@ def main() -> int:
 
     if args.reanalyse:
         if not os.path.exists(rows_output):
-            print(f"SKIPPED — {os.path.relpath(rows_output, ROOT)} does not exist; "
+            print(f"SKIPPED — {_shown(rows_output)} does not exist; "
                   "run without --reanalyse first.")
             return 0
         saved = pd.read_csv(rows_output)
@@ -504,7 +513,7 @@ def main() -> int:
         shutil.copyfile(output, APP_COPY)
         written.append(APP_COPY)
     print()
-    print("wrote " + ", ".join(os.path.relpath(p, ROOT) for p in written))
+    print("wrote " + ", ".join(_shown(p) for p in written))
     print("FAILED: " + ", ".join(FAILURES) if FAILURES else "All checks passed.")
     return 1 if FAILURES else 0
 
