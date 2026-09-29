@@ -1,0 +1,29 @@
+{
+  "check": "calibrated family p-values are uniform under a simulated null",
+  "plan": "docs/MICROVERSE_V3_PLAN.md \u00a727.6",
+  "script": "tests/reference/calibration_null.py",
+  "registered_design": true,
+  "design": {
+    "replicates": 200,
+    "permutations": 999,
+    "taxa": 40,
+    "per_group": 20,
+    "q": 0.05,
+    "discovery": "bh",
+    "weights": "decision_tree",
+    "mode": "quick",
+    "primary": "the most prevalent taxon's family p-value, one per replicate"
+  },
+  "ks_statistic": 0.05700000000000002,
+  "ks_p": 0.5158005513283483,
+  "passed": true,
+  "share_below": {
+    "0.01": 0.005,
+    "0.05": 0.055,
+    "0.1": 0.105
+  },
+  "share_replicates_with_any_discovery": 0.065,
+  "share_replicates_with_any_certified": 0.0,
+  "all_taxa_share_below_0_05": 0.051,
+  "elapsed_seconds": 287.0
+}

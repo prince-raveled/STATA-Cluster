@@ -60,5 +60,31 @@
       "total_seconds": 25.38
     }
   ],
-  "note": "Timings are from a single laptop, identified above. They are indicative, not a specification: a thermally limited mobile CPU and a server with the same core count give different numbers."
+  "note": "Timings are from a single laptop, identified above. They are indicative, not a specification: a thermally limited mobile CPU and a server with the same core count give different numbers.",
+  "calibration": {
+    "script": "tests/reference/calibration_benchmark.py",
+    "dataset": "ibd_genus demo, Quick mode",
+    "n_samples": 120,
+    "n_taxa": 380,
+    "n_specs": 1560,
+    "n_permutations": 2000,
+    "seconds_quick_run": 1.48,
+    "seconds_calibration": 19.41,
+    "phases": {
+      "permutations": 19.14,
+      "tails": 0.22,
+      "within": 0.04,
+      "total": 19.4
+    },
+    "budget_seconds": 60.0,
+    "within_budget": true,
+    "threads": 2,
+    "machine": {
+      "platform": "Windows-11-10.0.26200-SP0",
+      "python": "3.14.6",
+      "cpus": 12
+    },
+    "n_selected": 17,
+    "n_certified": 7
+  }
 }
