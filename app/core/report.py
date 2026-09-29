@@ -739,7 +739,7 @@ def run_manifest(run, summary, attribution=None) -> dict:
             for key, rates in REPLICATION_BY_LABELLING.items()
         }),
         "weighting_experiment": _jsonable(WEIGHTING_VALIDATION) or {
-            "experiment": "V8", "status": "pre-registered, not yet run"},
+            "experiment": "V8", "status": "pre-specified, not yet run"},
         "tier_experiment": TIER_VALIDATION,
         "tier_caveats": list(TIER_CAVEATS),
         "published_study": PUBLISHED_STUDY,

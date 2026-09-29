@@ -301,7 +301,7 @@ def certified_status(record: dict | None = None) -> dict:
             "validated": False,
             "short": "not yet validated on real data",
             "sentence": "CERTIFIED ROBUST has not yet been validated on real data: its "
-                        "pre-registered test, V9, has not been run. Tests show the "
+                        "pre-specified test, V9, has not been run. Tests show the "
                         "calibration is computed as specified, which is not evidence "
                         "that it controls error in practice.",
         }
@@ -309,13 +309,14 @@ def certified_status(record: dict | None = None) -> dict:
     failed = [c["name"] for c in criteria if not c.get("passed")]
     restricted = record.get("verdict", {}).get("restricted_to") or []
     if failed:
-        sentence = ("V9, the pre-registered test on real data, has been run, and "
-                    f"{len(failed)} of its {len(criteria)} criteria were not met ("
+        sentence = ("V9, the pre-specified test on real data, has been run, and "
+                    f"{len(failed)} of its {len(criteria)} criteria "
+                    f"{'was' if len(failed) == 1 else 'were'} not met ("
                     + "; ".join(failed) + "). ")
         sentence += ("Claims are restricted to: " + "; ".join(restricted) + "."
                      if restricted else "See the Evidence page before relying on it.")
     else:
-        sentence = (f"V9, the pre-registered test on real data, met all {len(criteria)} "
+        sentence = (f"V9, the pre-specified test on real data, met all {len(criteria)} "
                     "of its criteria; the settings it covered are on the Evidence page.")
     return {"validated": not failed, "short": ("validated in V9" if not failed
                                                else "V9 criteria not all met"),
@@ -423,7 +424,7 @@ def unmeasured_sentence(ruleset: str, scheme: str) -> str:
     from .weights import SCHEME_LABELS
     return (f"No replication rate has been measured for labels assigned this way "
             f"({SCHEME_LABELS.get(scheme, scheme)}, rule set {ruleset}). The held-out "
-            f"test for them (V8) is pre-registered and has not been run yet; the rates "
+            f"test for them (V8) is pre-specified and has not been run yet; the rates "
             f"on the Evidence page were measured for v2's labels, one vote per "
             f"specification, and are not evidence about these.")
 
@@ -615,7 +616,7 @@ def _weighted_tiers() -> Component:
         return Component(
             name="Weighted tiers (v3 decision tree)", grade=INTERNAL, internal=internal,
             note="The labels v3 runs report by default. Their held-out test, V8, is "
-                 "pre-registered in the v3 plan and has not been run, so no replication "
+                 "pre-specified in the v3 plan and has not been run, so no replication "
                  "rate is shown beside them anywhere on this site.",
             sources=sources)
     labellings = record["labellings"]
@@ -630,7 +631,7 @@ def _weighted_tiers() -> Component:
     return Component(
         name="Weighted tiers (v3 decision tree)", grade=EMPIRICAL, internal=internal,
         empirical=(
-            f"V8, pre-registered: {record['n_cohorts']} cohorts, {record['n_splits']} "
+            f"V8, pre-specified: {record['n_cohorts']} cohorts, {record['n_splits']} "
             f"splits, {record['n_observations']:,} taxon observations. AUC "
             f"{auc_of('v3_decision_tree'):.3f} with decision-tree weights against "
             f"{auc_of('v3_uniform'):.3f} with one vote each; difference "
