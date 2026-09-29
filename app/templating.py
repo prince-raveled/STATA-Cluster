@@ -20,6 +20,7 @@ from .core.evidence import (
     tier_sentence,
 )
 from .core.glossary import glossary_sections
+from .core.inference import TAIL_P_FLOOR
 from .core.models import FORK_LABELS, METHOD_LABELS, ordinal
 from .core.robustness import TIERS
 from .core.validity import defensibility_register, rule_id
@@ -105,7 +106,7 @@ templates.env.globals.update(
     # Changes whenever the stylesheet or scripts change shape, so a returning visitor
     # never renders new markup against a cached stylesheet. The application version
     # is recorded in every run manifest and is deliberately not bumped for a restyle.
-    ASSETS=f"{config.VERSION}-ui7",
+    ASSETS=f"{config.VERSION}-ui8",
     TIERS=TIERS,
     TIER_REPLICATION=TIER_REPLICATION,
     TIER_VALIDATION=TIER_VALIDATION,
@@ -128,5 +129,7 @@ templates.env.globals.update(
     DEFENSIBILITY=defensibility_register(),
     MODE_LABELS=config.MODE_LABELS,
     MODE_BLURBS=config.MODE_BLURBS,
+    CALIBRATION_PERMUTATIONS=config.CALIBRATION_PERMUTATIONS,
+    TAIL_P_FLOOR=TAIL_P_FLOOR,
     RETENTION_DAYS=config.RETENTION_DAYS,
 )

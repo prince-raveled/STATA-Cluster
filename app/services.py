@@ -234,10 +234,13 @@ def execute(token: str, mode: str, declared=None, covariates=()) -> None:
             timings[phase] = round(now - clock, 2)
             clock = now
 
+        # A job type can differ from the grid it runs: "calibrated" is the Quick grid
+        # plus the permutation calibration (plan §27).
+        engine_mode = config.ENGINE_MODE.get(mode, mode)
         run = run_multiverse(
             dataset,
-            mode=mode,
-            covariate_columns=list(covariates) if mode == "covariate" else (),
+            mode=engine_mode,
+            covariate_columns=list(covariates) if engine_mode == "covariate" else (),
             declared=declared,
             progress=progress,
         )
@@ -248,6 +251,19 @@ def execute(token: str, mode: str, declared=None, covariates=()) -> None:
         progress(0.97, "Attributing variance to the forks")
         attribution = attribute(run)
         lap("attribution")
+        if mode == "calibrated":
+            from .core import inference
+
+            def calibration_progress(fraction: float, message: str):
+                progress(0.975 + 0.014 * fraction, message)
+
+            weights = summary.spec_summary.sort_values("spec_id")["weight"].to_numpy()
+            result = inference.calibrate(
+                run, dataset, weights, n_permutations=config.CALIBRATION_PERMUTATIONS,
+                seed=config.CALIBRATION_SEED, scheme=summary.scheme,
+                progress=calibration_progress)
+            inference.attach(summary, result)
+            lap("calibration")
         progress(0.99, "Saving results")
 
         db.save_payload(token, "run", run)
@@ -364,6 +380,7 @@ def table_records(summary) -> list:
     # (plan §26.2). A v2 run has neither, and its records are unchanged.
     schemes = [c[len("tier_"):] for c in frame.columns if c.startswith("tier_")]
     has_stability = "weight_stable" in frame.columns
+    calibrated = "certified_robust" in frame.columns
     records = []
     for row in frame.itertuples():
         extra = {}
@@ -371,6 +388,10 @@ def table_records(summary) -> list:
             data = row._asdict()
             extra = {"weight_stable": bool(row.weight_stable),
                      "tiers": {scheme: data[f"tier_{scheme}"] for scheme in schemes}}
+        if calibrated:
+            extra.update({"calibrated_q": _number(row.calibrated_q),
+                          "certified_share": _number(row.certified_share, 4),
+                          "certified_robust": bool(row.certified_robust)})
         records.append({
             "taxon_id": int(row.taxon_id),
             "label": row.label,

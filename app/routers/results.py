@@ -21,6 +21,7 @@ from ..core.evidence import (
     tier_sentence,
     unmeasured_sentence,
 )
+from ..core.inference import ASSUMPTIONS
 from ..core.instability import (
     FINGERPRINT_LABELS,
     analyse_taxon,
@@ -30,6 +31,7 @@ from ..core.report import (
     CURVE_AXES,
     attribution_csv,
     build_zip,
+    calibration_csv,
     citation_list,
     long_results_csv_gz,
     methods_paragraph,
@@ -62,6 +64,7 @@ DOWNLOADS = {
     "specifications": ("specifications.csv", "text/csv"),
     "long": ("results_long.csv.gz", "application/gzip"),
     "attribution": ("attribution.csv", "text/csv"),
+    "calibration": ("calibration_rejections.csv", "text/csv"),
     "methods": ("methods.txt", "text/plain; charset=utf-8"),
     "bundle": ("microverse_results.zip", "application/zip"),
 }
@@ -149,6 +152,8 @@ def results_page(request: Request, token: str):
             "unmeasured": unmeasured_sentence(ruleset, scheme),
             "weighting": weighting_summary(summary),
             "curve_axes": CURVE_AXES,
+            "calibration": getattr(summary, "calibration", None),
+            "calibration_assumptions": ASSUMPTIONS,
             "verdict": verdict_sentence(run, summary),
             "n_detected": detected,
             "n_stable": stable,
@@ -208,6 +213,7 @@ def taxon_evidence(request: Request, token: str, taxon_id: int):
                                                      scheme)),
             "weighting": weighting_summary(summary),
             "axes": taxon_axes(run, summary, taxon_id),
+            "calibration": getattr(summary, "calibration", None),
             "fingerprint": stability_fingerprint(row),
             "fingerprint_labels": FINGERPRINT_LABELS,
             "declared": locate_declared(run, taxon_id),
@@ -233,12 +239,22 @@ def curve(token: str, taxon_id: int, axis: str = "effect"):
             "error": f"Unknown axis '{axis}'.",
             "hint": "Available: " + ", ".join(CURVE_AXES) + "."})
     try:
-        _, run, _, _ = _require(token)
+        _, run, summary, _ = _require(token)
         _require_taxon(run, taxon_id)
     except DatasetError as exc:
         return JSONResponse(status_code=getattr(exc, "status_code", 422),
                             content={"error": exc.message, "hint": exc.hint})
-    return JSONResponse(specification_curve(run, taxon_id, axis=axis))
+    return JSONResponse(specification_curve(run, taxon_id, axis=axis,
+                                            certified=certified_specs(summary, taxon_id)))
+
+
+def certified_specs(summary, taxon_id: int):
+    """The specifications a calibrated run rejected for this taxon, or None."""
+    calibration = getattr(summary, "calibration", None)
+    if calibration is None:
+        return None
+    rejected = calibration.rejected
+    return set(rejected.loc[rejected["taxon"] == taxon_id, "spec_id"].astype(int))
 
 
 def _require_finished_job(token: str):
@@ -336,6 +352,12 @@ def download(token: str, kind: str):
         payload = long_results_csv_gz(run)
     elif kind == "attribution":
         payload = attribution_csv(attribution or {})
+    elif kind == "calibration":
+        calibration = getattr(summary, "calibration", None)
+        if calibration is None:
+            raise NotFoundError("This run was not calibrated.",
+                                "Start a calibrated run from the configure page.")
+        payload = calibration_csv(run, calibration)
     elif kind == "bundle":
         payload = build_zip(run, summary, attribution)
     else:

@@ -84,6 +84,9 @@ class RobustnessSummary:
     #: primary scheme's}, for the grid-composition panel (plan §26.2). None under v2.
     composition: object = None
     tier_changes: object = None
+    #: inference.CalibrationResult for a calibrated run (plan §27), else None — also a
+    #: class-level default, so every summary stored before it unpickles unchanged.
+    calibration: object = None
 
     @property
     def weighted(self) -> bool:
@@ -405,6 +408,15 @@ def verdict_sentence(run, summary: RobustnessSummary) -> str:
               else f"across {summary.n_specs_total:,} valid specifications")
     sentence = "; ".join(parts) + f", {across}."
 
+    calibration = getattr(summary, "calibration", None)
+    if calibration is not None:
+        n = calibration.n_certified
+        sentence += (
+            f" With permutation-calibrated error control ({calibration.n_permutations:,} "
+            f"permutations, FDR {calibration.q:g} across taxa), {calibration.n_selected} of "
+            f"{calibration.n_taxa_tested} taxa differ under at least one pipeline and "
+            f"{n} {'is' if n == 1 else 'are'} CERTIFIED ROBUST."
+        )
     if run.declared_spec_id >= 0 and np.isfinite(summary.declared_percentile):
         sentence += (
             f" Your reported pipeline sits at the {ordinal(summary.declared_percentile)} "

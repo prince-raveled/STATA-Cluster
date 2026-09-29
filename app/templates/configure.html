@@ -80,6 +80,24 @@
         </div>
       </fieldset>
 
+      <div x-show="mode === 'quick'" style="margin-top:var(--space-5)">
+        <fieldset class="panel" aria-describedby="calibrate-help">
+          <legend class="visually-hidden">Calibrated error control</legend>
+          <label class="chip-check" style="font-weight:700">
+            <input type="checkbox" name="calibrate" value="1">
+            Also calibrate the error rate, by permuting the group labels</label>
+          <p class="small muted" id="calibrate-help" style="margin:10px 0 0">
+            Every Quick analysis is repeated {{ CALIBRATION_PERMUTATIONS|commafy }} times
+            with the two groups shuffled, which gives each taxon a p-value for
+            “different under at least one pipeline” with the false discovery rate
+            controlled at 5% across taxa, and marks as <b>CERTIFIED ROBUST</b> a taxon
+            whose error-controlled pipelines carry at least 80% of its weight in one
+            direction. It makes the run slower. Its guarantee assumes the samples are
+            exchangeable between the groups, and it has not yet been validated on
+            published data.</p>
+        </fieldset>
+      </div>
+
       {% if dataset.covariate_columns %}
       <div x-show="mode === 'covariate'" x-cloak style="margin-top:var(--space-5)">
         <fieldset class="panel">

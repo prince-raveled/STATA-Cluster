@@ -56,6 +56,29 @@
     </div>
   </dl>
 
+  {% if calibration %}
+  <!-- ============ v3: calibrated error control ============ -->
+  <section class="result-section" aria-labelledby="calibrated-title">
+    <div class="section-head">
+      {{ section_label('With an error rate attached', '27', 'purple') }}
+      <h2 id="calibrated-title">{% if row.certified_robust %}CERTIFIED ROBUST.{% elif row.calibrated_discovery %}Discovered, not certified robust.{% else %}Not discovered with calibrated error control.{% endif %}</h2>
+      <p>The group labels were shuffled {{ calibration.n_permutations|commafy }} times and
+        every analysis repeated; this taxon's strongest result across its analyses is
+        compared with what shuffled groups produce.</p>
+    </div>
+    <dl class="evidence-strip">
+      <div><dt>Family p-value</dt><dd class="num">{% if row.calibrated_p <= TAIL_P_FLOOR %}&lt; {{ '%g'|format(TAIL_P_FLOOR) }}{% else %}{{ '%.2g'|format(row.calibrated_p) if row.calibrated_p == row.calibrated_p else '-' }}{% endif %}<small>{% if row.calibrated_p_tail_fitted %}from the fitted tail of the shuffled maxima{% else %}share of shuffles at least as extreme{% endif %}</small></dd></div>
+      <div><dt>Adjusted across taxa</dt><dd class="num">{% if row.calibrated_q <= TAIL_P_FLOOR %}&lt; {{ '%g'|format(TAIL_P_FLOOR) }}{% else %}{{ '%.2g'|format(row.calibrated_q) if row.calibrated_q == row.calibrated_q else '-' }}{% endif %}<small>discovered if at most {{ calibration.q }}</small></dd></div>
+      <div><dt>Certified share</dt><dd class="num">{{ row.certified_share|percent(0) }}<small>weight of analyses rejected with error control; 80% needed</small></dd></div>
+      <div><dt>Their direction</dt><dd class="num">{{ row.certified_sign_agreement|percent(0) }}<small>agree on which group is higher; 95% needed</small></dd></div>
+      <div><dt>Analyses certified</dt><dd class="num">{{ row.n_specs_certified|commafy }}<small>marked with rings on the curve below</small></dd></div>
+    </dl>
+    <p class="note" style="margin-top:12px">Beside the label above, never instead of it.
+      The guarantee assumes the samples are exchangeable between the groups and has not
+      yet been validated on published data.</p>
+  </section>
+  {% endif %}
+
   {% if axes.weighted %}
   <!-- ============ v3: weighting, pseudocount, signed z ============ -->
   {% set stable = row.weight_stable %}
@@ -245,6 +268,7 @@
       <ul class="plot-legend" aria-label="Legend">
         <li><i class="sw-sig" aria-hidden="true"></i>significant after correction</li>
         <li><i class="sw-null" aria-hidden="true"></i>not significant</li>
+        {% if calibration %}<li><i class="sw-certified" aria-hidden="true"></i>rejected with calibrated error control</li>{% endif %}
         <li><i class="sw-declared" aria-hidden="true"></i>your declared pipeline, if any</li>
       </ul>
     </div>

@@ -129,7 +129,19 @@ MODE_LABELS = {
     "quick": "Quick",
     "full": "Full",
     "covariate": "Covariate",
+    # v3 plan §27: a job type, not a fourth grid. It runs the Quick grid and then the
+    # permutation calibration on top of it (services.execute maps it to "quick").
+    "calibrated": "Calibrated Quick",
 }
+
+#: The grid each job type runs.
+ENGINE_MODE = {"calibrated": "quick"}
+
+#: Permutations for a calibrated run on the web (plan §27.3 step 2), and the seed they
+#: are drawn with. Both are recorded in the run's manifest.
+CALIBRATION_PERMUTATIONS = int(os.environ.get("MICROVERSE_CALIBRATION_PERMUTATIONS",
+                                              "2000"))
+CALIBRATION_SEED = 20260929
 MODE_BLURBS = {
     "quick": "Forks 1-4 plus the four elementary methods and FDR. The default, and the "
              "mode with the best evidence behind it — Pelto et al. 2025 found elementary "
@@ -138,6 +150,11 @@ MODE_BLURBS = {
             "matrices. Slower; the sampling fraction is reported.",
     "covariate": "Fork 6: every subset of the covariates you choose, over a reference "
                  "sub-grid of the other forks. This is the Tierney et al. 2022 analysis.",
+    "calibrated": "Quick, then permutation-calibrated error control across taxa and "
+                  "pipelines: each taxon's family of pipelines is tested with a maxT "
+                  "permutation test, discoveries are controlled at FDR 0.05 across taxa, "
+                  "and a taxon is CERTIFIED ROBUST when rejected pipelines carry at least "
+                  "80% of the weight with a consistent direction.",
 }
 
 

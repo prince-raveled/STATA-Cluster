@@ -89,7 +89,7 @@ CURVE_AXES = {
 
 
 def specification_curve(run, taxon_id: int, max_points: int = 4000,
-                        axis: str = "effect") -> dict:
+                        axis: str = "effect", certified=None) -> dict:
     """Simonsohn's two-panel plot for one taxon.
 
     Upper panel: every tested specification on the chosen axis — the harmonised effect
@@ -98,7 +98,9 @@ def specification_curve(run, taxon_id: int, max_points: int = 4000,
     this is how you *see* that the null results all sit under one rarefaction depth.
 
     `effect` and `z` are both returned in plotting order whichever axis sorts them, so
-    a client can label a point with either.
+    a client can label a point with either. `certified` is the set of specification ids
+    a calibrated run rejected for this taxon with error control (plan §27.5); each
+    plotted point says whether it is one.
     """
     if axis not in CURVE_AXES:
         raise ValueError(f"Unknown axis '{axis}'. Available: {', '.join(CURVE_AXES)}.")
@@ -115,7 +117,8 @@ def specification_curve(run, taxon_id: int, max_points: int = 4000,
             "n_specs": 0, "n_plotted": 0, "stride": 1,
             "group_a": run.group_labels[0], "group_b": run.group_labels[1],
             "axis": axis, "axis_label": CURVE_AXES[axis],
-            "effect": [], "z": [], "significant": [], "p_adjusted": [], "p_raw": [],
+            "effect": [], "z": [], "significant": [], "certified": [], "p_adjusted": [],
+            "p_raw": [],
             "spec_id": [], "labels": [],
             "forks": {}, "fork_labels": {}, "categories": {},
             "declared_position": -1, "declared": {},
@@ -170,6 +173,8 @@ def specification_curve(run, taxon_id: int, max_points: int = 4000,
         "effect": [float(v) for v in thinned["effect_h"]],
         "z": [float(v) for v in thinned["z"]],
         "significant": [bool(v) for v in thinned["significant"]],
+        "certified": ([int(v) in certified for v in thinned["spec_id"]]
+                      if certified is not None else []),
         "p_adjusted": [float(v) for v in thinned["p_adj"]],
         "p_raw": [float(v) for v in thinned["p_raw"]],
         "spec_id": [int(v) for v in thinned["spec_id"]],
@@ -289,6 +294,31 @@ def _v3_weighting_sentence(summary) -> str:
     return sentence
 
 
+def _calibration_sentences(calibration) -> str:
+    """The error-control guarantee and its assumptions, in plain sentences (§27.5)."""
+    procedure = {"bh": "Benjamini-Hochberg", "by": "Benjamini-Yekutieli",
+                 "ebh": "e-BH"}[calibration.discovery]
+    return (
+        f"Error control was calibrated by permutation ({calibration.n_permutations:,} "
+        f"permutations of the group labels, seed {calibration.seed}): for each taxon, "
+        f"the maximum absolute z over the {calibration.specs_calibrated:,} calibrated "
+        f"specifications was compared with its permutation distribution (single-step "
+        f"maxT, with a generalised Pareto approximation where fewer than ten permutation "
+        f"maxima exceeded the observed value), and taxa were selected by "
+        f"{procedure} at {calibration.q:g}; {calibration.n_selected} of "
+        f"{calibration.n_taxa_tested} taxa were selected. Within a selected taxon, a "
+        f"specification was rejected when its maxT-adjusted p-value was at most "
+        f"q·R/m = {calibration.within_threshold:.2g}, and a taxon was called CERTIFIED "
+        f"ROBUST when rejected specifications carried at least 80% of its weight with at "
+        f"least 95% sign agreement ({calibration.n_certified} taxa). This controls the "
+        f"false discovery rate across taxa and the selective error within each selected "
+        f"taxon if samples are exchangeable between the groups under the null "
+        f"hypothesis, and relies on subset pivotality within each taxon's family, which "
+        f"strong compositional shifts in other taxa can violate; covariate adjustment "
+        f"was not calibrated."
+    )
+
+
 #: How the methods paragraph names each scheme mid-sentence.
 _SCHEME_PHRASES = {
     "uniform": "one vote per specification",
@@ -362,6 +392,9 @@ def methods_paragraph(run, summary, attribution=None) -> str:
         f"the data). {counts['NOT DETECTED']} taxa were significant in no specification "
         f"and {counts['INSUFFICIENT']} were testable in fewer than ten."
     )
+    calibration = getattr(summary, "calibration", None)
+    if calibration is not None:
+        lines.append(_calibration_sentences(calibration))
     if attribution and attribution.get("significance"):
         significance = attribution["significance"]
         lines.append(
@@ -645,6 +678,9 @@ def run_manifest(run, summary, attribution=None) -> dict:
         manifest["ruleset"] = ruleset
         manifest["rules_applied"] = defensibility_register()["rulesets"][ruleset]
         manifest["weighting"] = weighting_summary(summary)
+    calibration = getattr(summary, "calibration", None)
+    if calibration is not None:
+        manifest["calibration"] = calibration_manifest(calibration)
     if attribution:
         manifest["attribution"] = {
             target: {
@@ -709,6 +745,49 @@ def run_manifest(run, summary, attribution=None) -> dict:
         "method_benchmark": NEARING_STUDY,
     }
     return manifest
+
+
+def calibration_manifest(calibration) -> dict:
+    """What a calibrated run did, enough to repeat it (plan §27.3): the permutations
+    (count, seed and a hash of the label matrix), the procedures, the counts and the
+    assumptions its guarantee rests on."""
+    from .inference import ASSUMPTIONS, CERTIFIED_CR, CERTIFIED_SIGN, TAIL_P_FLOOR
+    return _jsonable({
+        "plan": "docs/MICROVERSE_V3_PLAN.md section 27",
+        "permutations": calibration.n_permutations,
+        "seed": calibration.seed,
+        "permutation_generator": "numpy.random.default_rng(seed).permuted, row 0 the "
+                                 "observed labels",
+        "permutations_sha256": calibration.permutations_sha256 or None,
+        "strata": calibration.strata,
+        "family_test": "single-step maxT over the calibrated specifications, generalised "
+                       "Pareto tail where fewer than 10 permutation maxima reach the "
+                       "observed value",
+        "tail_p_floor": TAIL_P_FLOOR,
+        "discovery": calibration.discovery,
+        "q": calibration.q,
+        "weights": calibration.scheme,
+        "n_taxa_tested": calibration.n_taxa_tested,
+        "n_selected": calibration.n_selected,
+        "within_threshold": calibration.within_threshold,
+        "certified_robust_rule": {"selected": True, "certified_share_at_least": CERTIFIED_CR,
+                                  "sign_agreement_at_least": CERTIFIED_SIGN},
+        "n_certified_robust": calibration.n_certified,
+        "specs_calibrated": calibration.specs_calibrated,
+        "specs_excluded": calibration.specs_excluded,
+        "timings": calibration.timings,
+        "assumptions": list(ASSUMPTIONS),
+        "validation": "V9 (plan section 33) has not been run",
+    })
+
+
+def calibration_csv(run, calibration) -> bytes:
+    """Every (specification, taxon) pair rejected with error control, with the
+    specification's choices: the certified part of the distribution, in full."""
+    frame = calibration.rejected.copy()
+    frame["taxon_name"] = [run.taxa_names[i] for i in frame["taxon"]]
+    frame = frame.merge(run.specs_frame, on="spec_id", how="left")
+    return frame.drop(columns=["taxon"]).to_csv(index=False).encode()
 
 
 def _jsonable(value):
@@ -776,6 +855,20 @@ labellings have been measured ("tier_replication_by_labelling").
 """
 
 
+ZIP_README_CALIBRATED = """
+This run: calibrated
+--------------------
+Error control was calibrated by permuting the group labels (manifest.json,
+"calibration", gives the number of permutations, the seed, the procedures and the
+assumptions). taxa_robustness.csv gains calibrated_p and calibrated_q (the taxon's
+family p-value and its FDR-adjusted value across taxa), calibrated_discovery,
+certified_share (the weight of specifications rejected with error control),
+certified_sign_agreement and certified_robust. calibration_rejections.csv lists every
+(specification, taxon) pair rejected, with the specification's choices. The descriptive
+tier is kept beside the calibrated result; neither replaces the other.
+"""
+
+
 def build_zip(run, summary, attribution=None, long_csv_gz: bytes = None) -> bytes:
     """Assemble the results bundle.
 
@@ -789,7 +882,9 @@ def build_zip(run, summary, attribution=None, long_csv_gz: bytes = None) -> byte
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("README.txt", ZIP_README + (
-            ZIP_README_V3 if getattr(summary, "weighted", False) else ""))
+            ZIP_README_V3 if getattr(summary, "weighted", False) else "") + (
+            ZIP_README_CALIBRATED if getattr(summary, "calibration", None) is not None
+            else ""))
         archive.writestr("methods.txt",
                          methods_paragraph(run, summary, attribution) + "\n\nReferences\n\n"
                          + "\n".join(f"{i + 1}. {c}" for i, c in enumerate(citation_list())))
@@ -798,6 +893,9 @@ def build_zip(run, summary, attribution=None, long_csv_gz: bytes = None) -> byte
         archive.writestr("results_long.csv.gz", long_csv_gz)
         if attribution:
             archive.writestr("attribution.csv", attribution_csv(attribution))
+        calibration = getattr(summary, "calibration", None)
+        if calibration is not None:
+            archive.writestr("calibration_rejections.csv", calibration_csv(run, calibration))
         archive.writestr("manifest.json",
                          json.dumps(run_manifest(run, summary, attribution), indent=2,
                                     default=str))

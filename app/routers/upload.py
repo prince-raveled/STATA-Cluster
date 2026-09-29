@@ -283,6 +283,8 @@ async def start_run(request: Request, token: str, background: BackgroundTasks):
     mode = str(form.get("mode") or "quick")
     if mode not in config.MODE_LABELS:
         mode = "quick"
+    if mode == "quick" and form.get("calibrate"):
+        mode = "calibrated"        # the Quick grid plus permutation calibration (§27)
     # getlist, not dict(): the covariate checkboxes repeat one key, and collapsing the
     # form to a dict keeps only the last of them.
     covariates = [str(v) for v in form.getlist("covariates")]

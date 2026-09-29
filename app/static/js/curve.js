@@ -86,6 +86,15 @@
       }
     }
 
+    /* A calibrated run marks the specifications rejected with error control (v3 plan
+       27.5) as rings drawn over the points, so the colours keep their meaning. */
+    const certX = [], certY = [];
+    if (Array.isArray(data.certified) && data.certified.length === n) {
+      for (let i = 0; i < n; i++) {
+        if (data.certified[i]) { certX.push(i); certY.push(values[i]); }
+      }
+    }
+
     const traces = [
       {
         x: nullX, y: nullY, text: nullText, type: "scattergl", mode: "markers",
@@ -98,6 +107,15 @@
         marker: { size: 5, color: colors.significant, opacity: 0.92 }, xaxis: "x", yaxis: "y"
       }
     ];
+
+    if (certX.length) {
+      traces.push({
+        x: certX, y: certY, type: "scattergl", mode: "markers",
+        name: "rejected with calibrated error control", hoverinfo: "skip",
+        marker: { size: 9, color: "rgba(0,0,0,0)", line: { color: colors.ink, width: 1.2 } },
+        xaxis: "x", yaxis: "y"
+      });
+    }
 
     /* ---- lower panel: the fork dot matrix ---- */
     const rows = buildRows(data);

@@ -198,10 +198,11 @@
       <h2 id="modes-title">Three modes, never one crossed grid</h2>
       <p>Fully crossing all seven choices is over 500,000 specifications, which no web request
         can run. So the space is explored in three separated modes, chosen after your data is
-        validated.</p>
+        validated. Quick can also be run calibrated: the same grid, then repeated with the
+        groups shuffled to attach an error rate.</p>
     </div>
     <div class="grid-3">
-      {% for name in ["quick", "full", "covariate"] %}
+      {% for name in ["quick", "full", "covariate", "calibrated"] %}
         <div class="panel">
           <h3>{{ MODE_LABELS[name] }}{% if name == "quick" %} <span class="mode-tag" style="vertical-align:middle">Recommended</span>{% endif %}</h3>
           <p class="small" style="margin-top:8px;color:var(--ink-2)">{{ MODE_SUMMARIES[name] }}</p>

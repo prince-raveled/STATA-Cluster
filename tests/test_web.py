@@ -170,7 +170,9 @@ def test_api_info_declares_the_policy(client):
     info = client.get("/api/info").json()
     assert info["policy"]["best_specification_export"].startswith("never")
     assert info["policy"]["two_group_only"] is True
-    assert set(info["modes"]) == {"quick", "full", "covariate"}
+    # "calibrated" is the v3 job type (plan §27): the Quick grid plus permutation
+    # calibration, not a fourth grid.
+    assert set(info["modes"]) == {"quick", "full", "covariate", "calibrated"}
     assert len(info["forks"]) == 8  # seven forks, with rarefaction seeds listed
 
 

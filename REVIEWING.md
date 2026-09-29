@@ -41,7 +41,10 @@ specification counts (a decision tree over the pipeline order), and
 `app/core/weighted.py`, which turns those weights into each taxon's shares. The maths is
 one page, `docs/v3_weighting_note.md`; every departure from the v3 plan is in
 `docs/V3_DEVIATIONS.md`. The weighted labels are graded internal only: their held-out
-test (V8) has not been run.
+test (V8) has not been run. `app/core/inference.py` is the calibrated inference of plan
+§27: read its docstring for the procedure and its assumptions; `tests/test_inference.py`
+checks it against the scalar methods and a brute-force permutation loop. Its validation
+on published data (V9) has not been run.
 
 ---
 

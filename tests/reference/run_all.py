@@ -244,6 +244,24 @@ CHECKS = [
         "args": ["--max-cohorts", "4", "--repeats", "1"],
     },
     {
+        # v3 plan §27.6: simulated nulls only, no data to fetch. The full 200 replicates
+        # (the registered design) take a while; this smaller run checks the script.
+        "name": "calibrated family p-values are uniform under a simulated null (plan §27.6)",
+        "script": "calibration_null.py",
+        "python": MAIN_PYTHON,
+        "requires": lambda: True,
+        "reason": "",
+        "args": ["--replicates", "20", "--permutations", "199"],
+    },
+    {
+        "name": "calibration fits its compute budget on the IBD demo (plan §27.4)",
+        "script": "calibration_benchmark.py",
+        "python": MAIN_PYTHON,
+        "requires": lambda: True,
+        "reason": "",
+        "args": ["--threads", "2"],
+    },
+    {
         "name": "regenerate the defensibility register from the engine (plan §26.3)",
         "script": "make_defensibility_register.py",
         "python": MAIN_PYTHON,

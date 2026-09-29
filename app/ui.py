@@ -207,11 +207,22 @@ RUN_STAGES = (
     ("save", "Saving results and exports"),
 )
 
+#: A calibrated job (plan §27) has one more stage, after attribution.
+CALIBRATED_STAGES = RUN_STAGES[:6] + (("calibrate", "Calibrating with permutations"),) \
+    + RUN_STAGES[6:]
+
 _MATRIX = re.compile(r"matrix\s+(\d+)\s+of\s+(\d+)", re.I)
 
 
-def _stage_index(message: str, progress: float) -> int:
+def _stage_index(message: str, progress: float, calibrated: bool = False) -> int:
     text = (message or "").lower()
+    if calibrated:
+        if text.startswith("permuting") or text.startswith("calibrating"):
+            return 6
+        if text.startswith("saving") or progress >= 0.99:
+            return 7
+        if progress >= 0.975:
+            return 6
     if text.startswith("queued"):
         return 0
     if text.startswith("starting") or text.startswith("enumerating"):
@@ -245,11 +256,14 @@ def run_stages(job) -> list:
     status = getattr(job, "status", "")
     message = getattr(job, "message", "") or ""
     progress = float(getattr(job, "progress", 0.0) or 0.0)
-    current = len(RUN_STAGES) if status == "done" else _stage_index(message, progress)
+    calibrated = getattr(job, "mode", "") == "calibrated"
+    stage_list = CALIBRATED_STAGES if calibrated else RUN_STAGES
+    current = (len(stage_list) if status == "done"
+               else _stage_index(message, progress, calibrated))
 
     matrix = _MATRIX.search(message)
     stages = []
-    for index, (key, label) in enumerate(RUN_STAGES):
+    for index, (key, label) in enumerate(stage_list):
         if index < current:
             state = "done"
         elif index == current:
@@ -257,7 +271,7 @@ def run_stages(job) -> list:
         else:
             state = "pending"
         detail = ""
-        if key == "fit" and matrix and state == "current":
+        if key in ("fit", "calibrate") and matrix and state == "current":
             detail = f"matrix {int(matrix.group(1)):,} of {int(matrix.group(2)):,}"
         stages.append({"key": key, "label": label, "state": state, "detail": detail})
     return stages
@@ -272,6 +286,7 @@ RUN_PHASES = (
     ("analysis", "fitting every specification"),
     ("robustness", "robustness labels"),
     ("attribution", "choice attribution"),
+    ("calibration", "permutation calibration"),
     ("saving", "saving results and downloads"),
 )
 
@@ -377,6 +392,11 @@ MODE_SUMMARIES = {
             "matrices it accepts. Slower; the sampling fraction is reported.",
     "covariate": "Every subset of the covariates you choose, over a reference sub-grid of "
                  "the other choices. This is the Tierney et al. 2022 analysis.",
+    "calibrated": "Quick, then every analysis repeated with the two groups shuffled, "
+                  "to attach an error rate: which taxa differ under at least one "
+                  "pipeline with the false discovery rate controlled across taxa, and "
+                  "which are CERTIFIED ROBUST. Slower; not yet validated on published "
+                  "data.",
 }
 
 TRANSFORM_NAMES = {"tss": "TSS", "clr": "CLR", "raw": "raw counts", "tmm": "TMM"}

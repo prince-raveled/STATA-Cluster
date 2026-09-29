@@ -30,6 +30,13 @@ signed z. The weighted labels have **not** yet been tested on held-out data (V8)
 replication rates below, measured for the one-vote labels, are not shown beside them.
 Runs stored before v3 are summarised exactly as before.
 
+Phase 1 adds a **calibrated** job type (`app/core/inference.py`): the Quick grid, then
+every analysis repeated with the group labels permuted, giving each taxon a family
+p-value (maxT over its pipelines) with the FDR controlled across taxa, and a CERTIFIED
+ROBUST label when error-controlled pipelines carry at least 80% of its weight in one
+direction. It is shown beside the descriptive tier, never instead of it, and it has not
+yet been validated on published data (V9).
+
 ---
 
 ## Quick start

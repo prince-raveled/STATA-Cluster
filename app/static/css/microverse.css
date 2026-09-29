@@ -943,3 +943,5 @@ pre.code code { background: none; padding: 0; color: inherit; }
 .axis-toggle label { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-2); }
 .axis-toggle input { accent-color: var(--accent-strong); }
 .scheme-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: var(--space-3); }
+/* v3 §27: a specification rejected with calibrated error control, drawn as a ring. */
+.plot-legend .sw-certified { background: transparent; box-shadow: inset 0 0 0 2px var(--ink); border-radius: 50%; }

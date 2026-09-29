@@ -425,6 +425,20 @@ VALIDATION_MATRIX = [
     ),
     "WEIGHTED_TIERS",
     Component(
+        name="Calibrated inference (v3)",
+        grade=INTERNAL,
+        internal="tests/test_inference.py: the vectorised tests equal the scalar ones to "
+                 "1e-10 on observed and permuted labels; the streamed maxima equal a "
+                 "brute-force loop over permutations; the depth-adjusted score test "
+                 "equals statsmodels'; BH and BY equal statsmodels'.",
+        note="Permutation-calibrated error control across taxa and pipelines, and the "
+             "CERTIFIED ROBUST label, for calibrated Quick runs. Its null-uniformity "
+             "check and its pre-registered validation on published data (V9) have not "
+             "been run, so no error rate or power is claimed for it here.",
+        sources=["app/core/inference.py", "tests/test_inference.py",
+                 "tests/reference/calibration_null.py"],
+    ),
+    Component(
         name="Reproducing a published analysis",
         grade=REFERENCE,
         internal="The paper's pipeline re-implemented from the authors' code: its sample "

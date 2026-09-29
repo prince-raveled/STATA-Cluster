@@ -18,6 +18,7 @@
     <span class="chip">{{ MODE_LABELS.get(run.mode, run.mode) }} mode</span>
     <span class="chip">{{ dataset.n_samples }} samples · {{ dataset.n_taxa|commafy }} taxa</span>
     <span class="chip">{{ dataset.group_b }} vs {{ dataset.group_a }}</span>
+    {% if calibration %}<span class="chip">calibrated · {{ calibration.n_permutations|commafy }} permutations</span>{% endif %}
     {% set took = RUN_TIME(job) %}
     <span class="chip" title="{% for part in took.parts %}{{ part.label|capitalize }}: {{ part.seconds|duration }}{{ '; ' if not loop.last }}{% endfor %}">ran in {{ took.total|duration }} (fitting {{ took.fitting|duration }})</span>
   {% endcall %}
@@ -208,6 +209,45 @@
       {% endfor %}
     </div>
 
+    {% if calibration %}
+    <div class="panel" id="calibration" style="margin-top:var(--space-5)" aria-labelledby="calibration-title">
+      <div class="panel-head">
+        <h3 id="calibration-title">Calibrated error control</h3>
+        <span class="grade-chip grade-internal">{{ GRADE_LABEL['internal'] }}</span>
+      </div>
+      <p class="small" style="margin:0 0 14px;color:var(--ink-2)">The labels above describe
+        how often a taxon was significant. This asks a different question with an error
+        rate attached. The group labels were shuffled
+        {{ calibration.n_permutations|commafy }} times and every Quick analysis repeated
+        each time, so each taxon's strongest result across its analyses can be compared
+        with what shuffled groups produce.</p>
+      <div class="stats">
+        <div class="stat"><span class="stat-value">{{ calibration.n_taxa_tested|commafy }}</span>
+          <span class="stat-label">taxa tested</span></div>
+        <div class="stat"><span class="stat-value">{{ calibration.n_selected|commafy }}</span>
+          <span class="stat-label">differ under at least one analysis</span>
+          <span class="stat-note">false discovery rate {{ calibration.q|percent(0) }} across taxa</span></div>
+        <div class="stat"><span class="stat-value">{{ calibration.n_certified|commafy }}</span>
+          <span class="stat-label">CERTIFIED ROBUST</span>
+          <span class="stat-note">error-controlled analyses carry ≥ 80% of the weight, ≥ 95% in one direction</span></div>
+      </div>
+      <details class="disclosure" style="margin-top:14px">
+        <summary>What the guarantee rests on</summary>
+        <div class="disclosure-body">
+          <ul class="limits-list">
+            {% for line in calibration_assumptions %}<li>{{ line }}</li>{% endfor %}
+            <li>The calibration itself has not yet been validated on published data (V9 on
+              the Evidence page); tests show it is computed as specified.</li>
+            <li>A certified analysis is one rejected with error control inside a taxon
+              that was already discovered, at level q·R/m =
+              {{ '%.2g'|format(calibration.within_threshold) }}. The descriptive label is
+              kept beside it: neither replaces the other.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+    {% endif %}
+
     {% if weighting %}
     <div class="panel" id="grid-composition" style="margin-top:var(--space-5)" aria-labelledby="composition-title">
       <div class="panel-head">
@@ -364,6 +404,7 @@
       <ul class="plot-legend" aria-label="Legend">
         <li><i class="sw-sig" aria-hidden="true"></i>significant after correction</li>
         <li><i class="sw-null" aria-hidden="true"></i>not significant</li>
+        {% if calibration %}<li><i class="sw-certified" aria-hidden="true"></i>rejected with calibrated error control</li>{% endif %}
         <li><i class="sw-declared" aria-hidden="true"></i>your declared pipeline, if any</li>
       </ul>
       <div id="curve-declared" style="margin-top:14px"></div>
@@ -715,6 +756,15 @@
           <div class="download-file">attribution.csv</div></div>
         <a class="btn btn-secondary btn-sm" href="/download/{{ token }}/attribution">Download</a>
       </div>
+      {% if calibration %}
+      <div class="download">
+        <span class="download-icon" aria-hidden="true">csv</span>
+        <div><div class="download-name">Calibrated rejections</div>
+          <div class="download-desc">Every specification rejected with error control for every discovered taxon, with its choices.</div>
+          <div class="download-file">calibration_rejections.csv</div></div>
+        <a class="btn btn-secondary btn-sm" href="/download/{{ token }}/calibration">Download</a>
+      </div>
+      {% endif %}
       <div class="download">
         <span class="download-icon" aria-hidden="true">txt</span>
         <div><div class="download-name">Methods paragraph</div>
@@ -816,6 +866,7 @@
   function labelCell(cell) {
     const data = cell.getRow().getData();
     let html = tierChip(cell.getValue());
+    if (data.certified_robust) html += ' <span class="tier robust">CERTIFIED ROBUST</span>';
     if (data.weight_stable === false && data.tiers) {
       const parts = schemeKeys.map(function (key, i) { return schemeNames[i] + ": " + data.tiers[key]; });
       html += ' <span class="weight-flag" title="' + escapeHtml(parts.join("; ")) + '">changes with weighting</span>';
@@ -900,6 +951,18 @@
           + "percentile). Export columns: iqr_low, iqr_high",
         formatter: (cell) => isNum(cell.getValue())
           ? "[" + cell.getValue().toFixed(2) + ", " + cell.getRow().getData().iqr_high.toFixed(2) + "]" : "–" },
+      {% if calibration %}
+      { title: "Calibrated q", field: "calibrated_q", width: 120, hozAlign: "right", cssClass: "num-cell",
+        formatter: expo,
+        headerTooltip: "The taxon's family p-value (strongest result across its analyses, "
+          + "against shuffled groups), adjusted for the false discovery rate across taxa. "
+          + "Export column: calibrated_q" },
+      { title: "Certified share", field: "certified_share", width: 130, hozAlign: "right", cssClass: "num-cell",
+        formatter: pct,
+        headerTooltip: "The weight of this taxon's analyses rejected with calibrated error "
+          + "control. CERTIFIED ROBUST needs 80% or more, in one direction. "
+          + "Export column: certified_share" },
+      {% endif %}
       { title: "Higher in", field: "direction", minWidth: 150,
         headerTooltip: "Which group the taxon is more abundant in, where the analyses "
           + "agree. Export column: direction",

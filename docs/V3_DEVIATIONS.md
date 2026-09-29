@@ -144,3 +144,84 @@ refused zenodo.org, so the archive could not be downloaded. Nothing was substitu
 script, its registration in `run_all.py`, the record format, the site's rendering of it
 and the tests of its statistics are in place, and the site says V8 has not been run.
 R 4.3.3 is installed for the export step once the archive is available.
+
+## Phase 1 — calibrated multiverse inference (plan §27)
+
+### A. Scientific choices the plan left open
+
+**A1 — Depth-adjusted presence/absence uses the score test in the calibrated family.**
+Plan §27.3 step 3 says the R9 logistic model is "handled by a residualised score". The
+uncalibrated grid reports a Wald test from an iterative fit, which would need one fit per
+permutation. The calibrated engine therefore uses the score test for group in
+presence ~ 1 + group + log depth, whose null model does not involve the labels and is
+fitted once; the same statistic is used for the observed and the permuted labels, as
+validity requires. Its observed p-value differs from the Wald p-value the grid shows for
+those specifications. It equals statsmodels' GLM score test (`tests/test_inference.py`).
+The 1e-10 equality of plan §27.6 is held for the four closed-form tests (Wilcoxon, Welch,
+linear, 2×2 logistic).
+
+**A2 — Specifications differing only in their FDR setting are one hypothesis.** They share
+one fit and one p-value, so they are one member of the family for the maxT and are
+rejected together; their weights still add up in the certified share. Per-specification
+FDR is what the calibrated procedure replaces.
+
+**A3 — The within-family threshold is q·R/m whichever discovery procedure is chosen.**
+Plan §27.3 step 7 states it for BH selection; BY and e-BH selections use the same level.
+
+**A4 — e-BH uses the p-to-e calibrator e = κ p^(κ−1) with κ = 1/2**, fixed before any
+data were seen. The plan names p-to-e calibration but not the calibrator.
+
+**A5 — The generalised Pareto tail is accepted by a Cramér–von Mises test.** The number of
+exceedances starts at 250 (or B/4) and falls by 10 until the fit is not rejected at 0.05,
+down to 10; with no acceptable fit the raw permutation p-value is kept. Parameters are
+estimated from the same exceedances the test uses, so the test is approximate. A
+tail-fitted p-value below 1e-12 is reported as 1e-12: an extrapolation that far is not a
+measurement, and no threshold in use (q/m > 1e-6) can depend on it.
+
+**A6 — |z| is taken directly for the normal-based tests, and skipped where it cannot
+matter for the t-based ones.** For Wilcoxon and the logistic tests |z| is the normal
+deviate itself, which equals Φ⁻¹(1 − p/2) up to rounding, and is computed the same way
+for observed and permuted labels. For Welch and the linear model, Student's t has heavier
+tails than the normal for every df > 0, so |z| ≤ |t|; a permuted cell whose |t| does not
+exceed the running maximum cannot raise it and is not converted. The maxima are exactly
+those of full evaluation (tested), and calibration on the IBD demo took 20 s rather than
+61 s for B = 2,000 with two BLAS threads in the build container.
+
+**A7 — Calibration covers the Quick grid only.** Plan §27.4 lists ALDEx2 as calibrated on
+the web as well; a calibrated run is a Quick run, which has no ALDEx2, so ALDEx2's
+vectorised calibration is deferred. Covariate-mode grids are not calibrated (plan §27.3,
+v3.1). Specifications outside the calibrated family are counted in the manifest.
+
+**A8 — The running weighted significance share is not streamed.** Plan §27.3 step 4 keeps
+it beside the running maximum; nothing in steps 5–10 uses it, so it is not computed.
+
+### B. Interface and records
+
+**B1 — "calibrated" is a job type, not a fourth grid.** It is chosen by a checkbox under
+Quick on the configure page (or mode `calibrated` in the API), recorded as the job's mode,
+and runs the Quick grid (`config.ENGINE_MODE`). The progress page shows one more stage.
+
+**B2 — The permutation matrix is recorded, not stored.** The manifest gives the number of
+permutations, the seed, the generator and a SHA-256 of the (B + 1) × n label matrix,
+which is enough to regenerate it exactly and prove it was the same one. The plan says to
+store it; regenerating from the seed is equivalent and keeps the bundle small.
+
+**B3 — Calibration is graded "Internally verified" on the Evidence page.** Its tests show
+it is computed as specified; nothing has yet measured its error rate or power.
+
+**B4 — One test pinned the list of modes.** `test_web.py::test_api_info_declares_the_policy`
+asserted that `/api/info` offers exactly Quick, Full and Covariate; it now expects the
+calibrated job type too.
+
+### C. Not done in Phase 1, and why
+
+**C1 — V9 has not been run.** The plan stops Phase 1 before it, and it is to be run where
+its data are: Zenodo, which holds the Pelto cohorts, is not reachable from the build
+environment.
+
+**C2 — The null-uniformity check and the compute benchmark have not been recorded.** Both
+scripts exist and are registered in `run_all.py`: `tests/reference/calibration_null.py`
+(200 simulated null tables, KS test of the family p-values against Uniform(0, 1), the
+§27.6 criterion) and `tests/reference/calibration_benchmark.py` (the §27.4 budget,
+written into `docs/benchmark.json`). This phase was limited to code and tests, so neither
+record was written; the 20 s above is a development measurement, not a record.
