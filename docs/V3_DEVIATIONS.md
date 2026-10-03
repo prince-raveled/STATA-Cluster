@@ -82,6 +82,18 @@ environment rather than failing. The claim the test makes is unchanged: under ru
 v3 reproduces the v2 engine exactly in an environment where the v2 engine was recorded.
 Recording `linux-py3.12` and `linux-py3.13` from 8d1cd9f would restore the check there.
 
+**B1b — CI checks the claim against the v2 engine itself, not recorded hashes.** At
+1c51084 the CI Python 3.14 job (3.14.7) failed the same test that passed there at
+951ce21: `results_long.csv` differed for all three demos while every output compared
+before it matched. Nothing in the code under test had changed, so the runner's
+environment had. Recorded hashes cannot be checked on a runner that changes underneath
+them. `tests/reference/compare_v2_engine.py` now runs the v2 engine (8d1cd9f, from a
+temporary git worktree) and this tree with rule set v2 in one environment, on the same
+demo files, and compares all 18 outputs byte for byte; CI runs it as its own job
+(`v2-reproduction`, Python 3.14, full history). On Windows (Python 3.14.6) all 18 are
+identical. The Linux hash set was removed, so the pytest check skips on Linux and names
+the script; the Windows set stays for local runs.
+
 **B2 — The weighting note is linked in the repository, at the deployed commit.** `docs/`
 is not deployed (`vercel.json` excludes it, and deployment settings are not changed
 here), so /about links to `docs/v3_weighting_note.md` on GitHub at

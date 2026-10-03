@@ -20,6 +20,11 @@ The Windows set is the first one recorded; the Linux set was written from a work
 8d1cd9f with this script copied in and the `ruleset=` argument removed
 (docs/V3_DEVIATIONS.md).
 
+Recorded hashes only hold while the environment holds. CI's Python 3.14 runner moved on
+and `results_long.csv` stopped matching the Linux set, so its hashes were dropped (B1b):
+CI instead runs tests/reference/compare_v2_engine.py, which runs the v2 engine and this
+tree side by side in one environment. The Windows set stays for local checks.
+
     python tests/fixtures/make_v2_golden.py
 """
 from __future__ import annotations

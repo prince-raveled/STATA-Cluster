@@ -1,25 +1,5 @@
 {
   "platforms": {
-    "linux-py3.14": {
-      "gut_species_quick/attribution.csv": "7a82e9e969bb83ec885a0d55b1a2d785aff9107ce59d5d9d6440b6435ec2ce2a",
-      "gut_species_quick/grid.json": "7ba07aaa9ceed164380819821d0c5ce11bec0a4fdc469096316632c1271a57e6",
-      "gut_species_quick/results_long.csv": "d7f550efcdbec5d85e1c98d56cb0e47e116469c40d9183533e2d60f09eae0a51",
-      "gut_species_quick/robustness.csv": "66ebeafcb0a528c22e4708203022781dc50f5ed03b2ac38a9139409d865fdec5",
-      "gut_species_quick/specifications.csv": "c168983abc5bacfa1edc8febe5f06847279792c2ce672a95e979aa4da4966b29",
-      "gut_species_quick/verdict.txt": "fa1f498c04eb78923e13ead5c60de44ba13e1d310b0de6a7e1b1ce5c918dacf4",
-      "ibd_genus_quick/attribution.csv": "ce8c2a65f08fd6a46631c054f57c1097a9e7507ba7d37ac77bda3bf7646e34cc",
-      "ibd_genus_quick/grid.json": "0ad611e888a4377e1f0e54a571b2718698f09cd5ed85d98bcdd1d7d886bdbef2",
-      "ibd_genus_quick/results_long.csv": "edb9167de14da645c9bddb922af3749bd6b312ae98b4da7f019672cc6dac8f81",
-      "ibd_genus_quick/robustness.csv": "46a9069156f6446e1169750964c0a0d6304b4adbd9b4ee9e12324eaf8e144978",
-      "ibd_genus_quick/specifications.csv": "6261422c844616219a1ad8dc5ceb2d05889936bfd9e04ee9bece1cdad38e7520",
-      "ibd_genus_quick/verdict.txt": "c42a74a0483d0b1df9dc1f0b745dfac53494bc724c11c12150a66f886e0acd0b",
-      "t2d_covariates_covariate/attribution.csv": "b090c937e2c53c6ec0061ee2500b109f2133e1b353a8afb8210be1ac6f097c76",
-      "t2d_covariates_covariate/grid.json": "07256be604c1a60585acbf02aeec6cd3bdac9fac9407bc278a0d80ea6da364dc",
-      "t2d_covariates_covariate/results_long.csv": "bc7feda87afad2973bd560ca2ca461c2a691b17967c08d2546b07a9cdd0b5b98",
-      "t2d_covariates_covariate/robustness.csv": "3763a8a49ff2e2b0bdad6ccfdc06f212f3426fb7d3b47235930b14b75d9d3a49",
-      "t2d_covariates_covariate/specifications.csv": "da7f5535264f03ca41e96839b7e6510d2c35529628a0ec02cf589b0c2afaa9d1",
-      "t2d_covariates_covariate/verdict.txt": "d0e3665bbe89e8e3542e7c86245080d316558dadca861f0cf5dac7cbb6546ce2"
-    },
     "win32-py3.14": {
       "gut_species_quick/attribution.csv": "69ffc80b15ddcdffcd83554a06b6760066d0d795d796dc0a970a62cb7685f465",
       "gut_species_quick/grid.json": "7ba07aaa9ceed164380819821d0c5ce11bec0a4fdc469096316632c1271a57e6",

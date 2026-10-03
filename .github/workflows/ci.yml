@@ -48,6 +48,29 @@ jobs:
       - name: Test
         run: pytest -q
 
+  v2-reproduction:
+    # Plan §26.5: under rule set v2, v3 must reproduce the v2 engine byte for byte. The
+    # bytes depend on the environment (docs/V3_DEVIATIONS.md B1-B1b), so recorded hashes
+    # cannot be checked on a runner that changes; both engines run here instead.
+    name: v3 under rule set v2 reproduces the v2 engine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # the v2 engine is checked out from history
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Generate the demo datasets
+        run: python examples/make_examples.py
+      - name: Compare with the v2 engine at 8d1cd9f
+        run: python tests/reference/compare_v2_engine.py
+
   blob-service:
     name: Blob signing service, through Vercel's Node launcher
     runs-on: ubuntu-latest

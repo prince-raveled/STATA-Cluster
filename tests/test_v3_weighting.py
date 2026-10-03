@@ -281,8 +281,8 @@ def test_v2_outputs_are_byte_identical_under_v2_rules(case):
     key = make_v2_golden.platform_key()
     expected = make_v2_golden.expected_hashes(key)
     if not expected:
-        pytest.skip(f"no v2 golden record for {key}: generate one from 8d1cd9f with "
-                    "tests/fixtures/make_v2_golden.py in that environment")
+        pytest.skip(f"no v2 golden record for {key}; tests/reference/compare_v2_engine.py "
+                    "checks the same claim against the v2 engine run here (CI runs it)")
     for name, data in make_v2_golden.outputs(demo, mode, ruleset="v2").items():
         assert hashlib.sha256(data).hexdigest() == expected[f"{case}/{name}"], name
 
