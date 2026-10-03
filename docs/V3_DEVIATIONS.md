@@ -70,6 +70,18 @@ removed; the readable copies are the Linux output. The test compares against its
 platform's set and skips, saying why, on a platform with none. With rule set v2, all 18
 v3 outputs on Linux are byte-identical to 8d1cd9f's on Linux.
 
+**B1a — ...and per Python version.** Once Phases 0-1 reached `vercel-migration`
+(951ce21), CI's Python 3.14 job passed this test against the Linux set while its 3.12 and
+3.13 jobs failed, with the same pinned packages; the image build, also Python 3.12, failed
+at the same test (`-x` stopped there, 633 passed). So bytes depend on the Python version
+as well as the platform. The sets are now keyed by platform and Python minor version: the
+Linux set as `linux-py3.14`, the version CI reproduces it under, and the Windows set as
+`win32-py3.14`, the version it was written with. Where no set exists for the environment —
+CI's 3.12 and 3.13 jobs and the image, for now — the test skips and names the missing
+environment rather than failing. The claim the test makes is unchanged: under rule set v2,
+v3 reproduces the v2 engine exactly in an environment where the v2 engine was recorded.
+Recording `linux-py3.12` and `linux-py3.13` from 8d1cd9f would restore the check there.
+
 **B2 — The weighting note is linked in the repository, at the deployed commit.** `docs/`
 is not deployed (`vercel.json` excludes it, and deployment settings are not changed
 here), so /about links to `docs/v3_weighting_note.md` on GitHub at

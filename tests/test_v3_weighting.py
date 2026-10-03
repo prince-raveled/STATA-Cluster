@@ -276,12 +276,13 @@ def test_v2_outputs_are_byte_identical_under_v2_rules(case):
     import make_v2_golden
 
     demo, _, mode = case.rpartition("_")
-    # Per platform: the same v2 engine writes different bytes on Windows and Linux
-    # (line separators; last-bit linear algebra in covariate mode). See make_v2_golden.
-    expected = make_v2_golden.expected_hashes(sys.platform)
+    # Per platform and Python version: the same v2 engine writes different bytes on
+    # Windows and Linux, and on Linux under Python 3.12 and 3.14. See make_v2_golden.
+    key = make_v2_golden.platform_key()
+    expected = make_v2_golden.expected_hashes(key)
     if not expected:
-        pytest.skip(f"no v2 golden record for {sys.platform}: generate one from 8d1cd9f "
-                    "with tests/fixtures/make_v2_golden.py")
+        pytest.skip(f"no v2 golden record for {key}: generate one from 8d1cd9f with "
+                    "tests/fixtures/make_v2_golden.py in that environment")
     for name, data in make_v2_golden.outputs(demo, mode, ruleset="v2").items():
         assert hashlib.sha256(data).hexdigest() == expected[f"{case}/{name}"], name
 
