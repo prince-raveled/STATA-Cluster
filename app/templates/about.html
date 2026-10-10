@@ -22,7 +22,7 @@
       <li><a href="#problem"><b>The problem</b><span>Why one analysis is not enough</span></a></li>
       <li><a href="#specification"><b>Specifications</b><span>The unit of analysis</span></a></li>
       <li><a href="#forks"><b>The seven choices</b><span>And why each is contested</span></a></li>
-      <li><a href="#pruning"><b>Pruning</b><span>What is ruled out, and why: the register</span></a></li>
+      <li><a href="#pruning"><b>Pruning</b><span>What is ruled out, and why</span></a></li>
       <li><a href="#modes"><b>Three modes</b><span>How much of the space runs</span></a></li>
       <li><a href="#pipeline"><b>Inside one specification</b><span>The fixed order</span></a></li>
       <li><a href="#effect"><b>Effect size</b><span>One scale for every test</span></a></li>
@@ -31,9 +31,10 @@
       <li><a href="#attribution"><b>Choice attribution</b><span>Which choice moved it</span></a></li>
       <li><a href="#norm"><b>Against cherry-picking</b><span>No “best” export</span></a></li>
       <li><a href="#scope"><b>Scope and limitations</b><span>What it will not do</span></a></li>
+      <li class="toc-extra"><a href="#glossary"><b>Glossary</b><span>Every term, defined</span></a></li>
+      <li class="toc-extra"><a href="#refs-title"><b>Sources</b><span>The papers behind each method</span></a></li>
+      <li class="toc-extra"><a href="/validation"><b>What has been validated</b><span>The Evidence page</span></a></li>
     </ol>
-    <p class="small" style="margin-top:12px">Also: <a href="#glossary">glossary</a> ·
-      <a href="#refs-title">sources</a> · <a href="/validation">what has been validated</a></p>
   </nav>
 
   <!-- 1 -->
@@ -118,7 +119,8 @@
             <td class="mono small">Wilcoxon · Welch's t · logistic · linear · ANCOM-BC · ALDEx2 · PyDESeq2</td>
             <td>Nearing et al. 2022 compared 14 methods over 38 datasets and found materially
               different results. Pelto et al. 2025 found the elementary methods the most
-              replicable, which is why Quick mode uses exactly those four, and says so.</td></tr>
+              replicable, which is why Quick mode uses exactly those four, and says so.
+              <a href="#tests">The seven tests at a glance</a>.</td></tr>
           <tr><th scope="row">6 · Multiple-testing correction</th>
             <td class="mono small">BH at 0.05 · BH at 0.10 · BY at 0.05</td>
             <td>Published studies use 0.05, 0.07 and 0.15, and BH versus BY, inconsistently.
@@ -131,6 +133,34 @@
         </tbody>
       </table>
     </div>
+
+    <h3 id="tests" style="margin-top:var(--space-6)">The seven tests at a glance</h3>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="The seven statistical tests, scrollable">
+      <table class="data tests-table">
+        <thead><tr><th scope="col">Test</th><th scope="col">Approach</th>
+          <th scope="col">Good at</th><th scope="col">Input</th></tr></thead>
+        <tbody>
+          <tr class="group"><th scope="colgroup" colspan="4">Elementary · every mode · the most replicable in Pelto et al. 2025</th></tr>
+          <tr><th scope="row">Wilcoxon rank-sum</th><td>Non-parametric: compares ranks</td>
+            <td>Skewed, zero-heavy values; assumes no distribution</td><td>any transform; raw counts only after rarefying (R8)</td></tr>
+          <tr><th scope="row">Welch's t-test</th><td>Parametric: compares means, unequal variances allowed</td>
+            <td>Roughly symmetric values, such as CLR</td><td>any transform; raw counts only after rarefying (R8)</td></tr>
+          <tr><th scope="row">Linear regression</th><td>Regression on the transformed value</td>
+            <td>A group effect adjusted for covariates</td><td>any transform; raw counts only after rarefying (R8)</td></tr>
+          <tr><th scope="row">Logistic regression</th><td>Regression on presence/absence</td>
+            <td>Taxa present in one group, absent in the other</td><td>raw counts only (R6); adjusted for depth without rarefying (R9)</td></tr>
+          <tr class="group"><th scope="colgroup" colspan="4">Model-based · Full mode</th></tr>
+          <tr><th scope="row">ANCOM-BC</th><td>Compositional: log-linear model with sampling-fraction bias correction</td>
+            <td>Correcting the bias that relative abundances carry</td><td>raw counts, not rarefied (R3, R4)</td></tr>
+          <tr><th scope="row">ALDEx2</th><td>Compositional: Monte Carlo Dirichlet draws, CLR, then Welch and Wilcoxon</td>
+            <td>Sequencing noise in sparse counts</td><td>counts; applies its own CLR (R2)</td></tr>
+          <tr><th scope="row">PyDESeq2</th><td>Count model: negative binomial with poscounts size factors</td>
+            <td>Raw counts with uneven depth</td><td>raw counts, not rarefied (R1, R7)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="micro" style="margin-top:8px">In Covariate mode, linear and logistic regression model
+      the covariates directly; Wilcoxon and Welch run on covariate-adjusted values.</p>
   </section>
 
   <!-- 5 -->
