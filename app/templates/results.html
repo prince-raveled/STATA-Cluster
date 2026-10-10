@@ -60,7 +60,20 @@
             No finding here held up across the analyses.
           {%- endif %}
         </h2>
-        <p class="answer-detail">{{ verdict }}</p>
+        {% if n_detected %}
+        {% set claims = ['ROBUST', 'CONDITIONAL', 'FRAGILE', 'UNSTABLE'] %}
+        <div class="label-bar" role="img" aria-label="Taxa by label: {% for name in claims %}{{ summary.tier_counts[name] }} {{ name }}{{ ', ' if not loop.last }}{% endfor %}">
+          {% for name in claims %}{% set n = summary.tier_counts[name] %}{% if n %}
+            <span class="label-seg {{ TIERS[name].class }}" style="flex: {{ n }} 1 0" title="{{ name }}: {{ n }}">{{ n }}</span>
+          {% endif %}{% endfor %}
+        </div>
+        <ul class="label-key">
+          {% for name in claims %}<li><i class="{{ TIERS[name].class }}" aria-hidden="true"></i>{{ name }} <b>{{ summary.tier_counts[name] }}</b></li>{% endfor %}
+          <li class="muted">+ {{ summary.tier_counts['NOT DETECTED'] }} never significant{% if summary.tier_counts['INSUFFICIENT'] %} · {{ summary.tier_counts['INSUFFICIENT'] }} too rarely tested{% endif %}</li>
+        </ul>
+        {% endif %}
+        <details class="verdict-more"><summary>The verdict in one sentence</summary>
+          <p class="answer-detail">{{ verdict }}</p></details>
       </div>
       <div class="answer-figure">
         <span class="stat-value">{{ n_robust }}</span>
@@ -173,21 +186,16 @@
     <div class="section-head">
       {{ section_label('How each taxon held up', '16.2', 'purple') }}
       <h2 id="tiers-title">Is each finding robust to analytical choice?</h2>
-      <p>Every taxon gets one label built from two numbers: its
-        {{ dfn('significance_rate') }} and its {{ dfn('direction_agreement') }}. Only the
-        analyses that actually tested a taxon count; a taxon a filter removed is not counted
-        against it.</p>
+      <p>One label per taxon, from its {{ dfn('significance_rate') }} and its
+        {{ dfn('direction_agreement') }} across the analyses that tested it.</p>
     </div>
 
     {% if weighting %}
-      <p class="small" style="margin:-4px 0 var(--space-4);color:var(--ink-2)">
-        The two numbers are {{ dfn('weighting_scheme', 'weighted') }}: labels here use
-        <b>{{ weighting.scheme_label }}</b>, so the many rarefied variants of an analysis
-        do not outvote the one unrarefied version.
-        {% if weighting.n_weight_unstable %}{{ weighting.n_weight_unstable }}
-          {{ 'taxon changes' if weighting.n_weight_unstable == 1 else 'taxa change' }}
-          label under another weighting; the table marks them.{% endif %}
-        <a href="#grid-composition">Where the weight sits</a>.</p>
+      <p class="chip-line">
+        <span class="chip">{{ dfn('weighting_scheme', 'Weighted') }}: {{ weighting.scheme_label }}</span>
+        {% if weighting.n_weight_unstable %}<span class="chip chip-flag">{{ weighting.n_weight_unstable }}
+          {{ 'taxon changes' if weighting.n_weight_unstable == 1 else 'taxa change' }} label with weighting</span>{% endif %}
+        <a class="small" href="#grid-composition">Where the weight sits &darr;</a></p>
     {% endif %}
     <div class="tier-cards">
       {% for name in TIER_ORDER %}
@@ -209,31 +217,48 @@
       {% endfor %}
     </div>
 
+    <div class="fig-grid">
+      <figure class="panel fig-panel">
+        <div class="fig-head"><span class="fig-no">Figure 1</span>The robustness landscape</div>
+        <div id="fig-landscape" class="plot" role="img"
+             aria-label="Every tested taxon plotted by typical effect and the share of analyses calling it significant, coloured by label. The table below holds the same numbers."></div>
+        <figcaption class="fig-caption">Every taxon at once: typical effect across, share of
+          analyses significant up. Dotted lines are the 30% and 80% label thresholds; stars are
+          CERTIFIED ROBUST. Click a point to open its curve.</figcaption>
+      </figure>
+      <figure class="panel fig-panel">
+        <div class="fig-head"><span class="fig-no">Figure 2</span>Findings that held up</div>
+        <div id="fig-forest" class="plot" role="img"
+             aria-label="ROBUST and CONDITIONAL taxa with their typical effect and its middle half. The table below holds the same numbers."></div>
+        <figcaption class="fig-caption" id="fig-forest-caption">ROBUST and CONDITIONAL taxa: the
+          dot is the typical effect, the bar its middle half; the share of analyses calling
+          it significant follows each name.</figcaption>
+      </figure>
+    </div>
+
     {% if calibration %}
     <div class="panel" id="calibration" style="margin-top:var(--space-5)" aria-labelledby="calibration-title">
       <div class="panel-head">
         <h3 id="calibration-title">Calibrated error control</h3>
         <span class="grade-chip grade-internal">{{ GRADE_LABEL['internal'] }}</span>
       </div>
-      <p class="small" style="margin:0 0 14px;color:var(--ink-2)">The labels above describe
-        how often a taxon was significant. This asks a different question with an error
-        rate attached. The group labels were shuffled
-        {{ calibration.n_permutations|commafy }} times and every Quick analysis repeated
-        each time, so each taxon's strongest result across its analyses can be compared
-        with what shuffled groups produce.</p>
-      <div class="stats">
-        <div class="stat"><span class="stat-value">{{ calibration.n_taxa_tested|commafy }}</span>
-          <span class="stat-label">taxa tested</span></div>
-        <div class="stat"><span class="stat-value">{{ calibration.n_selected|commafy }}</span>
-          <span class="stat-label">differ under at least one analysis</span>
-          <span class="stat-note">false discovery rate {{ calibration.q|percent(0) }} across taxa</span></div>
-        <div class="stat"><span class="stat-value">{{ calibration.n_certified|commafy }}</span>
-          <span class="stat-label">CERTIFIED ROBUST</span>
-          <span class="stat-note">error-controlled analyses carry ≥ 80% of the weight, ≥ 95% in one direction · {{ CERTIFIED_STATUS.short }}</span></div>
+      {% set base = calibration.n_taxa_tested or 1 %}
+      <div class="funnel" role="img" aria-label="{{ calibration.n_taxa_tested }} taxa tested; {{ calibration.n_selected }} differ under at least one analysis with the false discovery rate controlled at {{ calibration.q|percent(0) }}; {{ calibration.n_certified }} CERTIFIED ROBUST">
+        <div class="funnel-row"><span class="funnel-track"><span class="funnel-bar" style="width:100%"></span></span>
+          <b class="funnel-n">{{ calibration.n_taxa_tested|commafy }}</b><span class="funnel-label">taxa tested</span></div>
+        <div class="funnel-row"><span class="funnel-track"><span class="funnel-bar is-mid" style="width:{{ [100 * calibration.n_selected / base, 1.2]|max }}%"></span></span>
+          <b class="funnel-n">{{ calibration.n_selected|commafy }}</b><span class="funnel-label">differ under at least one analysis · false discovery rate {{ calibration.q|percent(0) }}</span></div>
+        <div class="funnel-row"><span class="funnel-track"><span class="funnel-bar is-top" style="width:{{ [100 * calibration.n_certified / base, 1.2]|max }}%"></span></span>
+          <b class="funnel-n">{{ calibration.n_certified|commafy }}</b><span class="funnel-label">CERTIFIED ROBUST · ≥ 80% of the weight, ≥ 95% one direction · {{ CERTIFIED_STATUS.short }}</span></div>
       </div>
       <details class="disclosure" style="margin-top:14px">
         <summary>What the guarantee rests on</summary>
         <div class="disclosure-body">
+          <p class="small">The labels above describe how often a taxon was significant. This
+            asks a different question with an error rate attached. The group labels were
+            shuffled {{ calibration.n_permutations|commafy }} times and every Quick analysis
+            repeated each time, so each taxon's strongest result across its analyses can be
+            compared with what shuffled groups produce.</p>
           <ul class="limits-list">
             {% for line in calibration_assumptions %}<li>{{ line }}</li>{% endfor %}
             <li>{{ CERTIFIED_STATUS.sentence }} <a href="/validation#v9">V9 on the
@@ -254,7 +279,26 @@
         <h3 id="composition-title">Where the weight sits</h3>
         <a class="small" href="{{ SOURCE_URL('docs/v3_weighting_note.md') }}">How the weights are defined</a>
       </div>
-      <p class="small" style="margin:0 0 14px;color:var(--ink-2)">Rarefying has many
+      <div class="weight-bars" role="img" aria-label="Share of the weight on rarefied analyses: {% for s in weighting.schemes %}{{ s.label }}, {{ s.rarefied_share|percent(0) }}{{ '; ' if not loop.last }}{% endfor %}">
+        {% for s in weighting.schemes %}
+          <div class="weight-row{% if s.primary %} is-primary{% endif %}">
+            <span class="weight-name">{{ s.label.split(':')[0]|capitalize }}{% if s.primary %} <span class="chip">used here</span>{% endif %}</span>
+            <span class="weight-track"><span class="weight-fill" style="width:{{ (s.rarefied_share * 100)|round(1) }}%">{{ s.rarefied_share|percent(0) }} rarefied</span></span>
+            <span class="weight-note">{% if s.primary %}labels on this page{% else %}{{ s.taxa_labelled_differently|commafy }} taxa labelled differently{% endif %}</span>
+          </div>
+        {% endfor %}
+      </div>
+      <figure class="fig-inline">
+        <div class="fig-head"><span class="fig-no">Figure 3</span>How labels move between weightings</div>
+        <div id="fig-flow" class="plot" role="img"
+             aria-label="Each taxon's label under one vote per analysis, flowing to its label under the weighting used on this page. The table below gives every taxon's label under each scheme."></div>
+        <figcaption class="fig-caption" id="fig-flow-caption">Bands are groups of taxa; coloured
+          bands changed label. Taxa never significant under either weighting are left out.</figcaption>
+      </figure>
+      <details class="disclosure" style="margin-top:14px">
+        <summary>Why the analyses are weighted, scheme by scheme</summary>
+        <div class="disclosure-body">
+      <p class="small" style="margin:0 0 14px">Rarefying has many
         variants (depths and random draws) and not rarefying has one, so counting one vote
         per analysis would put most of the weight behind rarefying. The labels on this page
         use <b>{{ weighting.scheme_label }}</b>. The same run under the other schemes is
@@ -278,6 +322,8 @@
           </tbody>
         </table>
       </div>
+        </div>
+      </details>
       {% set primary = weighting.schemes[0] %}
       <details class="disclosure" style="margin-top:14px">
         <summary>Weight by test, transformation and filter
@@ -345,10 +391,9 @@
     <div class="section-head">
       {{ section_label('One taxon, every analysis', '16.3', 'purple') }}
       <h2 id="curve-title">See which choice moves the answer.</h2>
-      <p>Pick a taxon. The top panel shows its {{ dfn('effect_size') }} from every analysis,
-        sorted smallest to largest and coloured by significance. The panel beneath shows which
-        choice was active in each one. <b>When the non-significant points all sit above a
-        single row below, that choice is what is producing your result.</b></p>
+      <p>Each dot is one analysis of the chosen taxon, sorted by {{ dfn('effect_size') }};
+        the rows beneath show which choice it used. <b>Non-significant dots that all sit
+        above one row point to the choice producing your result.</b></p>
     </div>
 
     <div class="panel">
@@ -425,8 +470,9 @@
         </div>
       </details>
 
-      <div style="margin-top:var(--space-4)" id="effect-invariance">
-        {% call callout('blue', 'Reading the effect axis') %}
+      <details class="disclosure" style="margin-top:var(--space-4)" id="effect-invariance">
+        <summary>Reading the effect axis</summary>
+        <div class="disclosure-body">
           <p>The effect plotted here is computed from the abundance table itself — the
             log<sub>2</sub> ratio of mean relative abundance between your two groups — and not
             from any model. So it is the same number whichever statistical test produced the
@@ -449,8 +495,8 @@
               adjustment set changes.</p>
             {% endif %}
           </details>
-        {% endcall %}
-      </div>
+        </div>
+      </details>
     </div>
   </section>
 
@@ -459,12 +505,16 @@
     <div class="section-head">
       {{ section_label('Which choice is driving this?', '17', 'purple') }}
       <h2 id="attribution-title">Where the variation comes from.</h2>
-      <p>An attempt to apportion the variation in your results across the seven
-        {{ dfn('fork', 'analytical choices') }}, following Young &amp; Holsteen (2017).
-        Percentages are shares <i>of the variation this model can explain</i>, which on real
-        data is often only a few percent of the total. Read the grade before quoting any of
-        it.</p>
+      <p>Which of the seven {{ dfn('fork', 'analytical choices') }} the variation in your
+        results is attributed to. Read the grade before quoting it.</p>
     </div>
+    <details class="disclosure" style="margin:-6px 0 var(--space-4)">
+      <summary>How this is estimated</summary>
+      <div class="disclosure-body"><p class="small">An attempt to apportion the variation
+        across the analytical choices, following Young &amp; Holsteen (2017). Percentages
+        are shares <i>of the variation this model can explain</i>, which on real data is
+        often only a few percent of the total.</p></div>
+    </details>
     <p class="bar-legend">
       <span><i aria-hidden="true"></i>main estimate</span>
       <span><i class="ghost" aria-hidden="true"></i>independent second estimate (if the two disagree, trust neither)</span>
@@ -573,10 +623,8 @@
     <div class="section-head">
       {{ section_label('Every taxon, sortable', '16.2', 'purple') }}
       <h2 id="table-title">Every taxon, every metric.</h2>
-      <p><b>Share of grid</b> is how much of the analysis space ever reached a taxon: some
-        are removed by a prevalence filter before any test runs. A taxon testable in only part
-        of the grid is a finding in itself. Hover a column heading for its definition and its
-        name in the export. Click a row to load its curve; click a name to open its page.</p>
+      <p>Hover a column heading for its definition. Click a row to load its curve, a name to
+        open its page.</p>
     </div>
 
     <div class="table-tools">
@@ -590,10 +638,8 @@
       <div class="panel">
         {{ section_label('What was actually run', '11-12') }}
         <h3 style="font-size:20px">Every specification.</h3>
-        <p class="small" style="margin:8px 0 16px;color:var(--ink-2)">
-          Not every combination of choices makes sense — some contradict themselves. Those
-          are {{ dfn('pruned', 'ruled out') }} with the reason shown, so you can see how much
-          of the space was ever real.</p>
+        <p class="small" style="margin:8px 0 16px;color:var(--ink-2)">Combinations that
+          contradict themselves are {{ dfn('pruned', 'ruled out') }}, each with its reason.</p>
 
         <div class="flow" id="grid-metrics" role="list" aria-label="How the specifications were counted">
           <div class="flow-node is-candidate" role="listitem"><span class="flow-value">{{ grid.n_enumerated|commafy }}</span><span class="flow-label">{{ dfn('enumerated', 'enumerated') }}</span></div>
@@ -680,34 +726,15 @@
     <div class="section-head">
       <h2 id="interpretation-title">Before you report any of this</h2>
     </div>
-    {% call callout('red', 'Important interpretation') %}
-      <ul>
-        <li><b>Robust to analytical choice is not biologically real.</b> Confounding,
-          contamination and batch effects survive every analysis intact, and nothing here is
-          causal.</li>
-        <li><b>The percentages are not probabilities.</b> The analyses are re-analyses of the
-          same samples: “significant in 86%” measures how much the conclusion depends on your
-          choices, not 86 replications and not a chance that the difference is real.</li>
-        <li><b>A label ignores magnitude.</b> Read the typical effect beside it: a ROBUST taxon
-          can have a difference too small to matter.</li>
-      </ul>
-    {% endcall %}
-
-    <div class="panel" style="margin-top:var(--space-4)">
-      <h3>What a tier deliberately leaves out</h3>
-      <div class="grid-2" style="margin-top:var(--space-3)">
-        <p class="small"><b>Magnitude.</b> A tier is built from two numbers — how often a taxon
-          was significant and how often the direction agreed. Effect size is not one of them,
-          so a ROBUST taxon can have a difference far too small to care about.</p>
-        <p class="small"><b>Independence.</b> The analyses behind a tier are re-analyses of the
-          same samples. "Significant in 86%" is not a p-value, not a probability, and not 86
-          replications.</p>
-        <p class="small"><b>Which choice was responsible.</b> The tier says the answer moved,
-          not what moved it. Open a taxon, or the curve above, to see that.</p>
-        <p class="small"><b>Causation, and biology.</b> A difference that survives every
-          analytical choice is still an association, and statistical stability is not
-          importance.</p>
+    <div class="panel caveats">
+      <p class="eyebrow">Important interpretation · what a tier deliberately leaves out</p>
+      <div class="caveat-grid">
+        {% for item in INTERPRETATION %}
+          <details class="caveat"><summary>{{ item.short }}</summary><p>{{ item.full }}</p></details>
+        {% endfor %}
       </div>
+      <p class="micro" style="margin-top:12px">The same text is in the Interpretation sheet
+        of the Excel workbook below.</p>
     </div>
   </section>
 
@@ -715,25 +742,24 @@
   <section class="result-section" id="downloads" aria-labelledby="downloads-title">
     <div class="section-head">
       <h2 id="downloads-title">Take the whole distribution with you.</h2>
-      <p>Every export contains the full distribution. There is no “best specification”
-        export here, and there will not be one: a tool that hands you your favourite point in
-        the distribution is a p-hacking device.</p>
+      <p>Every export holds the full distribution. There is no “best specification” export:
+        a tool that hands you your favourite point in the distribution is a p-hacking device.</p>
     </div>
 
-    <div class="downloads">
+    <div class="downloads downloads-main">
       <div class="download is-primary">
-        <span class="download-icon" aria-hidden="true">zip</span>
-        <div><div class="download-name">Complete results bundle</div>
-          <div class="download-desc">Everything below in one archive, with a README describing each file.</div>
-          <div class="download-file">microverse_results.zip</div></div>
-        <a class="btn btn-primary btn-sm" href="/download/{{ token }}/bundle">Download</a>
+        <span class="download-icon" aria-hidden="true">xlsx</span>
+        <div><div class="download-name">Excel workbook</div>
+          <div class="download-desc">Every table and every explanation from this page, one sheet each, with a README sheet.</div>
+          <div class="download-file">microverse_results.xlsx</div></div>
+        <a class="btn btn-primary btn-sm" href="/download/{{ token }}/workbook">Download</a>
       </div>
       <div class="download">
-        <span class="download-icon" aria-hidden="true">csv</span>
-        <div><div class="download-name">Per-taxon robustness table</div>
-          <div class="download-desc">One row per taxon: label, how often significant, direction agreement, typical effect and range.</div>
-          <div class="download-file">taxa_robustness.csv</div></div>
-        <a class="btn btn-secondary btn-sm" href="/download/{{ token }}/robustness">Download</a>
+        <span class="download-icon" aria-hidden="true">zip</span>
+        <div><div class="download-name">Complete results bundle</div>
+          <div class="download-desc">Everything, including the workbook, in one archive with a README.</div>
+          <div class="download-file">microverse_results.zip</div></div>
+        <a class="btn btn-secondary btn-sm" href="/download/{{ token }}/bundle">Download</a>
       </div>
       <div class="download">
         <span class="download-icon" aria-hidden="true">gz</span>
@@ -741,6 +767,19 @@
           <div class="download-desc">One row per taxon per specification: raw and adjusted p-value, significance, the common effect and each test's native statistic.</div>
           <div class="download-file">results_long.csv.gz</div></div>
         <a class="btn btn-secondary btn-sm" href="/download/{{ token }}/long">Download</a>
+      </div>
+    </div>
+
+    <details class="disclosure" style="margin-top:var(--space-4)">
+      <summary>Individual files <span class="summary-meta">CSV tables, methods text, manifest</span></summary>
+      <div class="disclosure-body">
+    <div class="downloads">
+      <div class="download">
+        <span class="download-icon" aria-hidden="true">csv</span>
+        <div><div class="download-name">Per-taxon robustness table</div>
+          <div class="download-desc">One row per taxon: label, how often significant, direction agreement, typical effect and range.</div>
+          <div class="download-file">taxa_robustness.csv</div></div>
+        <a class="btn btn-secondary btn-sm" href="/download/{{ token }}/robustness">Download</a>
       </div>
       <div class="download">
         <span class="download-icon" aria-hidden="true">csv</span>
@@ -780,15 +819,17 @@
         <a class="btn btn-secondary btn-sm" href="/download/{{ token }}/manifest">Download</a>
       </div>
     </div>
-
-    <div class="panel" style="margin-top:var(--space-5)" aria-labelledby="methods-title">
-      <div class="panel-head">
-        <h3 id="methods-title">Methods paragraph</h3>
-        <button type="button" class="btn btn-secondary btn-sm" data-copy="#methods-text">Copy</button>
       </div>
-      <p class="small muted" style="margin-top:-6px">It describes the multiverse, not a point in it. Copy it as written.</p>
-      <p id="methods-text" style="white-space:pre-wrap;margin:0;font-size:14.5px;line-height:1.75;padding:var(--space-4);background:var(--surface-2);border-radius:8px">{{ methods_text }}</p>
-    </div>
+    </details>
+
+    <details class="disclosure" style="margin-top:var(--space-4)" aria-labelledby="methods-title">
+      <summary id="methods-title">Methods paragraph for your paper
+        <span class="summary-meta">describes the multiverse, not a point in it</span></summary>
+      <div class="disclosure-body">
+        <button type="button" class="btn btn-secondary btn-sm" data-copy="#methods-text" style="margin-bottom:10px">Copy</button>
+        <p id="methods-text" style="white-space:pre-wrap;margin:0;font-size:14.5px;line-height:1.75;padding:var(--space-4);background:var(--surface-2);border-radius:8px">{{ methods_text }}</p>
+      </div>
+    </details>
 
     <details class="disclosure" style="margin-top:var(--space-4)">
       <summary>Exactly what produced these numbers</summary>
@@ -825,6 +866,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.3/plotly.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/6.3.1/js/tabulator.min.js"></script>
 <script src="/static/js/curve.js?v={{ ASSETS }}"></script>
+<script src="/static/js/figures.js?v={{ ASSETS }}"></script>
 <script id="taxa-data" type="application/json">{{ records|tojson }}</script>
 <script id="hist-data" type="application/json">{{ spec_histogram|tojson }}</script>
 <script>
@@ -973,15 +1015,43 @@
   });
   accessible(taxaTable, "taxa-table", "Per-taxon robustness table");
 
-  taxaTable.on("rowClick", function (event, row) {
-    if (event.target.closest && event.target.closest("a")) return;   // the name opens its page
+  function pickTaxon(taxonId) {
     const select = document.getElementById("taxon-select");
     const search = document.getElementById("taxon-search");
     if (search && search.value) { search.value = ""; search.dispatchEvent(new Event("input")); }
-    select.value = row.getData().taxon_id;
-    loadCurve(row.getData().taxon_id);
+    select.value = taxonId;
+    loadCurve(taxonId);
     document.getElementById("curve-section").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  taxaTable.on("rowClick", function (event, row) {
+    if (event.target.closest && event.target.closest("a")) return;   // the name opens its page
+    pickTaxon(row.getData().taxon_id);
   });
+
+  /* ---------------- figures 1-3 ---------------- */
+  if (window.MicroVerseFigures) {
+    MicroVerseFigures.landscape(document.getElementById("fig-landscape"), records,
+                                { theme: theme, groups: groups, onPick: pickTaxon });
+    const forestEl = document.getElementById("fig-forest");
+    if (!MicroVerseFigures.forest(forestEl, records, { theme: theme, onPick: pickTaxon })) {
+      forestEl.style.minHeight = "0";
+      document.getElementById("fig-forest-caption").textContent =
+        "No taxon reached ROBUST or CONDITIONAL, so there is nothing to draw here. "
+        + "Figure 1 shows where every taxon fell.";
+    }
+    const flowEl = document.getElementById("fig-flow");
+    if (flowEl && schemeKeys.length > 1) {
+      const primary = schemeKeys[0];
+      const from = primary === "uniform" ? schemeKeys[1] : "uniform";
+      const changed = MicroVerseFigures.labelFlow(flowEl, records, {
+        theme: theme, from: from, to: primary,
+        fromLabel: schemeNames[schemeKeys.indexOf(from)].split(":")[0],
+        toLabel: schemeNames[0].split(":")[0] + " (used here)" });
+      document.getElementById("fig-flow-caption").textContent = changed + " "
+        + (changed === 1 ? "taxon changes" : "taxa change") + " label (coloured bands). "
+        + "Taxa never significant under either weighting are left out.";
+    }
+  }
 
   /* ---------------- specification-count histogram ---------------- */
   const centres = [];

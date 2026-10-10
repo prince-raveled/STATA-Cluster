@@ -210,7 +210,7 @@ def test_bundle_contains_the_whole_distribution(client, finished):
     names = set(archive.namelist())
     assert names == {"README.txt", "methods.txt", "taxa_robustness.csv",
                      "specifications.csv", "results_long.csv.gz", "attribution.csv",
-                     "manifest.json"}
+                     "manifest.json", "microverse_results.xlsx"}
     manifest = json.loads(archive.read("manifest.json"))
     assert manifest["grid"]["valid"] > 0
     readme = archive.read("README.txt").decode()

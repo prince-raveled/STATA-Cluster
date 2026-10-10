@@ -13,11 +13,9 @@
     <div>
       <p class="eyebrow eyebrow-purple">Multiverse analysis for microbiome differential abundance</p>
       <h1 id="hero-title">Is your finding robust to <em>the analysis you chose?</em></h1>
-      <p class="lede">A <b>differential abundance</b> result (which microbes differ between two
-        groups) depends on at least six analytical choices that the field has not agreed on.
-        MicroVerse runs every defensible combination of those choices on your data and shows
-        which findings survive all of them, which depend on a particular choice, and which
-        choice is responsible.</p>
+      <p class="lede">Which microbes differ between two groups depends on choices the field
+        has not agreed on. MicroVerse runs <b>every defensible combination</b> on your data and
+        shows which findings survive all of them.</p>
       <div class="hero-actions">
         <a class="btn btn-primary btn-lg" href="#start">Start analysis</a>
         <a class="btn btn-secondary btn-lg" href="#demos">Try a demo dataset</a>
@@ -65,10 +63,9 @@
           {% endfor %}
         {% endfor %}
       </svg>
-      <p class="figure-note"><b>How to read it:</b> each dot is one complete analysis of the
-        same taxon. Pink ones found a significant difference; grey ones did not. The grey
-        ones all share one statistical test (the blue marks), so in this made-up example
-        that single choice decides the answer.</p>
+      <p class="figure-note"><b>How to read it:</b> each dot is one analysis of the same taxon;
+        pink found a difference, grey did not. Every grey one used the same test (blue marks),
+        so that one choice decides the answer.</p>
     </figure>
   </div>
 </section>
@@ -96,26 +93,27 @@
       <span class="story-n" aria-hidden="true">01</span>
       <div>
         <h3>The problem</h3>
-        <p>Rarefy or not, which transformation, which test, which threshold: each choice is
-          defensible and each can change the answer. A paper reports one set of choices and one
-          p-value, and never shows what the other defensible sets would have said.</p>
-        <p class="micro" style="margin-top:12px">Tierney et al. fitted six million models across
-          15 cohorts: one taxon in three flipped the <i>sign</i> of its association, and 84% of
-          published associations could be recovered as significant by picking the right model.
-          <i>PLOS Biology</i> 2022;20(3):e3001556.</p>
+        <p>Every choice is defensible and each can change the answer, but a paper reports
+          one.</p>
+        <div class="story-stats" aria-label="Tierney et al. 2022, six million models across 15 cohorts">
+          <div><b>1 in 3</b><span>taxa flipped the <i>sign</i> of their association</span></div>
+          <div><b>84%</b><span>of published associations recoverable by picking the model</span></div>
+        </div>
+        <p class="micro" style="margin-top:8px">Tierney et al., six million models across 15
+          cohorts. <i>PLOS Biology</i> 2022;20(3):e3001556.</p>
       </div>
     </article>
     <article class="story-step is-approach">
       <span class="story-n" aria-hidden="true">02</span>
       <div>
         <h3>The approach</h3>
-        <p>Run the whole space instead of one point in it. MicroVerse enumerates every
-          combination of the contested choices, removes the combinations that are
-          statistically incoherent, fits the rest, and reports the <b>distribution</b> of
-          answers for every taxon, together with the choice that moves it.</p>
-        <p class="micro" style="margin-top:12px">Not a new statistical method: it orchestrates
-          published methods inside published frameworks (multiverse analysis, specification
-          curves, vibration of effects).</p>
+        <p>Run the whole space, not one point: enumerate, rule out the incoherent, fit the
+          rest, report the <b>distribution</b> and the choice that moves it.</p>
+        <ol class="approach-flow" aria-label="The approach">
+          <li>every combination</li><li>rule out the incoherent</li><li>fit all</li><li>one label per taxon</li>
+        </ol>
+        <p class="micro" style="margin-top:8px">Published methods inside published frameworks:
+          multiverse analysis, specification curves, vibration of effects.</p>
       </div>
     </article>
   </div>
@@ -127,12 +125,9 @@
     <div class="section-head" style="margin-bottom:0">
       <p class="eyebrow eyebrow-purple">The unit of analysis</p>
       <h2 id="spec-title">What is a specification?</h2>
-      <p>One complete analysis: one value for every contested choice, applied in a fixed
-        order, producing one p-value and one effect size per taxon. Change any single choice
-        and you have a different {{ dfn('specification') }}.</p>
-      <p>MicroVerse counts every combination, rules out the incoherent ones (for example,
-        rarefying and then applying TMM corrects library size twice), and runs all the
-        rest. <a href="/about#forks">The seven choices, and why each is contested</a>.</p>
+      <p>One complete analysis: one option for every choice, in a fixed order. Change any
+        one and it is a different {{ dfn('specification') }}.
+        <a href="/about#forks">The seven choices</a>.</p>
     </div>
     <div class="panel">
       <p class="micro" style="margin:0 0 4px"><span class="example-tag">Example</span> one specification</p>
@@ -162,28 +157,24 @@
   <div class="section-head">
     <p class="eyebrow eyebrow-purple">Reading the answer</p>
     <h2 id="meaning-title">Every taxon gets one of six labels.</h2>
-    <p>Two numbers decide it: how often the taxon is significant across the analyses that
-      tested it, and how often they agree on which group it is higher in. The three most
-      telling:</p>
+    <p>Decided by how often it is significant, and how often the analyses agree on its
+      direction.</p>
   </div>
   <div class="meaning-grid">
     <div class="meaning">
       <span class="tier robust">ROBUST</span>
       <b>Robust to analytical choice</b>
-      <p>Significant in at least 80% of the analyses, in a consistent direction. The
-        conclusion does not depend on which defensible pipeline you picked.</p>
+      <p>Significant in ≥ 80% of analyses, one direction.</p>
     </div>
     <div class="meaning">
       <span class="tier conditional">CONDITIONAL</span>
       <b>Depends on the analytical choice</b>
-      <p>Significant in some analyses and not others. Whether you would report it depends on
-        a choice, and the results page shows which one.</p>
+      <p>Significant in 30–80%: a choice decides it, and the page shows which.</p>
     </div>
     <div class="meaning">
       <span class="tier unstable">UNSTABLE</span>
       <b>Direction not determined</b>
-      <p>The analyses do not agree on which group the taxon is higher in. There is no stable
-        finding to report.</p>
+      <p>The analyses disagree on which group is higher.</p>
     </div>
   </div>
   <p class="small" style="margin-top:16px"><a href="/about#tiers">All six labels and their exact thresholds</a></p>
@@ -194,15 +185,10 @@
   <h2 id="limits-title" class="visually-hidden">Limitations</h2>
   {% call callout('red', 'What MicroVerse does not claim') %}
     <ul>
-      <li><b>Robust is not true.</b> A taxon robust to analytical choice is not thereby
-        biologically real. Confounding, contamination and batch effects survive a multiverse
-        intact.</li>
-      <li><b>Nothing here is causal.</b> A difference that survives every analysis is still
-        an association between two groups.</li>
-      <li><b>The analyses are not independent.</b> They are re-analyses of the same samples, so
-        “significant in 86%” is not 86 replications and not a probability.</li>
-      <li><b>The space is bounded.</b> It covers what is defensible and computable, and every
-        run reports what was enumerated, what was ruled out and why.</li>
+      <li><b>Robust is not true.</b> Confounding and batch effects survive every analysis.</li>
+      <li><b>Nothing here is causal.</b> It is an association between two groups.</li>
+      <li><b>Not independent.</b> “Significant in 86%” is not 86 replications.</li>
+      <li><b>The space is bounded.</b> Every run reports what was ruled out and why.</li>
     </ul>
   {% endcall %}
 </section>

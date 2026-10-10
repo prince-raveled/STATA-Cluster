@@ -822,6 +822,7 @@ Files
   results_long.csv.gz      Every (specification, taxon) result. The full distribution.
   attribution.csv          Variance attributed to each analytical fork (SPEC section 17).
   manifest.json            Run parameters, grid counts, pruning reasons, failures.
+  microverse_results.xlsx  Every table and explanation above, one Excel sheet each.
 
 How to report this
 ------------------
@@ -899,6 +900,9 @@ def build_zip(run, summary, attribution=None, long_csv_gz: bytes = None) -> byte
         calibration = getattr(summary, "calibration", None)
         if calibration is not None:
             archive.writestr("calibration_rejections.csv", calibration_csv(run, calibration))
+        from .workbook import build_workbook
+        archive.writestr("microverse_results.xlsx",
+                         build_workbook(run, summary, attribution))
         archive.writestr("manifest.json",
                          json.dumps(run_manifest(run, summary, attribution), indent=2,
                                     default=str))

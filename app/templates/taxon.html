@@ -62,9 +62,8 @@
     <div class="section-head">
       {{ section_label('With an error rate attached', '27', 'purple') }}
       <h2 id="calibrated-title">{% if row.certified_robust %}CERTIFIED ROBUST.{% elif row.calibrated_discovery %}Discovered, not certified robust.{% else %}Not discovered with calibrated error control.{% endif %}</h2>
-      <p>The group labels were shuffled {{ calibration.n_permutations|commafy }} times and
-        every analysis repeated; this taxon's strongest result across its analyses is
-        compared with what shuffled groups produce.</p>
+      <p>Its strongest result across the analyses, against {{ calibration.n_permutations|commafy }}
+        label shuffles.</p>
     </div>
     <dl class="evidence-strip">
       <div><dt>Family p-value</dt><dd class="num">{% if row.calibrated_p <= TAIL_P_FLOOR %}&lt; {{ '%g'|format(TAIL_P_FLOOR) }}{% else %}{{ '%.2g'|format(row.calibrated_p) if row.calibrated_p == row.calibrated_p else '-' }}{% endif %}<small>{% if row.calibrated_p_tail_fitted %}from the fitted tail of the shuffled maxima{% else %}share of shuffles at least as extreme{% endif %}</small></dd></div>
@@ -73,9 +72,14 @@
       <div><dt>Their direction</dt><dd class="num">{{ row.certified_sign_agreement|percent(0) }}<small>agree on which group is higher; 95% needed</small></dd></div>
       <div><dt>Analyses certified</dt><dd class="num">{{ row.n_specs_certified|commafy }}<small>marked with rings on the curve below</small></dd></div>
     </dl>
-    <p class="note" style="margin-top:12px">Beside the label above, never instead of it.
-      The guarantee assumes the samples are exchangeable between the groups.
-      {{ CERTIFIED_STATUS.sentence }}</p>
+    <details class="disclosure" style="margin-top:12px">
+      <summary>What the guarantee rests on</summary>
+      <div class="disclosure-body"><p class="small">Beside the label above, never instead of
+        it. The group labels were shuffled {{ calibration.n_permutations|commafy }} times and
+        every analysis repeated; this taxon's strongest result across its analyses is
+        compared with what shuffled groups produce. The guarantee assumes the samples are
+        exchangeable between the groups. {{ CERTIFIED_STATUS.sentence }}</p></div>
+    </details>
   </section>
   {% endif %}
 
@@ -86,9 +90,8 @@
     <div class="section-head">
       {{ section_label('How the label depends on counting', '26', 'purple') }}
       <h2 id="weighting-title">{% if stable %}The same label however the analyses are weighted.{% else %}The label changes with the weighting.{% endif %}</h2>
-      <p>The label above uses {{ dfn('weighting_scheme', weighting.scheme_label) }}. Here
-        is the same taxon with each analysis counted differently. The thresholds are the
-        same in every row; only how much each analysis counts changes.</p>
+      <p>The same taxon under each {{ dfn('weighting_scheme', 'weighting') }}; the thresholds
+        never change, only how much each analysis counts.</p>
     </div>
     <div class="table-wrap" tabindex="0" role="region" aria-label="Label under each weighting, scrollable">
       <table class="data">
@@ -100,8 +103,8 @@
             <tr>
               <td>{{ s.label|capitalize }}{% if s.primary %} <span class="chip">used above</span>{% endif %}</td>
               <td><span class="tier {{ TIERS[s.tier].class }}">{{ s.tier }}</span></td>
-              <td class="num">{{ s.frac_significant|percent(0) }}</td>
-              <td class="num">{{ s.sign_consistency|percent(0) }}</td>
+              <td class="num"><span class="mini-bar" aria-hidden="true"><i style="width:{{ (s.frac_significant * 100)|round(0) }}%"></i></span>{{ s.frac_significant|percent(0) }}</td>
+              <td class="num"><span class="mini-bar" aria-hidden="true"><i style="width:{{ (s.sign_consistency * 100)|round(0) }}%"></i></span>{{ s.sign_consistency|percent(0) }}</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -113,30 +116,38 @@
         {% set pc = axes.pseudocount %}
         <div class="panel">
           <h3>Does the pseudocount move it?</h3>
-          <p class="small" style="margin:8px 0 12px;color:var(--ink-2)">The common effect
-            size adds one small constant to every mean so that a zero does not become
-            −∞. Recomputed at a tenth and ten times that constant:</p>
-          <dl class="evidence-strip" style="grid-template-columns:repeat(3, minmax(0, 1fr))">
-            <div><dt>× {{ pc.multipliers[0]|fixed(1) }}</dt><dd class="num">{{ pc.low|signed(2) }}</dd></div>
-            <div><dt>as run</dt><dd class="num">{{ pc.reference|signed(2) }}</dd></div>
-            <div><dt>× {{ pc.multipliers[1]|fixed(0) }}</dt><dd class="num">{{ pc.high|signed(2) }}</dd></div>
-          </dl>
+          <p class="small" style="margin:8px 0 6px;color:var(--ink-2)">Typical effect with the
+            pseudocount at a tenth, as run, and ten times.</p>
+          {% set vals = [pc.low, pc.reference, pc.high] %}
+          {% set lo = [vals|min, 0]|min if (vals|min) < 0 < (vals|max) else vals|min %}
+          {% set hi = vals|max %}
+          {% set span = (hi - lo) if hi > lo else 1 %}
+          <div class="pc-line" role="img" aria-label="Typical effect {{ pc.low|signed(2) }} at {{ pc.multipliers[0] }} times the pseudocount, {{ pc.reference|signed(2) }} as run, {{ pc.high|signed(2) }} at {{ pc.multipliers[1] }} times">
+            <span class="pc-axis"></span>
+            {% if (vals|min) < 0 < (vals|max) %}<span class="pc-zero" style="left:{{ ((0 - lo) / span * 100)|round(1) }}%" title="zero"></span>{% endif %}
+            {% for v, name, cls in [(pc.low, '× ' ~ (pc.multipliers[0]|fixed(1)), ''), (pc.reference, 'as run', ' is-ref'), (pc.high, '× ' ~ (pc.multipliers[1]|fixed(0)), '')] %}
+              {% set x = ((v - lo) / span * 100) if hi > lo else 50 %}
+              <span class="pc-dot{{ cls }}" style="left:{{ x|round(1) }}%"></span>
+              <span class="pc-label{{ cls }}{% if x < 12 %} at-start{% elif x > 88 %} at-end{% endif %}" style="left:{{ x|round(1) }}%">{{ name }} <b>{{ v|signed(2) }}</b></span>
+            {% endfor %}
+          </div>
           <p class="small" style="margin-top:10px">{% if pc.sign_flip %}<span class="weight-flag">direction depends on the pseudocount</span>
-            The typical effect changes direction at one of these settings, so its sign is
-            not a property of the data alone.{% else %}The typical effect keeps its direction
-            at both settings.{% endif %}</p>
+            Its sign is not a property of the data alone.{% else %}Direction holds at both
+            settings.{% endif %}</p>
         </div>
       {% endif %}
       {% if axes.z %}
         {% set z = axes.z %}
         <div class="panel">
           <h3>The tests' own verdicts</h3>
-          <p class="small" style="margin:8px 0 12px;color:var(--ink-2)">The
-            {{ dfn('signed_z') }} of each of the {{ z.n|commafy }} analyses, weighted as
-            above: {{ z.share_positive|percent(0) }} point to higher in {{ run.group_labels[1] }},
-            {{ z.share_negative|percent(0) }} to higher in {{ run.group_labels[0] }}{% set zero = 1 - z.share_positive - z.share_negative %}{% if zero > 0.005 %},
-            and {{ zero|percent(0) }} are exactly zero (a p-value of 1, or a test that found
-            no direction at all){% endif %}.</p>
+          <p class="small" style="margin:8px 0 8px;color:var(--ink-2)">Which way the
+            {{ dfn('signed_z') }} of each of the {{ z.n|commafy }} analyses points, weighted as above.</p>
+          {% set zero = 1 - z.share_positive - z.share_negative %}
+          <div class="z-split" role="img" aria-label="{{ z.share_positive|percent(0) }} point to higher in {{ run.group_labels[1] }}, {{ z.share_negative|percent(0) }} to higher in {{ run.group_labels[0] }}{% if zero > 0.005 %}, {{ zero|percent(0) }} exactly zero{% endif %}">
+            {% if z.share_positive > 0 %}<span class="z-b" style="flex:{{ z.share_positive }} 1 0">{{ z.share_positive|percent(0) }} {{ run.group_labels[1] }}</span>{% endif %}
+            {% if zero > 0.005 %}<span class="z-0" style="flex:{{ zero }} 1 0">{{ zero|percent(0) }}</span>{% endif %}
+            {% if z.share_negative > 0 %}<span class="z-a" style="flex:{{ z.share_negative }} 1 0">{{ z.share_negative|percent(0) }} {{ run.group_labels[0] }}</span>{% endif %}
+          </div>
           <dl class="evidence-strip" style="grid-template-columns:repeat(3, minmax(0, 1fr))">
             <div><dt>Typical</dt><dd class="num">{{ z.median|signed(2) }}</dd></div>
             <div><dt>Middle half</dt><dd class="num">{{ z.iqr_low|signed(1) }} to {{ z.iqr_high|signed(1) }}</dd></div>
@@ -144,13 +155,16 @@
           </dl>
           {% if axes.within_matrix %}
             {% set wm = axes.within_matrix %}
-            <p class="small" style="margin-top:10px">Analyses that share one preprocessed
+            <details class="disclosure" style="margin-top:10px">
+              <summary>Why this moves when the effect size cannot</summary>
+              <div class="disclosure-body"><p class="small">Analyses that share one preprocessed
               table differ only in the test, the covariates adjusted for and the FDR
               setting. Across them (a median of {{ wm.median_specs|fixed(0) }} per table,
               {{ wm.n_matrices|commafy }} tables) the common effect size has a standard
               deviation of {{ wm.effect_sd|fixed(2) }} and the signed z
               {{ wm.z_sd|fixed(2) }}: whatever the adjustment changed shows up here, not on
-              the effect axis.</p>
+              the effect axis.</p></div>
+            </details>
           {% endif %}
         </div>
       {% endif %}
@@ -163,9 +177,8 @@
     <div class="section-head">
       {{ section_label('Why the answer moved', '', 'purple') }}
       <h2 id="influence-title">Which choice is responsible?</h2>
-      <p>For each analytical choice: how much the significance rate moves when you change
-        <i>only that one</i> and hold everything else fixed. This is measured, not modelled:
-        it is what happened across the analyses that ran.</p>
+      <p>How much the significance rate moves when <i>only that choice</i> changes. Measured
+        across the analyses that ran, not modelled.</p>
     </div>
 
     {% set movers = evidence.ranked|selectattr('conditional_swing', '>=', 0.005)|list %}
@@ -253,8 +266,7 @@
     <div class="section-head">
       {{ section_label('Every analysis, plotted', '16.3', 'purple') }}
       <h2 id="curve-title">The full distribution.</h2>
-      <p>Every analysis for this taxon, sorted by {{ dfn('effect_size') }} and coloured by
-        significance, over a panel showing which choice was active in each.</p>
+      <p>Every analysis, sorted by {{ dfn('effect_size') }}, over the choice each one used.</p>
     </div>
     <div class="panel">
       {% if axes.weighted %}
@@ -279,10 +291,7 @@
     <div class="section-head">
       {{ section_label('Four separate questions, not one label', '16.2', 'purple') }}
       <h2 id="fingerprint-title">Stability, broken apart.</h2>
-      <p>A {{ dfn('tier') }} compresses detection and direction into a single word and drops
-        magnitude entirely. These are the dimensions it compresses, kept separate: a taxon
-        can have a completely settled direction and a magnitude that is anyone's guess, and
-        one label cannot say that.</p>
+      <p>What one {{ dfn('tier') }} compresses, kept separate.</p>
     </div>
     <div class="fingerprint">
       {% for key, value in fingerprint.items() %}
@@ -298,7 +307,12 @@
         </div>
       {% endfor %}
     </div>
-    <p class="note" style="margin-top:16px">
+    <details class="disclosure" style="margin-top:16px">
+      <summary>These are shares of analyses, not probabilities</summary>
+      <div class="disclosure-body"><p class="small">
+      A tier compresses detection and direction into a single word and drops magnitude
+      entirely: a taxon can have a completely settled direction and a magnitude that is
+      anyone's guess, and one label cannot say that.
       These are shares of the <i>analyses</i>, not probabilities about the biology.
       Detection here is <b>{{ fingerprint.detection|percent(0) if fingerprint.detection == fingerprint.detection else 'not available' }}</b>,
       which means {{ fingerprint.detection|percent(0) if fingerprint.detection == fingerprint.detection else 'an unknown share' }}
@@ -306,7 +320,8 @@
       significant. It does not mean there is a
       {{ fingerprint.detection|percent(0) if fingerprint.detection == fingerprint.detection else 'corresponding' }}
       chance the difference is real.
-    </p>
+      </p></div>
+    </details>
   </section>
 
   <!-- ============ do the tests agree ============ -->
@@ -315,10 +330,8 @@
       <div class="section-head">
         {{ section_label('Do the statistical tests agree?', '10', 'purple') }}
         <h2 id="methods-title">Method by method.</h2>
-        <p>Tests disagreeing is a different problem from preprocessing moving the answer, so
-          it is shown separately. Each test's own native statistic is in the downloads; the
-          effect below is the {{ dfn('harmonised_effect', 'comparable effect size') }}, which is
-          computed the same way for all of them.</p>
+        <p>Each test's share of analyses calling it significant, and the
+          {{ dfn('harmonised_effect', 'comparable effect size') }}.</p>
       </div>
       <div class="table-wrap" tabindex="0" role="region" aria-label="Results by statistical test, scrollable">
         <table class="data">
@@ -332,7 +345,7 @@
               <tr>
                 <td>{{ m.label }}</td>
                 <td class="num">{{ m.n|commafy }}</td>
-                <td class="num"><b>{{ m.frac_significant|percent(0) }}</b></td>
+                <td class="num"><span class="mini-bar" aria-hidden="true"><i style="width:{{ (m.frac_significant * 100)|round(0) }}%"></i></span><b>{{ m.frac_significant|percent(0) }}</b></td>
                 <td class="num">{{ m.median_effect|signed(2) }}</td>
               </tr>
             {% endfor %}
@@ -345,8 +358,10 @@
   <!-- ============ what this does not tell you ============ -->
   <section class="result-section" aria-labelledby="limits-title">
     <h2 id="limits-title" class="visually-hidden">What this page cannot tell you</h2>
-    {% call callout('red', 'Important interpretation') %}
-      <ul>
+    <details class="disclosure caveat-drawer">
+      <summary>Important interpretation <span class="summary-meta">what this page cannot tell you</span></summary>
+      <div class="disclosure-body">
+      <ul class="limits-list">
         {% for note in evidence.notes %}<li>{{ note }}</li>{% endfor %}
         <li>The analyses are <b>not independent evidence</b>. They are
           {{ row.n_specs_tested|commafy }} re-analyses of the same samples, so
@@ -371,7 +386,8 @@
           <li>{{ tier_note }}</li>
         {% endif %}
       </ul>
-    {% endcall %}
+      </div>
+    </details>
 
     <details class="disclosure" style="margin-top:var(--space-4)">
       <summary>Where these numbers come from</summary>

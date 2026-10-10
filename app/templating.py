@@ -27,6 +27,7 @@ from .core.inference import TAIL_P_FLOOR
 from .core.models import FORK_LABELS, METHOD_LABELS, ordinal
 from .core.robustness import TIERS
 from .core.validity import defensibility_register, rule_id
+from .core.workbook import INTERPRETATION
 from .ui import (
     MODE_SUMMARIES,
     TIER_HEADLINES,
@@ -109,7 +110,8 @@ templates.env.globals.update(
     # Changes whenever the stylesheet or scripts change shape, so a returning visitor
     # never renders new markup against a cached stylesheet. The application version
     # is recorded in every run manifest and is deliberately not bumped for a restyle.
-    ASSETS=f"{config.VERSION}-ui8",
+    ASSETS=f"{config.VERSION}-ui9",
+    INTERPRETATION=INTERPRETATION,
     TIERS=TIERS,
     TIER_REPLICATION=TIER_REPLICATION,
     TIER_VALIDATION=TIER_VALIDATION,

@@ -21,6 +21,7 @@ scipy==1.18.1
 statsmodels==0.15.0
 joblib==1.6.0
 h5py==3.16.0          # BIOM v2 (HDF5) reader
+openpyxl==3.1.5       # the Excel workbook download
 
 # Optional: enables PyDESeq2 (fork 5, method 7). Specifications needing it are
 # pruned with a visible reason when it is absent.

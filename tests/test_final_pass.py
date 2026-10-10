@@ -508,10 +508,16 @@ def test_the_manifest_is_reachable_without_unzipping_anything(client, finished):
 
 
 def test_the_results_page_says_what_a_tier_leaves_out(client, finished):
+    """One line per caveat on the page, its full text one click away (in the HTML) and in
+    the workbook's Interpretation sheet, so shortening the page lost none of it."""
+    from app.core.workbook import INTERPRETATION
+
     text = _rendered_text(client.get(f"/results/{finished}").text)
-    assert "What a tier deliberately leaves out" in text
-    assert "Magnitude" in text
-    assert "not 86 replications" in text or "re-analyses of the same samples" in text
+    assert "what a tier deliberately leaves out" in text.lower()
+    for item in INTERPRETATION:
+        assert item["short"] in text
+        assert item["full"] in text
+    assert "not 86 replications" in text
 
 
 # --------------------------------------------------------------------------

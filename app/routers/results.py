@@ -67,6 +67,8 @@ DOWNLOADS = {
     "calibration": ("calibration_rejections.csv", "text/csv"),
     "methods": ("methods.txt", "text/plain; charset=utf-8"),
     "bundle": ("microverse_results.zip", "application/zip"),
+    "workbook": ("microverse_results.xlsx",
+                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
 }
 
 
@@ -360,6 +362,9 @@ def download(token: str, kind: str):
         payload = calibration_csv(run, calibration)
     elif kind == "bundle":
         payload = build_zip(run, summary, attribution)
+    elif kind == "workbook":
+        from ..core.workbook import build_workbook
+        payload = build_workbook(run, summary, attribution)
     else:
         payload = methods_paragraph(run, summary, attribution).encode()
 

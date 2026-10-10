@@ -123,8 +123,7 @@
       <div class="block-head">
         <span class="block-number" aria-hidden="true">2</span>
         <h2 id="forks-title">The seven analytical choices</h2>
-        <p>These are not settings. Every value listed is run, and the results report how much
-          each choice moves the answer. Dashed cards are held at one value in this mode.</p>
+        <p>Not settings: every option listed is run. Dashed cards are fixed in this mode.</p>
       </div>
       {% for name in ["quick", "full", "covariate"] %}
         <div class="fork-grid" x-show="mode === '{{ name }}'"{% if name != 'quick' %} x-cloak{% endif %}
@@ -150,9 +149,7 @@
       <div class="block-head">
         <span class="block-number" aria-hidden="true">3</span>
         <h2 id="space-title">From candidate combinations to model fits</h2>
-        <p>Not every combination is coherent. Incoherent ones are ruled out with a stated
-          reason, and the valid ones share preprocessing and model fits wherever the
-          arithmetic allows.</p>
+        <p>Incoherent combinations are ruled out, each with its reason.</p>
       </div>
       {% for name in ["quick", "full", "covariate"] %}
         {% set s = space[name] %}
@@ -250,9 +247,7 @@
       <div class="block-head">
         <span class="block-number" aria-hidden="true">4</span>
         <h2 id="inside-title">Inside one specification</h2>
-        <p>Each specification applies its choices in this fixed order. The order is enforced
-          in one place in the engine: filtering before rarefying, for example, gives a
-          different answer.</p>
+        <p>Always in this order: filtering before rarefying would give a different answer.</p>
       </div>
       <ol class="pipeline">
         <li><b>Rarefy</b><span>Subsample each sample to one depth, or not at all.</span></li>
@@ -263,11 +258,9 @@
         <li><b>Correct</b><span>BH or BY across the taxa tested: an {{ dfn('q_value', 'adjusted p-value') }}.</span></li>
         <li class="is-output"><b>Call</b><span>Significant when the adjusted p-value is at or below the threshold.</span></li>
       </ol>
-      <p class="pipeline-side"><span><b>Effect size, computed alongside:</b> the log<sub>2</sub>
-        fold change of mean relative abundance ({{ summary.group_b }} relative to
-        {{ summary.group_a }}), taken from the matrix after step 4 with one pseudocount for the
-        whole run. It is the same whichever test ran and whichever covariates were adjusted
-        for, so every specification can share one axis.</span></p>
+      <p class="pipeline-side"><span><b>Effect size, alongside:</b> log<sub>2</sub> fold change
+        of mean relative abundance, {{ summary.group_b }} vs {{ summary.group_a }}, the same
+        for every test, so all analyses share one axis.</span></p>
     </section>
 
     <!-- ================= 5. across the space ================= -->
@@ -275,27 +268,23 @@
       <div class="block-head">
         <span class="block-number" aria-hidden="true">5</span>
         <h2 id="across-title">Across the specification space</h2>
-        <p>After the run, each taxon has one result from every specification that tested it.
-          Those results are summarised, not averaged into a single p-value.</p>
+        <p>Each taxon's results are summarised, never averaged into one p-value.</p>
       </div>
       <div class="grid-3">
         <div class="panel">
           <h3>{{ dfn('significance_rate', 'How often significant') }}</h3>
-          <p class="small" style="margin-top:8px;color:var(--ink-2)">The share of the
-            specifications that tested the taxon and called it significant. Taxa removed by a
-            filter are not counted against it.</p>
+          <p class="small" style="margin-top:8px;color:var(--ink-2)">Share of the analyses that
+            tested it calling it significant.</p>
         </div>
         <div class="panel">
           <h3>{{ dfn('direction_agreement') }}</h3>
-          <p class="small" style="margin-top:8px;color:var(--ink-2)">The share of those
-            specifications that agree on which group the taxon is higher in.</p>
+          <p class="small" style="margin-top:8px;color:var(--ink-2)">Share agreeing which group
+            is higher.</p>
         </div>
         <div class="panel">
           <h3>{{ dfn('tier', 'Robustness label') }}</h3>
-          <p class="small" style="margin-top:8px;color:var(--ink-2)">Those two numbers decide
-            the label, from <span class="tier robust">ROBUST</span> to
-            <span class="tier unstable">UNSTABLE</span>. A second analysis then attributes the
-            variation to the choices that caused it.</p>
+          <p class="small" style="margin-top:8px;color:var(--ink-2)">The two decide it, from
+            <span class="tier robust">ROBUST</span> to <span class="tier unstable">UNSTABLE</span>.</p>
         </div>
       </div>
     </section>
@@ -305,9 +294,8 @@
       <div class="block-head">
         <span class="block-number" aria-hidden="true">6</span>
         <h2 id="declare-title">Your own pipeline <span class="tag-optional" style="vertical-align:middle">optional</span></h2>
-        <p>Tell MicroVerse the pipeline you would otherwise have reported, and it locates that
-          pipeline in the distribution: the percentile it sits at, marked on every
-          specification curve.</p>
+        <p>Enter the pipeline you would have reported; it is marked on every curve with its
+          percentile.</p>
       </div>
       <label class="check-row">
         <input type="checkbox" name="declare" value="1" x-model="declare">
