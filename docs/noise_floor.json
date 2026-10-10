@@ -1,78 +1,79 @@
 {
+  "labels": "v3: a taxon significant in no analysis is NOT DETECTED (docs/V3_DEVIATIONS.md L1)",
   "headline": {
     "seed": 11,
     "n_per_group": 25,
     "n_taxa": 80,
-    "n_taxa_tiered": 79,
-    "n_specifications": 1596,
+    "n_taxa_tiered": 80,
+    "n_specifications": 1560,
     "tiers": {
       "ROBUST": 0,
       "CONDITIONAL": 0,
-      "FRAGILE": 0,
-      "UNSTABLE": 57,
-      "INSUFFICIENT": 0,
-      "NOT DETECTED": 22
+      "FRAGILE": 1,
+      "UNSTABLE": 0,
+      "INSUFFICIENT": 1,
+      "NOT DETECTED": 78
     },
-    "n_detected": 57,
+    "n_detected": 1,
     "n_stable": 0,
-    "unstable_share": 0.7215
+    "unstable_share": 0.0
   },
   "replicates": [
     {
       "seed": 12,
       "n_per_group": 25,
       "n_taxa": 80,
-      "n_taxa_tiered": 78,
-      "n_specifications": 1596,
+      "n_taxa_tiered": 80,
+      "n_specifications": 1560,
       "tiers": {
         "ROBUST": 0,
         "CONDITIONAL": 0,
         "FRAGILE": 2,
-        "UNSTABLE": 53,
-        "INSUFFICIENT": 0,
-        "NOT DETECTED": 23
+        "UNSTABLE": 0,
+        "INSUFFICIENT": 2,
+        "NOT DETECTED": 76
       },
-      "n_detected": 55,
+      "n_detected": 2,
       "n_stable": 0,
-      "unstable_share": 0.6795
+      "unstable_share": 0.0
     },
     {
       "seed": 13,
       "n_per_group": 25,
       "n_taxa": 80,
-      "n_taxa_tiered": 79,
-      "n_specifications": 1596,
+      "n_taxa_tiered": 80,
+      "n_specifications": 1560,
       "tiers": {
         "ROBUST": 0,
         "CONDITIONAL": 0,
         "FRAGILE": 0,
-        "UNSTABLE": 58,
-        "INSUFFICIENT": 0,
-        "NOT DETECTED": 21
+        "UNSTABLE": 0,
+        "INSUFFICIENT": 1,
+        "NOT DETECTED": 79
       },
-      "n_detected": 58,
+      "n_detected": 0,
       "n_stable": 0,
-      "unstable_share": 0.7342
+      "unstable_share": 0.0
     },
     {
       "seed": 14,
       "n_per_group": 25,
       "n_taxa": 80,
-      "n_taxa_tiered": 78,
-      "n_specifications": 1596,
+      "n_taxa_tiered": 80,
+      "n_specifications": 1560,
       "tiers": {
         "ROBUST": 0,
         "CONDITIONAL": 0,
-        "FRAGILE": 18,
-        "UNSTABLE": 52,
-        "INSUFFICIENT": 0,
-        "NOT DETECTED": 8
+        "FRAGILE": 4,
+        "UNSTABLE": 0,
+        "INSUFFICIENT": 2,
+        "NOT DETECTED": 74
       },
-      "n_detected": 70,
+      "n_detected": 4,
       "n_stable": 0,
-      "unstable_share": 0.6667
+      "unstable_share": 0.0
     }
   ],
   "n_stable_across_all_runs": 0,
-  "interface_claim": "on a table simulated with no difference between the groups at all, 57 of 79 taxa still landed in UNSTABLE"
+  "interface_claim": "on tables simulated with no difference between the groups at all (4 seeds, 80 taxa each), between 0 and 4 taxa reached significance in any analysis, and none held up as ROBUST or CONDITIONAL"
 }

@@ -54,15 +54,22 @@ WORKED_EXAMPLE = {
 @pytest.mark.parametrize("taxon", sorted(WORKED_EXAMPLE))
 def test_worked_example_tiers(taxon):
     case = WORKED_EXAMPLE[taxon]
+    # SPEC §19 is the v2 rulebook; v3 changes one ordering (test_tier_boundaries).
     assert assign_tier(
-        case["n_specs_tested"], case["frac_significant"], case["sign_consistency"]
+        case["n_specs_tested"], case["frac_significant"], case["sign_consistency"],
+        ruleset="v2",
     ) == case["tier"], f"{taxon} must be {case['tier']}"
 
 
 def test_bacteroides_is_unstable_regardless_of_frac_significant():
     """§19: 'UNSTABLE (0.61 < 0.80 -> UNSTABLE regardless of frac_significant)'."""
     for frac in (0.0, 0.23, 0.55, 0.95):
+        assert assign_tier(3104, frac, 0.61, ruleset="v2") == "UNSTABLE"
+    # v3: once it was significant somewhere, the same holds; significant nowhere is
+    # NOT DETECTED.
+    for frac in (0.23, 0.55, 0.95):
         assert assign_tier(3104, frac, 0.61) == "UNSTABLE"
+    assert assign_tier(3104, 0.0, 0.61) == "NOT DETECTED"
 
 
 def test_tier_boundaries_are_inclusive_as_written():

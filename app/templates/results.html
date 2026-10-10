@@ -146,10 +146,13 @@
           it found.</p>
         {% call callout('red', 'Do not read the table below as a shortlist') %}
           <p>Crossing significance in a handful of analyses out of {{ summary.n_specs_total|commafy }}
-            is close to what noise alone produces: on a table simulated with no difference
-            between the groups at all, 57 of 79 taxa still landed in UNSTABLE. A taxon
-            appearing there is not weak evidence of an effect — it is an absence of evidence
-            either way.</p>
+            is close to what noise alone produces:
+            {% if summary.weighted %}on tables simulated with no difference between the
+            groups at all, up to 4 of 80 taxa still reached significance somewhere, all
+            FRAGILE, and none held up.{% else %}on a table simulated with no difference
+            between the groups at all, 57 of 79 taxa still landed in UNSTABLE under the v2
+            labels.{% endif %} A taxon appearing there is not weak evidence of an effect — it
+            is an absence of evidence either way.</p>
         {% endcall %}
       {% endif %}
       <p style="margin-top:var(--space-4)"><b>This is more informative than it looks.</b> A
@@ -290,6 +293,7 @@
       </div>
       <figure class="fig-inline">
         <div class="fig-head"><span class="fig-no">Figure 3</span>How labels move between weightings</div>
+        <div class="flow-ends" aria-hidden="true"><span></span><span></span></div>
         <div id="fig-flow" class="plot" role="img"
              aria-label="Each taxon's label under one vote per analysis, flowing to its label under the weighting used on this page. The table below gives every taxon's label under each scheme."></div>
         <figcaption class="fig-caption" id="fig-flow-caption">Bands are groups of taxa; coloured

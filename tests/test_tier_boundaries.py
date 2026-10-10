@@ -85,8 +85,9 @@ def test_conditional_boundary_on_significance(frac, expected):
 @pytest.mark.parametrize("consistency", [0.0, 0.5, 0.7999])
 def test_direction_not_settled_is_unstable(consistency):
     """Whatever the significance rate, an undetermined direction is not a finding."""
-    for frac in (0.0, 0.1, 0.5, 0.9, 1.0):
+    for frac in (0.1, 0.5, 0.9, 1.0):
         assert assign_tier(100, frac, consistency) == "UNSTABLE"
+        assert assign_tier(100, frac, consistency, ruleset="v2") == "UNSTABLE"
 
 
 def test_sign_consistency_below_a_half_is_impossible_but_handled():
@@ -102,10 +103,14 @@ def test_never_significant_with_a_settled_direction_is_not_detected():
     assert assign_tier(100, 0.0, 0.95) == "NOT DETECTED"
 
 
-def test_never_significant_with_an_unsettled_direction_is_unstable_not_undetected():
-    """Order matters: UNSTABLE is evaluated before NOT DETECTED, and should be —
-    'we could not tell which way' is more informative than 'we found nothing'."""
-    assert assign_tier(100, 0.0, 0.5) == "UNSTABLE"
+def test_never_significant_is_not_detected_whatever_its_direction_under_v3():
+    """v3 (docs/V3_DEVIATIONS.md L1): a taxon no analysis called significant was never a
+    finding, so it cannot be an unstable one. v2 evaluated direction first and called it
+    UNSTABLE; a v2 run keeps that order so v2 results reproduce exactly."""
+    for consistency in (0.0, 0.5, 0.7999, 0.95, 1.0):
+        assert assign_tier(100, 0.0, consistency) == "NOT DETECTED"
+    assert assign_tier(100, 0.0, 0.5, ruleset="v2") == "UNSTABLE"
+    assert assign_tier(100, 0.0, 1.0, ruleset="v2") == "NOT DETECTED"
 
 
 # --- exhaustiveness: no input may fall through -----------------------------

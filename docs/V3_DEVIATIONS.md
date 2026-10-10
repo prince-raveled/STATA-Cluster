@@ -168,6 +168,8 @@ refused zenodo.org, so the archive could not be downloaded. Nothing was substitu
 script, its registration in `run_all.py`, the record format, the site's rendering of it
 and the tests of its statistics are in place, and the site says V8 has not been run.
 R 4.3.3 is installed for the export step once the archive is available.
+*Since run* on the project PC, where the cohorts were already exported (ad4f9b1), and
+re-run after the label correction L1 below.
 
 ## Phase 1 — calibrated multiverse inference (plan §27)
 
@@ -244,6 +246,8 @@ its data are: Zenodo, which holds the Pelto cohorts, is not reachable from the b
 environment. Its script is written (section D below); until its record exists, every
 page, the methods paragraph and the manifest describe CERTIFIED ROBUST as not yet
 validated on real data (`app/core/evidence.py::certified_status`).
+*Since run* on the project PC (c6423f0): two of its three criteria met, and the pages
+restrict the label's claims to the settings that passed.
 
 **C2 — The null-uniformity check and the compute benchmark have not been recorded.** Both
 scripts exist and are registered in `run_all.py`: `tests/reference/calibration_null.py`
@@ -251,6 +255,7 @@ scripts exist and are registered in `run_all.py`: `tests/reference/calibration_n
 §27.6 criterion) and `tests/reference/calibration_benchmark.py` (the §27.4 budget,
 written into `docs/benchmark.json`). This phase was limited to code and tests, so neither
 record was written; the 20 s above is a development measurement, not a record.
+*Since recorded* (ad4f9b1): KS p = 0.516 over 200 null tables; 19.4 s for B = 2,000.
 
 ### D. V9's script (`tests/reference/v9_calibration.py`)
 
@@ -293,3 +298,44 @@ for offline Atlas runs.
 
 **D7 — Resumable.** Replicates are cached in `data/v9_calibration_rows.jsonl` with the code
 commit, so a long run can be interrupted; a changed commit starts again.
+
+## After Phase 1 — label correction and results redesign
+
+**L1 — A taxon significant in no analysis is NOT DETECTED, whatever its direction.** SPEC
+§16.2 checks direction before significance, so under v2 a taxon that no analysis called
+significant was labelled UNSTABLE whenever its sign wavered. UNSTABLE then mixed two
+different things: findings whose direction is unsettled, and taxa that were never
+findings. On the IBD demo 20 of the 23 UNSTABLE taxa had never been significant, and every
+count of taxa "significant in at least one specification" (the verdict, the summary
+tiles) included them: 94 where the true number was 74. On the noise-floor tables, which
+have no group difference by construction, 56 of the 57 UNSTABLE taxa had never been
+significant (rule set v2, checked directly). v3 runs check "significant nowhere" first; under v3 the noise-floor tables
+put 0 of 80 taxa in UNSTABLE and between 0 and 4 anywhere significant, all FRAGILE.
+Runs under rule set v2, and every run stored before v3, keep v2's order, so v2 results
+still reproduce byte for byte (B1b). The SPEC §19 worked example is checked under v2, the
+order it was written for. Re-run after the change: the noise floor
+(`docs/noise_floor.json`, whose interface sentence is rewritten) and V8, because the
+weighted labels it validates changed. `app/core/robustness.py::assign_tier`.
+
+V8 before and after. The first run (ad4f9b1) failed its pre-specified criterion:
+decision tree minus one vote each, -0.026 AUC (95% CI -0.071 to +0.008). After L1 it
+passes: +0.017 (-0.007 to +0.037) on the majority definition, and +0.054 (+0.009 to
++0.091) on the reference definition. The criterion, margin and data were not changed;
+L1 was made to correct the miscount above, after the first V8 result was known, and both
+results stay in the history. Every labelling's AUC fell (decision tree 0.763 to 0.719,
+one vote each 0.788 to 0.702, v2 baseline unchanged at 0.785): v2-ordered UNSTABLE
+held never-significant taxa that almost never replicate, easy negatives at the bottom of
+the ordering. ROBUST, CONDITIONAL and FRAGILE replicate as before (90%, 47-52%, 11-12%);
+UNSTABLE now replicates 7-10%, because it now holds taxa that were significant somewhere.
+
+**L2 — Results are shown as figures; the reasoning moved to an Excel workbook.** The
+results page led with text: about 3,600 words over 12 screens and two charts. It now
+leads with a bar of taxa by label, the robustness landscape (Figure 1), a forest plot of
+the taxa that held up (Figure 2), label flows between weightings (Figure 3), a
+calibration funnel and weighting bars. Explanations are one click away in drawers, and in
+full in `microverse_results.xlsx` (README, Summary, Taxa, Specifications, Grid,
+Attribution, Calibration, Methods, Interpretation, Glossary), which leads the downloads
+and joins the bundle. The interpretation text is defined once
+(`app/core/workbook.py::INTERPRETATION`); a test checks every caveat appears on the page
+in full and in the workbook. The specification x taxon table stays a CSV: it can exceed
+Excel's 1,048,576 rows. Adds `openpyxl==3.1.5`.

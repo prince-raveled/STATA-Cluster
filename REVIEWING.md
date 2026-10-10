@@ -107,18 +107,22 @@ replications. The effective number of independent analyses is much smaller and i
 computed anywhere**. If you think the interface implies otherwise at any point, that is a
 bug worth reporting.
 
-**UNSTABLE is what noise looks like, and it fills up.** A table simulated with no
-group difference at all — 25 per group, 80 taxa — still put **57 of 79 taxa in
-UNSTABLE**, and 0 in ROBUST or CONDITIONAL. Repeated over four seeds, ROBUST and
-CONDITIONAL stayed empty every time while UNSTABLE held 52-58 taxa. So "significant in
-at least one of 1,596 analyses" is close to an unmissable bar, and a taxon sitting in
-UNSTABLE is not weak evidence of an effect — it is the absence of evidence either way.
-This is the tiers working, not failing: the separation between the two tiers that carry
-a measured replication rate and the two that do not is exactly what the validation in §6
-is about. It is stated here because a reader scanning a results page will otherwise read
-a long UNSTABLE list as a shortlist of candidates. Measured by
-`tests/reference/noise_floor.py`; record in `docs/noise_floor.json`, and the results page
-says it in words whenever a run produces no ROBUST or CONDITIONAL taxon.
+**What noise looks like.** Tables simulated with no group difference at all — 25 per
+group, 80 taxa, four seeds — put between 0 and 4 taxa significant in any analysis, all of
+them FRAGILE, and none in ROBUST or CONDITIONAL. So a taxon that is FRAGILE is not weak
+evidence of an effect — it is the absence of evidence either way — and the separation
+between the two tiers that carry a measured replication rate and the rest is exactly what
+the validation in §6 is about. Measured by `tests/reference/noise_floor.py`; record in
+`docs/noise_floor.json`, and the results page says it in words whenever a run produces
+no ROBUST or CONDITIONAL taxon.
+
+Under v2's labels the same tables put **57 of 79 taxa in UNSTABLE**, and that figure was
+quoted here as "UNSTABLE is what noise looks like". It was an artefact of the order the
+rules were checked in: 56 of those 57 had been significant in no analysis at all,
+and v2 checked direction before checking for significance, so a never-significant taxon
+whose sign wavered was called UNSTABLE. v3 labels a taxon significant nowhere NOT
+DETECTED, whatever its direction (docs/V3_DEVIATIONS.md L1), and UNSTABLE now holds only
+taxa that were significant somewhere with an unsettled direction.
 
 **Quick mode excludes three of the seven tests.** ANCOM-BC, ALDEx2 and PyDESeq2 never run
 in the default mode. Full mode runs them on a *sample* of matrices (e.g. ALDEx2 on 45 of

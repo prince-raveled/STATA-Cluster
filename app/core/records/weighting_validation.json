@@ -1,5 +1,5 @@
 {
-  "elapsed_seconds": 256.5,
+  "elapsed_seconds": 353.4,
   "experiment": "V8",
   "script": "tests/reference/weighting_validation.py",
   "preregistration": {
@@ -9,8 +9,8 @@
     "operationalised": "lower limit of the 95% paired cluster-bootstrap interval (cohorts resampled) for AUC(v3 decision_tree) - AUC(v3 uniform) above -0.03, majority definition"
   },
   "code_commit": {
-    "sha": "9bc5f589c354eea9fc21def8182a10c055dfa578",
-    "dirty": false
+    "sha": "2b6b66c8257de3ec074e4e24f8d4b1f649afa9cf",
+    "dirty": true
   },
   "registered_design": true,
   "design": {
@@ -65,31 +65,31 @@
             },
             {
               "tier": "UNSTABLE",
-              "n_taxa": 1491,
-              "n_cohorts": 25,
-              "replication_rate": 0.023474178403755867,
-              "ci_low": 0.010739026334752367,
-              "ci_high": 0.04181579991740853
+              "n_taxa": 243,
+              "n_cohorts": 17,
+              "replication_rate": 0.09053497942386832,
+              "ci_low": 0.02857142857142857,
+              "ci_high": 0.1412484497726333
             },
             {
               "tier": "NOT DETECTED",
-              "n_taxa": 8664,
+              "n_taxa": 9912,
               "n_cohorts": 23,
-              "replication_rate": 0.03185595567867036,
-              "ci_low": 0.023813415320868832,
-              "ci_high": 0.040923273646420316
+              "replication_rate": 0.029156577885391444,
+              "ci_low": 0.021734294516796232,
+              "ci_high": 0.03767115996073297
             }
           ],
           "discrimination": {
-            "n": 3900,
-            "n_replicated": 519,
-            "auc": 0.7884069938606254,
-            "auc_p": 7.74616100753012e-123,
-            "trend_rho": 0.3774781267172144,
-            "trend_p": 2.5845216794250597e-132,
+            "n": 2652,
+            "n_replicated": 506,
+            "auc": 0.702344927045077,
+            "auc_p": 3.82464405242038e-79,
+            "trend_rho": 0.36583559933140486,
+            "trend_p": 8.837245888062482e-85,
             "robust_rate": 0.9016393442622951,
-            "other_rate": 0.12086480854389164,
-            "risk_ratio": 7.459899660825324
+            "other_rate": 0.17406406792744114,
+            "risk_ratio": 5.179928028788485
           },
           "null_rate": 0.0067653613498885705
         },
@@ -121,31 +121,31 @@
             },
             {
               "tier": "UNSTABLE",
-              "n_taxa": 1491,
-              "n_cohorts": 25,
-              "replication_rate": 0.03755868544600939,
-              "ci_low": 0.006514234675843911,
-              "ci_high": 0.08500957734183807
+              "n_taxa": 243,
+              "n_cohorts": 17,
+              "replication_rate": 0.20164609053497942,
+              "ci_low": 0.03355145413870246,
+              "ci_high": 0.328152327674897
             },
             {
               "tier": "NOT DETECTED",
-              "n_taxa": 8664,
+              "n_taxa": 9912,
               "n_cohorts": 23,
-              "replication_rate": 0.011426592797783934,
-              "ci_low": 0.005463460029993065,
-              "ci_high": 0.01814934163547906
+              "replication_rate": 0.010694108151735271,
+              "ci_low": 0.005179367052514842,
+              "ci_high": 0.017101052380002722
             }
           ],
           "discrimination": {
-            "n": 3900,
-            "n_replicated": 550,
-            "auc": 0.7756580732700136,
-            "auc_p": 6.546650105454169e-118,
-            "trend_rho": 0.369704046105773,
-            "trend_p": 1.3668416316763499e-126,
+            "n": 2652,
+            "n_replicated": 543,
+            "auc": 0.6816956531989972,
+            "auc_p": 1.4017333116601504e-67,
+            "trend_rho": 0.33735431425530704,
+            "trend_p": 1.3656379226326194e-71,
             "robust_rate": 0.8524590163934426,
-            "other_rate": 0.12972128158374577,
-            "risk_ratio": 6.571466192639409
+            "other_rate": 0.1895021227325357,
+            "risk_ratio": 4.498414076324663
           },
           "null_rate": 7.95924864692773e-05
         }
@@ -154,9 +154,9 @@
         "ROBUST": 61,
         "CONDITIONAL": 346,
         "FRAGILE": 2002,
-        "UNSTABLE": 1491,
+        "UNSTABLE": 243,
         "INSUFFICIENT": 0,
-        "NOT DETECTED": 8664
+        "NOT DETECTED": 9912
       }
     },
     "v3_flat_tree": {
@@ -191,31 +191,31 @@
             },
             {
               "tier": "UNSTABLE",
-              "n_taxa": 1231,
-              "n_cohorts": 25,
-              "replication_rate": 0.025182778229082048,
-              "ci_low": 0.009998933143669985,
-              "ci_high": 0.046832366564827456
+              "n_taxa": 213,
+              "n_cohorts": 16,
+              "replication_rate": 0.09859154929577464,
+              "ci_low": 0.029628533859303093,
+              "ci_high": 0.15898832684824893
             },
             {
               "tier": "NOT DETECTED",
-              "n_taxa": 8894,
+              "n_taxa": 9912,
               "n_cohorts": 23,
-              "replication_rate": 0.031594333258376434,
-              "ci_low": 0.023723609892470177,
-              "ci_high": 0.0404691308358592
+              "replication_rate": 0.029358353510895885,
+              "ci_low": 0.021999970932545146,
+              "ci_high": 0.037765265228966005
             }
           ],
           "discrimination": {
-            "n": 3670,
-            "n_replicated": 517,
-            "auc": 0.7779125342540125,
-            "auc_p": 2.7889894153126873e-114,
-            "trend_rho": 0.3751032127198146,
-            "trend_p": 5.809875251369478e-123,
+            "n": 2652,
+            "n_replicated": 507,
+            "auc": 0.7003158577123074,
+            "auc_p": 2.370755665573482e-78,
+            "trend_rho": 0.36395496831281726,
+            "trend_p": 7.238117370775723e-84,
             "robust_rate": 0.9047619047619048,
-            "other_rate": 0.1275298031605212,
-            "risk_ratio": 7.094513457556936
+            "other_rate": 0.17381228273464658,
+            "risk_ratio": 5.205396825396826
           },
           "null_rate": 0.0067653613498885705
         },
@@ -247,31 +247,31 @@
             },
             {
               "tier": "UNSTABLE",
-              "n_taxa": 1231,
-              "n_cohorts": 25,
-              "replication_rate": 0.043866774979691305,
-              "ci_low": 0.007587454336573339,
-              "ci_high": 0.09814833285836418
+              "n_taxa": 213,
+              "n_cohorts": 16,
+              "replication_rate": 0.22535211267605634,
+              "ci_low": 0.04806547619047619,
+              "ci_high": 0.3529591104734576
             },
             {
               "tier": "NOT DETECTED",
-              "n_taxa": 8894,
+              "n_taxa": 9912,
               "n_cohorts": 23,
-              "replication_rate": 0.011355970317067686,
-              "ci_low": 0.0054268355309750865,
-              "ci_high": 0.018064549167079877
+              "replication_rate": 0.01079499596448749,
+              "ci_low": 0.0051947455783937675,
+              "ci_high": 0.017202992110367948
             }
           ],
           "discrimination": {
-            "n": 3670,
-            "n_replicated": 552,
-            "auc": 0.7672804473324595,
-            "auc_p": 1.1834921555287561e-111,
-            "trend_rho": 0.37068940750195944,
-            "trend_p": 6.526231077652469e-120,
+            "n": 2652,
+            "n_replicated": 546,
+            "auc": 0.6859861411143462,
+            "auc_p": 1.3962555426453501e-71,
+            "trend_rho": 0.34747277435457397,
+            "trend_p": 4.0305389164009404e-76,
             "robust_rate": 0.8571428571428571,
-            "other_rate": 0.13806487385639035,
-            "risk_ratio": 6.208261617900172
+            "other_rate": 0.19003476245654694,
+            "risk_ratio": 4.510452961672473
           },
           "null_rate": 7.95924864692773e-05
         }
@@ -280,9 +280,9 @@
         "ROBUST": 63,
         "CONDITIONAL": 367,
         "FRAGILE": 2009,
-        "UNSTABLE": 1231,
+        "UNSTABLE": 213,
         "INSUFFICIENT": 0,
-        "NOT DETECTED": 8894
+        "NOT DETECTED": 9912
       }
     },
     "v3_decision_tree": {
@@ -317,31 +317,31 @@
             },
             {
               "tier": "UNSTABLE",
-              "n_taxa": 523,
-              "n_cohorts": 25,
-              "replication_rate": 0.015296367112810707,
-              "ci_low": 0.0061703403808666965,
-              "ci_high": 0.02917965884079236
+              "n_taxa": 57,
+              "n_cohorts": 12,
+              "replication_rate": 0.07017543859649122,
+              "ci_low": 0.0,
+              "ci_high": 0.15151515151515152
             },
             {
               "tier": "NOT DETECTED",
-              "n_taxa": 9446,
+              "n_taxa": 9912,
               "n_cohorts": 23,
-              "replication_rate": 0.03038323099724751,
-              "ci_low": 0.022730076387963743,
-              "ci_high": 0.03913520693607818
+              "replication_rate": 0.029358353510895885,
+              "ci_low": 0.021999970932545146,
+              "ci_high": 0.037765265228966005
             }
           ],
           "discrimination": {
-            "n": 3118,
-            "n_replicated": 511,
-            "auc": 0.7629050043650356,
-            "auc_p": 8.835484321159575e-113,
-            "trend_rho": 0.40423628216957114,
-            "trend_p": 6.682647035138357e-123,
+            "n": 2652,
+            "n_replicated": 507,
+            "auc": 0.719056288878774,
+            "auc_p": 4.2115256321688654e-102,
+            "trend_rho": 0.4166770236559704,
+            "trend_p": 6.809455875458058e-112,
             "robust_rate": 0.9027777777777778,
-            "other_rate": 0.1464215364412344,
-            "risk_ratio": 6.165607872446437
+            "other_rate": 0.17131782945736435,
+            "risk_ratio": 5.269607843137255
           },
           "null_rate": 0.0067653613498885705
         },
@@ -373,31 +373,31 @@
             },
             {
               "tier": "UNSTABLE",
-              "n_taxa": 523,
-              "n_cohorts": 25,
-              "replication_rate": 0.02676864244741874,
-              "ci_low": 0.006929863814150827,
-              "ci_high": 0.06081573947953256
+              "n_taxa": 57,
+              "n_cohorts": 12,
+              "replication_rate": 0.21052631578947367,
+              "ci_low": 0.05263157894736842,
+              "ci_high": 0.3617021276595745
             },
             {
               "tier": "NOT DETECTED",
-              "n_taxa": 9446,
+              "n_taxa": 9912,
               "n_cohorts": 23,
-              "replication_rate": 0.011115816218505187,
-              "ci_low": 0.005318096117149104,
-              "ci_high": 0.01771894039335368
+              "replication_rate": 0.01079499596448749,
+              "ci_low": 0.0051947455783937675,
+              "ci_high": 0.017202992110367948
             }
           ],
           "discrimination": {
-            "n": 3118,
-            "n_replicated": 548,
-            "auc": 0.7787071487403788,
-            "auc_p": 1.2752944086756636e-133,
-            "trend_rho": 0.4406161604051291,
-            "trend_p": 2.8889636826974497e-148,
+            "n": 2652,
+            "n_replicated": 546,
+            "auc": 0.7354106007952161,
+            "auc_p": 3.0330716685167425e-124,
+            "trend_rho": 0.4604449562406131,
+            "trend_p": 2.610660808039387e-139,
             "robust_rate": 0.875,
-            "other_rate": 0.1592252133946159,
-            "risk_ratio": 5.495360824742268
+            "other_rate": 0.1872093023255814,
+            "risk_ratio": 4.673913043478261
           },
           "null_rate": 7.95924864692773e-05
         }
@@ -406,9 +406,9 @@
         "ROBUST": 72,
         "CONDITIONAL": 443,
         "FRAGILE": 2080,
-        "UNSTABLE": 523,
+        "UNSTABLE": 57,
         "INSUFFICIENT": 0,
-        "NOT DETECTED": 9446
+        "NOT DETECTED": 9912
       }
     },
     "v2_uniform": {
@@ -540,40 +540,40 @@
   },
   "non_inferiority": {
     "replicated_majority": {
-      "difference": -0.025501989495589794,
+      "difference": 0.016711361833697036,
       "ci": [
-        -0.07115410228538208,
-        0.0082686929188751
+        -0.007100075423176566,
+        0.03666037718340136
       ],
       "draws": 2000,
       "margin": -0.03,
-      "non_inferior": false
+      "non_inferior": true
     },
     "replicated_reference": {
-      "difference": 0.003049075470365259,
+      "difference": 0.053714947596218976,
       "ci": [
-        -0.06164644034837661,
-        0.04062308981403422
+        0.008722025740155402,
+        0.09064386134583127
       ],
       "draws": 2000,
       "margin": -0.03,
-      "non_inferior": false
+      "non_inferior": true
     }
   },
   "against_v2_baseline": {
     "replicated_majority": {
-      "difference": -0.02254228846228712,
+      "difference": -0.06639100394854869,
       "ci": [
-        -0.06612972647538408,
-        0.009617181448162674
+        -0.1530426387500731,
+        -0.016992066304931327
       ],
       "draws": 2000
     },
     "replicated_reference": {
-      "difference": 0.005582638886256985,
+      "difference": -0.037713909058905704,
       "ci": [
-        -0.05781338440169713,
-        0.04362676208553752
+        -0.1413255680241676,
+        0.012611681385664944
       ],
       "draws": 2000
     }
@@ -581,15 +581,10 @@
   "label_changes": {
     "from_v3_uniform": {
       "v3_flat_tree": {
-        "share_changed": 0.024355300859598854,
-        "n_changed": 306,
+        "share_changed": 0.005093919134033747,
+        "n_changed": 64,
         "n": 12564,
         "transitions": [
-          {
-            "from": "UNSTABLE",
-            "to": "NOT DETECTED",
-            "n": 236
-          },
           {
             "from": "UNSTABLE",
             "to": "FRAGILE",
@@ -599,11 +594,6 @@
             "from": "FRAGILE",
             "to": "CONDITIONAL",
             "n": 23
-          },
-          {
-            "from": "NOT DETECTED",
-            "to": "UNSTABLE",
-            "n": 6
           },
           {
             "from": "CONDITIONAL",
@@ -633,15 +623,10 @@
         ]
       },
       "v3_decision_tree": {
-        "share_changed": 0.0890639923591213,
-        "n_changed": 1119,
+        "share_changed": 0.023798153454313912,
+        "n_changed": 299,
         "n": 12564,
         "transitions": [
-          {
-            "from": "UNSTABLE",
-            "to": "NOT DETECTED",
-            "n": 801
-          },
           {
             "from": "UNSTABLE",
             "to": "FRAGILE",
@@ -656,11 +641,6 @@
             "from": "UNSTABLE",
             "to": "CONDITIONAL",
             "n": 36
-          },
-          {
-            "from": "NOT DETECTED",
-            "to": "UNSTABLE",
-            "n": 19
           },
           {
             "from": "CONDITIONAL",
@@ -685,19 +665,19 @@
         ]
       },
       "v2_uniform": {
-        "share_changed": 0.0062878064310729065,
-        "n_changed": 79,
+        "share_changed": 0.10211716014008278,
+        "n_changed": 1283,
         "n": 12564,
         "transitions": [
           {
             "from": "NOT DETECTED",
-            "to": "FRAGILE",
-            "n": 35
+            "to": "UNSTABLE",
+            "n": 1227
           },
           {
-            "from": "UNSTABLE",
-            "to": "NOT DETECTED",
-            "n": 22
+            "from": "NOT DETECTED",
+            "to": "FRAGILE",
+            "n": 35
           },
           {
             "from": "FRAGILE",
@@ -723,30 +703,25 @@
             "from": "ROBUST",
             "to": "CONDITIONAL",
             "n": 1
-          },
-          {
-            "from": "NOT DETECTED",
-            "to": "UNSTABLE",
-            "n": 1
           }
         ]
       }
     },
     "from_v2_uniform": {
       "v3_uniform": {
-        "share_changed": 0.0062878064310729065,
-        "n_changed": 79,
+        "share_changed": 0.10211716014008278,
+        "n_changed": 1283,
         "n": 12564,
         "transitions": [
+          {
+            "from": "UNSTABLE",
+            "to": "NOT DETECTED",
+            "n": 1227
+          },
           {
             "from": "FRAGILE",
             "to": "NOT DETECTED",
             "n": 35
-          },
-          {
-            "from": "NOT DETECTED",
-            "to": "UNSTABLE",
-            "n": 22
           },
           {
             "from": "CONDITIONAL",
@@ -772,23 +747,18 @@
             "from": "CONDITIONAL",
             "to": "ROBUST",
             "n": 1
-          },
-          {
-            "from": "UNSTABLE",
-            "to": "NOT DETECTED",
-            "n": 1
           }
         ]
       },
       "v3_flat_tree": {
-        "share_changed": 0.025867558102515124,
-        "n_changed": 325,
+        "share_changed": 0.10593759949060809,
+        "n_changed": 1331,
         "n": 12564,
         "transitions": [
           {
             "from": "UNSTABLE",
             "to": "NOT DETECTED",
-            "n": 215
+            "n": 1227
           },
           {
             "from": "FRAGILE",
@@ -808,11 +778,6 @@
           {
             "from": "NOT DETECTED",
             "to": "FRAGILE",
-            "n": 6
-          },
-          {
-            "from": "NOT DETECTED",
-            "to": "UNSTABLE",
             "n": 6
           },
           {
@@ -843,14 +808,14 @@
         ]
       },
       "v3_decision_tree": {
-        "share_changed": 0.09057624960203757,
-        "n_changed": 1138,
+        "share_changed": 0.12464183381088825,
+        "n_changed": 1566,
         "n": 12564,
         "transitions": [
           {
             "from": "UNSTABLE",
             "to": "NOT DETECTED",
-            "n": 780
+            "n": 1227
           },
           {
             "from": "UNSTABLE",
@@ -871,11 +836,6 @@
             "from": "FRAGILE",
             "to": "NOT DETECTED",
             "n": 35
-          },
-          {
-            "from": "NOT DETECTED",
-            "to": "UNSTABLE",
-            "n": 19
           },
           {
             "from": "CONDITIONAL",
@@ -908,45 +868,43 @@
   },
   "kendall_tau": {
     "v3_uniform~v3_flat_tree": {
-      "tier_tau_b": 0.9657552853031514,
+      "tier_tau_b": 0.9974863108520254,
       "tier_n": 12564,
       "frac_significant_tau_b": 0.9954500765905917,
       "frac_significant_n": 12564
     },
     "v3_uniform~v3_decision_tree": {
-      "tier_tau_b": 0.8808493018587459,
+      "tier_tau_b": 0.985405718191488,
       "tier_n": 12564,
       "frac_significant_tau_b": 0.9889289537393117,
       "frac_significant_n": 12564
     },
     "v3_uniform~v2_uniform": {
-      "tier_tau_b": 0.9876051747579516,
+      "tier_tau_b": 0.8365945382143631,
       "tier_n": 12564,
       "frac_significant_tau_b": 0.990734057275369,
       "frac_significant_n": 12564
     },
     "v3_flat_tree~v3_decision_tree": {
-      "tier_tau_b": 0.9100973752420366,
+      "tier_tau_b": 0.9877599574986785,
       "tier_n": 12564,
       "frac_significant_tau_b": 0.9934737911383393,
       "frac_significant_n": 12564
     },
     "v3_flat_tree~v2_uniform": {
-      "tier_tau_b": 0.9598691322964846,
+      "tier_tau_b": 0.8349752939835781,
       "tier_n": 12564,
       "frac_significant_tau_b": 0.9881073668440563,
       "frac_significant_n": 12564
     },
     "v3_decision_tree~v2_uniform": {
-      "tier_tau_b": 0.8755064178912256,
+      "tier_tau_b": 0.8247181752366999,
       "tier_n": 12564,
       "frac_significant_tau_b": 0.9818040173924871,
       "frac_significant_n": 12564
     }
   },
   "verdict": {
-    "failures": [
-      "decision_tree AUC is non-inferior to uniform (majority definition)"
-    ]
+    "failures": []
   }
 }

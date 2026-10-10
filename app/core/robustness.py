@@ -35,7 +35,8 @@ TIER_ORDER = ["ROBUST", "CONDITIONAL", "FRAGILE", "UNSTABLE", "INSUFFICIENT", "N
 MIN_SPECS_FOR_TIER = 10  # §15
 
 
-def assign_tier(n_specs_tested: int, frac_significant: float, sign_consistency: float) -> str:
+def assign_tier(n_specs_tested: int, frac_significant: float, sign_consistency: float,
+                ruleset: str = "v3") -> str:
     """SPEC §16.2, evaluated in order, first match wins.
 
     Two gap-fillers are needed because the four published criteria do not partition the
@@ -43,6 +44,13 @@ def assign_tier(n_specs_tested: int, frac_significant: float, sign_consistency: 
       * frac_significant == 0 with a consistent sign matches no tier -> NOT DETECTED;
       * sign_consistency in [0.80, 0.95) with frac_significant >= 0.30 matches no tier
         -> CONDITIONAL (significant often, direction not fully pinned down).
+
+    v3 checks "significant nowhere" before direction (docs/V3_DEVIATIONS.md L1). Under
+    v2's order a taxon no analysis called significant was UNSTABLE whenever its sign
+    wavered, so UNSTABLE mixed findings whose direction is unsettled with taxa that were
+    never findings at all — 20 of the IBD demo's 23 — and every count of taxa
+    "significant in at least one specification" included them. A v2 run keeps v2's
+    order, so v2 results reproduce exactly.
     """
     if n_specs_tested < MIN_SPECS_FOR_TIER:
         return "INSUFFICIENT"
@@ -53,6 +61,8 @@ def assign_tier(n_specs_tested: int, frac_significant: float, sign_consistency: 
         # CONDITIONAL — tests/reference/tier_validation.py), that would attach a claim
         # to a taxon nothing is known about. INSUFFICIENT is the honest answer.
         return "INSUFFICIENT"
+    if ruleset != "v2" and frac_significant <= 0.0:
+        return "NOT DETECTED"
     if frac_significant >= 0.80 and sign_consistency >= 0.95:
         return "ROBUST"
     if 0.30 <= frac_significant < 0.80 and sign_consistency >= 0.95:
@@ -200,7 +210,7 @@ def compute_robustness(run, scheme: str = None, custom: dict = None) -> Robustne
         frame, extras = _apply_weighting(run, frame, scheme, custom)
 
     frame["robustness_tier"] = [
-        assign_tier(int(n), float(f), float(s))
+        assign_tier(int(n), float(f), float(s), ruleset)
         for n, f, s in zip(frame["n_specs_tested"], frame["frac_significant"],
                            frame["sign_consistency"], strict=True)
     ]
@@ -298,7 +308,8 @@ def _apply_weighting(run, frame: pd.DataFrame, scheme: str, custom: dict):
         frame[f"frac_significant_{other}"] = np.where(untested, 0.0, frac)
         frame[f"sign_consistency_{other}"] = np.where(untested, 0.0, sign)
         frame[f"tier_{other}"] = [
-            assign_tier(int(n), 0.0 if u else float(f), 0.0 if u else float(c))
+            assign_tier(int(n), 0.0 if u else float(f), 0.0 if u else float(c),
+                        getattr(run, "ruleset", "v3"))
             for n, f, c, u in zip(frame["n_specs_tested"], frac, sign, untested,
                                   strict=True)]
 
@@ -360,10 +371,11 @@ def n_detected(summary: RobustnessSummary) -> int:
 def n_stable(summary: RobustnessSummary) -> int:
     """Taxa that held up: ROBUST or CONDITIONAL.
 
-    The distinction that matters to a reader. "Significant in at least one of 1,596
-    analyses" is a very low bar — a table simulated with no group difference at all
-    still put 57 of 79 taxa in UNSTABLE — so a page can be full of tiers and contain
-    no finding. This counts the tiers that survive their own definition.
+    The distinction that matters to a reader. "Significant in at least one of 1,560
+    analyses" is a low bar — tables simulated with no group difference at all still put
+    up to 4 of 80 taxa there, all FRAGILE (tests/reference/noise_floor.py) — so a page
+    can carry labels and contain no finding. This counts the tiers that survive their
+    own definition.
     """
     counts = summary.tier_counts
     return int(counts["ROBUST"]) + int(counts["CONDITIONAL"])

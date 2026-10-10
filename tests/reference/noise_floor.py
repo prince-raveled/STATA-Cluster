@@ -84,8 +84,10 @@ def main() -> int:
     print("\nHeadline configuration (the one the interface quotes):")
     print(f"  {headline['n_per_group']} per group, {headline['n_taxa']} taxa, "
           f"{headline['n_specifications']:,} analyses")
-    print(f"  UNSTABLE       {headline['tiers']['UNSTABLE']:>4d} of "
+    print(f"  significant anywhere {headline['n_detected']:>4d} of "
           f"{headline['n_taxa_tiered']} taxa")
+    print(f"  FRAGILE        {headline['tiers']['FRAGILE']:>4d}")
+    print(f"  UNSTABLE       {headline['tiers']['UNSTABLE']:>4d}")
     print(f"  NOT DETECTED   {headline['tiers']['NOT DETECTED']:>4d}")
     print(f"  ROBUST         {headline['tiers']['ROBUST']:>4d}")
     print(f"  CONDITIONAL    {headline['tiers']['CONDITIONAL']:>4d}")
@@ -93,24 +95,30 @@ def main() -> int:
     print("\nAcross further seeds:")
     replicates = [measure(HEADLINE_PER_GROUP, HEADLINE_TAXA, s) for s in (12, 13, 14)]
     for row in replicates:
-        print(f"  seed {row['seed']}: UNSTABLE {row['tiers']['UNSTABLE']:>3d}/"
-              f"{row['n_taxa_tiered']}, ROBUST {row['tiers']['ROBUST']}, "
+        print(f"  seed {row['seed']}: significant anywhere {row['n_detected']:>3d}/"
+              f"{row['n_taxa_tiered']} (FRAGILE {row['tiers']['FRAGILE']}, UNSTABLE "
+              f"{row['tiers']['UNSTABLE']}), ROBUST {row['tiers']['ROBUST']}, "
               f"CONDITIONAL {row['tiers']['CONDITIONAL']}")
 
     every = [headline, *replicates]
     stable_total = sum(r["n_stable"] for r in every)
     print(f"\nROBUST or CONDITIONAL across all {len(every)} null runs: {stable_total}")
-    print("The two tiers carrying a replication claim stay empty on pure noise, while\n"
-          "UNSTABLE fills up. That is the separation the interface relies on.")
+    print("The two tiers carrying a replication claim stay empty on pure noise, and the\n"
+          "few taxa noise makes significant anywhere are FRAGILE or UNSTABLE. That is the\n"
+          "separation the interface relies on.")
 
     RECORD.parent.mkdir(parents=True, exist_ok=True)
     RECORD.write_text(json.dumps(
-        {"headline": headline, "replicates": replicates,
+        {"labels": "v3: a taxon significant in no analysis is NOT DETECTED "
+                   "(docs/V3_DEVIATIONS.md L1)",
+         "headline": headline, "replicates": replicates,
          "n_stable_across_all_runs": stable_total,
          "interface_claim": (
-             f"on a table simulated with no difference between the groups at all, "
-             f"{headline['tiers']['UNSTABLE']} of {headline['n_taxa_tiered']} taxa "
-             f"still landed in UNSTABLE")},
+             f"on tables simulated with no difference between the groups at all "
+             f"({len(every)} seeds, {headline['n_taxa']} taxa each), between "
+             f"{min(r['n_detected'] for r in every)} and "
+             f"{max(r['n_detected'] for r in every)} taxa reached significance in any "
+             f"analysis, and none held up as ROBUST or CONDITIONAL")},
         indent=2), encoding="utf-8")
     print(f"\nRecorded to {RECORD.relative_to(RECORD.parents[1])}")
     return 0 if stable_total == 0 else 1

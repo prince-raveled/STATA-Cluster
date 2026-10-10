@@ -28,7 +28,7 @@
   function baseLayout(t, extra) {
     return Object.assign({
       paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
-      font: { family: t.sans, color: t.inkSoft, size: 12 },
+      font: { family: t.sans, color: t.ink, size: 12.5 },
       hoverlabel: { font: { family: t.sans, size: 12 } },
       showlegend: false
     }, extra);
@@ -71,13 +71,13 @@
                   line: { color: t.line, width: 1 } });
     const annotations = [
       { xref: "paper", x: 1, y: 0.8, yanchor: "bottom", xanchor: "right", showarrow: false,
-        text: "80% · ROBUST if direction agrees", font: { size: 11, color: t.grey } },
+        text: "80% · ROBUST if direction agrees", font: { size: 11.5, color: t.inkSoft } },
       { xref: "paper", x: 1, y: 0.3, yanchor: "bottom", xanchor: "right", showarrow: false,
-        text: "30% · CONDITIONAL", font: { size: 11, color: t.grey } },
+        text: "30% · CONDITIONAL", font: { size: 11.5, color: t.inkSoft } },
       { xref: "paper", yref: "paper", x: 0, y: 1.02, xanchor: "left", yanchor: "bottom",
-        showarrow: false, text: "← higher in " + opts.groups.a, font: { size: 11, color: t.grey } },
+        showarrow: false, text: "← higher in " + opts.groups.a, font: { size: 11.5, color: t.inkSoft } },
       { xref: "paper", yref: "paper", x: 1, y: 1.02, xanchor: "right", yanchor: "bottom",
-        showarrow: false, text: "higher in " + opts.groups.b + " →", font: { size: 11, color: t.grey } }
+        showarrow: false, text: "higher in " + opts.groups.b + " →", font: { size: 11.5, color: t.inkSoft } }
     ];
     sized(el, 380);
     global.Plotly.newPlot(el, traces, baseLayout(t, {
@@ -112,7 +112,7 @@
     sized(el, height);
     global.Plotly.newPlot(el, [{
       type: "scatter", mode: "markers", x: rows.map((r) => r.median_effect), y: y,
-      error_x: { type: "data", symmetric: false, thickness: 1.6, width: 0, color: t.grey,
+      error_x: { type: "data", symmetric: false, thickness: 1.8, width: 0, color: t.inkSoft,
                  array: rows.map((r) => isNum(r.iqr_high) ? r.iqr_high - r.median_effect : 0),
                  arrayminus: rows.map((r) => isNum(r.iqr_low) ? r.median_effect - r.iqr_low : 0) },
       marker: { size: rows.map((r) => r.certified_robust ? 15 : 11),
@@ -161,12 +161,13 @@
       source.push(left.indexOf(parts[0]));
       target.push(left.length + right.indexOf(parts[1]));
       value.push(counts[k]);
-      color.push(parts[0] === parts[1] ? "rgba(150,131,133,0.22)" : "rgba(212,99,161,0.45)");
+      color.push(parts[0] === parts[1] ? "rgba(150,131,133,0.16)" : "rgba(212,99,161,0.32)");
     });
     const total = (key, tier) => rows.filter((r) => r.tiers[key] === tier).length;
     sized(el, 320);
     global.Plotly.newPlot(el, [{
       type: "sankey", arrangement: "fixed",
+      textfont: { family: opts.theme.sans, size: 13, color: opts.theme.ink },
       node: { label: left.map((tier) => tier + " " + total(from, tier))
                        .concat(right.map((tier) => tier + " " + total(to, tier))),
               color: labels.map(tierColor), pad: 14, thickness: 14,
@@ -174,14 +175,15 @@
       link: { source: source, target: target, value: value, color: color,
               hovertemplate: "%{source.label} → %{target.label}: %{value} taxa<extra></extra>" }
     }], baseLayout(opts.theme, {
-      height: 320, margin: { l: 8, r: 8, t: 30, b: 8 },
-      annotations: [
-        { xref: "paper", yref: "paper", x: 0, y: 1.08, showarrow: false, xanchor: "left",
-          text: opts.fromLabel, font: { size: 12, color: opts.theme.grey } },
-        { xref: "paper", yref: "paper", x: 1, y: 1.08, showarrow: false, xanchor: "right",
-          text: opts.toLabel, font: { size: 12, color: opts.theme.grey } }
-      ]
+      height: 320, margin: { l: 8, r: 8, t: 8, b: 8 }
     }), config);
+    /* The two column titles sit above the plot, in the page, where Plotly's toolbar
+       cannot cover them. */
+    const ends = el.previousElementSibling;
+    if (ends && ends.classList.contains("flow-ends")) {
+      ends.children[0].textContent = opts.fromLabel;
+      ends.children[1].textContent = opts.toLabel;
+    }
     return rows.filter((r) => r.tiers[from] !== r.tiers[to]).length;
   }
 

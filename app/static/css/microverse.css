@@ -1034,3 +1034,4 @@ td:has(> .mini-bar) { white-space: nowrap; }
 .approach-flow { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: var(--space-3) 0 0; counter-reset: ap; }
 .approach-flow li { counter-increment: ap; font-size: 13px; padding: 6px 10px; border-radius: 999px; background: var(--accent-wash); color: var(--accent-strong); }
 .approach-flow li::before { content: counter(ap) " · "; font-family: var(--mono); }
+.flow-ends { display: flex; justify-content: space-between; gap: 12px; font: 600 13px/1.3 var(--sans); color: var(--ink-2); }
